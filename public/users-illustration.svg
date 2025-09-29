@@ -1,0 +1,12 @@
+<svg width="300" height="300" viewBox="0 0 300 300" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path d="M150 260C210.751 260 260 210.751 260 150C260 89.249 210.751 40 150 40C89.249 40 40 89.249 40 150C40 210.751 89.249 260 150 260Z" fill="#F3F4F6"/>
+  <path d="M100 100H200V200H100V100Z" stroke="#4361EE" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M175 130C175 141.046 166.046 150 155 150C143.954 150 135 141.046 135 130C135 118.954 143.954 110 155 110C166.046 110 175 118.954 175 130Z" stroke="#4361EE" stroke-width="6"/>
+  <path d="M187 195C187 177.879 172.673 164 155 164C137.327 164 123 177.879 123 195" stroke="#4361EE" stroke-width="6" stroke-linecap="round"/>
+  <path d="M100 120H120" stroke="#4361EE" stroke-width="6" stroke-linecap="round"/>
+  <path d="M100 150H120" stroke="#4361EE" stroke-width="6" stroke-linecap="round"/>
+  <path d="M100 180H120" stroke="#4361EE" stroke-width="6" stroke-linecap="round"/>
+  <path d="M215 120C221.627 120 227 114.627 227 108C227 101.373 221.627 96 215 96C208.373 96 203 101.373 203 108C203 114.627 208.373 120 215 120Z" fill="#10B981"/>
+  <path d="M215 120V150" stroke="#10B981" stroke-width="6" stroke-linecap="round"/>
+  <path d="M200 135H230" stroke="#10B981" stroke-width="6" stroke-linecap="round"/>
+</svg>
