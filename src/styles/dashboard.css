@@ -1,0 +1,47 @@
+/* Dashboard layout styles */
+.ant-layout-sider {
+    background-color: #fff !important;
+}
+
+.ant-menu-light {
+    background-color: #fff !important;
+}
+
+.ant-menu-item:hover {
+    color: #f59e0b !important;
+}
+
+.ant-menu-item-selected {
+    color: #f59e0b !important;
+}
+
+.ant-menu-item-selected::after {
+    border-right-color: #f59e0b !important;
+}
+
+.ant-menu-light .ant-menu-submenu-selected>.ant-menu-submenu-title {
+    color: #f59e0b !important;
+}
+
+.ant-menu-item-active {
+    color: #f59e0b !important;
+}
+
+.ant-btn-primary {
+    background-color: #f59e0b !important;
+    border-color: #f59e0b !important;
+}
+
+.ant-btn-primary:hover {
+    background-color: #ea580c !important;
+    border-color: #ea580c !important;
+}
+
+/* Fix for navbar color after logout */
+.ant-layout-header {
+    background-color: #fff !important;
+}
+
+.ant-menu-horizontal {
+    background-color: #fff !important;
+}

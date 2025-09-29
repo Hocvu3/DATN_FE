@@ -1,0 +1,9 @@
+/* Reset navbar color */
+.bg-white,
+header {
+    background-color: white !important;
+}
+
+.text-white {
+    color: white;
+}
