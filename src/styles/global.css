@@ -7,3 +7,6 @@ header {
 .text-white {
     color: white;
 }
+
+/* Import upload modal styles */
+@import './upload-modal.css';
