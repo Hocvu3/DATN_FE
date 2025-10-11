@@ -407,6 +407,51 @@ export const UsersApi = {
   },
 };
 
+// Helper function for downloading blob data
+export async function apiDownloadBlob(
+  path: string,
+  options: ApiOptions = {}
+): Promise<Blob> {
+  const controller = new AbortController();
+  const timeoutMs = options.timeout || DEFAULT_TIMEOUT_MS;
+  const id = setTimeout(() => controller.abort(), timeoutMs);
+
+  // Build headers
+  const headers: Record<string, string> = {};
+
+  // Add auth token if required (default to false for public downloads)
+  if (options?.requiresAuth === true) {
+    const token = getAuthToken();
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+  }
+
+  try {
+    const res = await fetch(`${getBaseUrl()}${path}`, {
+      method: 'GET',
+      headers,
+      credentials: 'include',
+      signal: controller.signal,
+      ...options,
+    });
+
+    clearTimeout(id);
+
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+    }
+
+    return await res.blob();
+  } catch (error) {
+    clearTimeout(id);
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new Error(`Request timeout after ${timeoutMs}ms`);
+    }
+    throw error;
+  }
+}
+
 // Helper functions may be added here if needed in the future
 
 
