@@ -38,8 +38,7 @@ import {
 import CoverImageUpload from "@/components/documents/CoverImageUpload";
 import DocumentGrid from "@/components/documents/DocumentGrid";
 import EditDocumentModal from "@/components/documents/EditDocumentModal";
-// Will be used when implementing real API calls
-// import { DocumentsApi } from "@/lib/api";
+import { DocumentsApi } from "@/lib/documents-api";
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -554,10 +553,10 @@ export default function DepartmentDocumentsPage() {
   // Handle document delete
   const handleDelete = async (id: string) => {
     try {
-      // In production, call API
-      // await DocumentsApi.deleteDocument(id);
-
-      // For development
+      // Call the delete document API
+      await DocumentsApi.deleteDocument(id);
+      
+      // Update the local state
       setDocuments((prev) => prev.filter((doc) => doc.id !== id));
       message.success("Document deleted successfully!");
     } catch (error) {

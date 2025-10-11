@@ -10,6 +10,7 @@ import {
   Input,
   Empty,
   Pagination,
+  message,
 } from "antd";
 import {
   AppstoreOutlined,
@@ -18,20 +19,49 @@ import {
 } from "@ant-design/icons";
 
 import DocumentGallery from "@/components/documents/DocumentGallery";
+import { DocumentsApi } from "@/lib/documents-api";
 
 const { Title, Paragraph, Text } = Typography;
 const { Option } = Select;
 
-// Interfaces
+// Interfaces - Updated to match API response
 interface Document {
   id: string;
   title: string;
   description: string;
-  fileType: string;
-  size: number;
+  documentNumber: string;
+  status: string;
+  securityLevel: string;
+  isConfidential: boolean;
   createdAt: string;
-  tags: string[];
-  downloads: number;
+  updatedAt: string;
+  creator: {
+    id: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+  };
+  department?: {
+    id: string;
+    name: string;
+  };
+  tags: Array<{
+    id: string;
+    name: string;
+  }>;
+  cover?: {
+    id: string;
+    s3Url: string;
+    filename: string;
+  };
+  assets?: Array<{
+    id: string;
+    s3Url: string;
+    filename: string;
+    contentType: string;
+    sizeBytes: string;
+    isCover: boolean;
+  }>;
 }
 
 interface FilterParams {
@@ -42,92 +72,6 @@ interface FilterParams {
   page: number;
   pageSize: number;
 }
-
-// Mock data for initial development
-const MOCK_DOCUMENTS: Document[] = [
-  {
-    id: "1",
-    title: "Company Guidelines 2025",
-    description: "Official guidelines for company policies and procedures.",
-    fileType: "pdf",
-    size: 2540000,
-    createdAt: "2025-08-15T12:00:00Z",
-    tags: ["guidelines", "policy", "public"],
-    downloads: 153,
-  },
-  {
-    id: "2",
-    title: "Annual Financial Report Q3",
-    description: "Quarterly financial performance and analysis.",
-    fileType: "xlsx",
-    size: 1240000,
-    createdAt: "2025-07-22T09:30:00Z",
-    tags: ["finance", "report", "quarterly"],
-    downloads: 87,
-  },
-  {
-    id: "3",
-    title: "Product Roadmap 2025",
-    description: "Strategic vision and development timeline for our products.",
-    fileType: "pptx",
-    size: 3800000,
-    createdAt: "2025-07-05T14:15:00Z",
-    tags: ["roadmap", "strategy", "product"],
-    downloads: 121,
-  },
-  {
-    id: "4",
-    title: "Research Findings: Market Analysis",
-    description:
-      "Comprehensive market research analysis and competitor insights.",
-    fileType: "pdf",
-    size: 4200000,
-    createdAt: "2025-06-18T10:45:00Z",
-    tags: ["research", "market", "analysis"],
-    downloads: 95,
-  },
-  {
-    id: "5",
-    title: "Legal Compliance Documentation",
-    description:
-      "Documentation for regulatory compliance and legal requirements.",
-    fileType: "docx",
-    size: 1850000,
-    createdAt: "2025-05-30T16:20:00Z",
-    tags: ["legal", "compliance", "regulation"],
-    downloads: 63,
-  },
-  {
-    id: "6",
-    title: "Employee Handbook 2025",
-    description: "Comprehensive guide for employee policies and benefits.",
-    fileType: "pdf",
-    size: 5100000,
-    createdAt: "2025-05-12T11:10:00Z",
-    tags: ["hr", "handbook", "policy"],
-    downloads: 210,
-  },
-  {
-    id: "7",
-    title: "Marketing Campaign Results",
-    description: "Analysis of recent marketing campaign performance and ROI.",
-    fileType: "pptx",
-    size: 2900000,
-    createdAt: "2025-04-25T09:00:00Z",
-    tags: ["marketing", "campaign", "analysis"],
-    downloads: 76,
-  },
-  {
-    id: "8",
-    title: "Technical Documentation: API Reference",
-    description: "Complete API reference guide for developers.",
-    fileType: "pdf",
-    size: 3400000,
-    createdAt: "2025-04-10T15:30:00Z",
-    tags: ["api", "technical", "reference"],
-    downloads: 182,
-  },
-];
 
 const FILE_TYPES = [
   { label: "PDF", value: "pdf" },
@@ -166,66 +110,52 @@ export default function PublicDocumentsPage() {
     const fetchDocuments = async () => {
       setLoading(true);
       try {
-        // In production, this would call the API with filter parameters
-        // const response = await DocumentsApi.getPublicDocuments(filters);
-        // setDocuments(response.data);
-        // setTotal(response.total);
+        console.log('Fetching public documents with filters:', filters);
+        
+        // Call the real API for public documents
+        const response = await DocumentsApi.getPublicDocuments({
+          page: filters.page,
+          limit: filters.pageSize,
+          search: filters.keyword || undefined,
+          // Note: securityLevel is automatically set to PUBLIC by the backend endpoint
+        });
 
-        // For development using mock data
-        setTimeout(() => {
-          let filteredDocs = [...MOCK_DOCUMENTS];
+        console.log('API response:', response);
 
-          // Apply keyword filter
-          if (filters.keyword) {
-            const keyword = filters.keyword.toLowerCase();
-            filteredDocs = filteredDocs.filter(
-              (doc) =>
-                doc.title.toLowerCase().includes(keyword) ||
-                doc.description.toLowerCase().includes(keyword) ||
-                doc.tags.some((tag) => tag.toLowerCase().includes(keyword))
-            );
+        if (response.status === 200 && response.data) {
+          // Handle the nested response structure
+          const responseData = response.data as any;
+          let rawDocuments = [];
+          let totalCount = 0;
+          
+          if (responseData.documents) {
+            // Direct structure: { documents: [], total: number, ... }
+            rawDocuments = responseData.documents || [];
+            totalCount = responseData.total || 0;
+          } else if (responseData.data && responseData.data.documents) {
+            // Nested structure: { data: { documents: [], total: number, ... } }
+            rawDocuments = responseData.data.documents || [];
+            totalCount = responseData.data.total || 0;
+          } else {
+            console.warn('Unexpected response structure:', responseData);
+            rawDocuments = [];
+            totalCount = 0;
           }
 
-          // Apply file type filter
-          if (filters.fileType) {
-            filteredDocs = filteredDocs.filter(
-              (doc) => doc.fileType === filters.fileType
-            );
-          }
+          // Use documents directly from API response - no transformation needed
+          setDocuments(rawDocuments);
+          setTotal(totalCount);
+        } else {
+          console.error('Failed to fetch documents:', response);
+          setDocuments([]);
+          setTotal(0);
+        }
 
-          // Apply sorting
-          const [sortField, sortOrder] = filters.sortBy.split("_");
-          filteredDocs.sort((a, b) => {
-            if (sortField === "date") {
-              return sortOrder === "asc"
-                ? new Date(a.createdAt).getTime() -
-                    new Date(b.createdAt).getTime()
-                : new Date(b.createdAt).getTime() -
-                    new Date(a.createdAt).getTime();
-            } else if (sortField === "title") {
-              return sortOrder === "asc"
-                ? a.title.localeCompare(b.title)
-                : b.title.localeCompare(a.title);
-            } else if (sortField === "downloads") {
-              return sortOrder === "asc"
-                ? a.downloads - b.downloads
-                : b.downloads - a.downloads;
-            }
-            return 0;
-          });
-
-          setTotal(filteredDocs.length);
-
-          // Apply pagination
-          const startIdx = (filters.page - 1) * filters.pageSize;
-          const endIdx = startIdx + filters.pageSize;
-          filteredDocs = filteredDocs.slice(startIdx, endIdx);
-
-          setDocuments(filteredDocs);
-          setLoading(false);
-        }, 600); // Simulate network delay
+        setLoading(false);
       } catch (error) {
-        console.error("Error fetching documents:", error);
+        console.error("Error fetching public documents:", error);
+        setDocuments([]);
+        setTotal(0);
         setLoading(false);
       }
     };
@@ -258,6 +188,57 @@ export default function PublicDocumentsPage() {
       fileType: value,
       page: 1,
     }));
+  };
+
+  // Handle document download
+  const handleDownload = async (doc: Document) => {
+    try {
+      // Find the document file (non-cover asset)
+      const documentAssets = doc.assets || [];
+      const documentFile = documentAssets.find((asset: any) => !asset.isCover);
+      
+      if (!documentFile || !documentFile.s3Url) {
+        message.warning('No document file available for download');
+        return;
+      }
+
+      // Extract keyPath from S3 URL
+      const url = new URL(documentFile.s3Url);
+      const keyPath = url.pathname.substring(1);
+      
+      console.log('Downloading file with keyPath:', keyPath);
+      
+      const blob = await DocumentsApi.downloadFilePublic(keyPath);
+      
+      // Create download link
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = window.document.createElement('a');
+      link.href = downloadUrl;
+      link.download = documentFile.filename || `${doc.title}.pdf`;
+      window.document.body.appendChild(link);
+      link.click();
+      window.document.body.removeChild(link);
+      window.URL.revokeObjectURL(downloadUrl);
+      
+      message.success('File downloaded successfully');
+    } catch (error) {
+      console.error('Download error:', error);
+      
+      // More specific error handling
+      if (error instanceof Error) {
+        if (error.message.includes('404')) {
+          message.error('File not found on server');
+        } else if (error.message.includes('403')) {
+          message.error('Access denied to file');
+        } else if (error.message.includes('timeout')) {
+          message.error('Download timeout - please try again');
+        } else {
+          message.error(`Download failed: ${error.message}`);
+        }
+      } else {
+        message.error('Failed to download file');
+      }
+    }
   };
 
   // Handle page change
@@ -364,7 +345,11 @@ export default function PublicDocumentsPage() {
       <div className="bg-white rounded-lg shadow p-6">
         <Spin spinning={loading}>
           {documents.length > 0 ? (
-            <DocumentGallery documents={documents} />
+            <DocumentGallery 
+              documents={documents} 
+              onDownload={handleDownload}
+              isPublicView={true}
+            />
           ) : (
             <Empty
               description="No documents found matching your criteria"

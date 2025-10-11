@@ -12,122 +12,104 @@ import {
   Col,
   Divider,
   Skeleton,
-  Tooltip,
   Tabs,
+  message,
 } from "antd";
 import {
   DownloadOutlined,
   ShareAltOutlined,
-  StarOutlined,
-  StarFilled,
-  EyeOutlined,
   FileTextOutlined,
-  HistoryOutlined,
   CommentOutlined,
 } from "@ant-design/icons";
 import { format } from "date-fns";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import Image from "next/image";
+import { DocumentsApi } from "@/lib/documents-api";
 
 const { Title, Text, Paragraph } = Typography;
 
-// Interfaces
+// Interfaces - Updated to match API response
 interface Document {
   id: string;
   title: string;
   description: string;
-  fileType: string;
-  size: number;
+  documentNumber: string;
+  status: string;
+  securityLevel: string;
+  isConfidential: boolean;
+  fileType?: string;
   createdAt: string;
   updatedAt: string;
-  createdBy: string;
-  department: string;
-  tags: string[];
-  versions: number;
-  downloads: number;
-  views: number;
-  starred: boolean;
+  creator: {
+    id: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+  };
+  department?: {
+    id: string;
+    name: string;
+  };
+  tags: Array<{
+    id: string;
+    name: string;
+  }>;
+  cover?: {
+    id: string;
+    s3Url: string;
+    filename: string;
+  };
+  assets?: Array<{
+    id: string;
+    s3Url: string;
+    filename: string;
+    contentType: string;
+    sizeBytes: string;
+    isCover: boolean;
+  }>;
 }
 
-// Mock data for development
-const MOCK_DOCUMENT: Document = {
-  id: "1",
-  title: "Company Guidelines 2025",
-  description:
-    "Official guidelines for company policies and procedures. This comprehensive document outlines the standard operating procedures, code of conduct, and organizational policies that govern our company operations. It serves as a reference for all employees to understand company expectations and protocols.",
-  fileType: "pdf",
-  size: 2540000,
-  createdAt: "2025-08-15T12:00:00Z",
-  updatedAt: "2025-08-18T14:30:00Z",
-  createdBy: "Jane Smith",
-  department: "Human Resources",
-  tags: ["guidelines", "policy", "public", "official", "employees"],
-  versions: 3,
-  downloads: 153,
-  views: 278,
-  starred: false,
+// Function to get file icon component for placeholder
+const getFileIconForPlaceholder = (fileType: string) => {
+  switch (fileType) {
+    case "pdf":
+      return <FileTextOutlined style={{ color: "#F40F02", fontSize: "40px" }} />;
+    case "docx":
+      return <FileTextOutlined style={{ color: "#2B579A", fontSize: "40px" }} />;
+    case "xlsx":
+      return <FileTextOutlined style={{ color: "#217346", fontSize: "40px" }} />;
+    case "pptx":
+      return <FileTextOutlined style={{ color: "#D04423", fontSize: "40px" }} />;
+    default:
+      return <FileTextOutlined style={{ color: "#5A5A5A", fontSize: "40px" }} />;
+  }
 };
-
-// Comments mock data
-const MOCK_COMMENTS = [
-  {
-    id: "c1",
-    user: "Mark Johnson",
-    avatar: "/avatars/user1.jpg",
-    content:
-      "This is very helpful, especially section 3.2 about remote work policies.",
-    timestamp: "2025-08-16T09:23:00Z",
-  },
-  {
-    id: "c2",
-    user: "Sarah Williams",
-    avatar: "/avatars/user2.jpg",
-    content:
-      "Could we get some clarification on the travel expense policy? It seems to have changed from the previous version.",
-    timestamp: "2025-08-17T14:10:00Z",
-  },
-  {
-    id: "c3",
-    user: "Robert Chen",
-    avatar: "/avatars/user3.jpg",
-    content:
-      "The formatting on page 12 needs to be fixed - the tables are cut off on mobile view.",
-    timestamp: "2025-08-18T11:45:00Z",
-  },
-];
-
-// Version history mock data
-const MOCK_VERSIONS = [
-  {
-    version: 3,
-    updatedBy: "Jane Smith",
-    timestamp: "2025-08-18T14:30:00Z",
-    changes: "Updated remote work policy section and fixed formatting issues",
-  },
-  {
-    version: 2,
-    updatedBy: "Mike Richards",
-    timestamp: "2025-08-16T10:15:00Z",
-    changes: "Added new section on cyber security guidelines",
-  },
-  {
-    version: 1,
-    updatedBy: "Jane Smith",
-    timestamp: "2025-08-15T12:00:00Z",
-    changes: "Initial document creation",
-  },
-];
 
 // Format file size to human-readable format
 function formatFileSize(bytes: number): string {
   if (bytes === 0) return "0 Bytes";
-
   const k = 1024;
   const sizes = ["Bytes", "KB", "MB", "GB"];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
-
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+}
+
+// Get file type from filename or contentType
+function getFileType(filename?: string, contentType?: string): string {
+  if (contentType) {
+    if (contentType.includes('pdf')) return 'pdf';
+    if (contentType.includes('word') || contentType.includes('document')) return 'docx';
+    if (contentType.includes('sheet') || contentType.includes('excel')) return 'xlsx';
+    if (contentType.includes('presentation') || contentType.includes('powerpoint')) return 'pptx';
+  }
+  
+  if (filename) {
+    const ext = filename.split('.').pop()?.toLowerCase();
+    return ext || 'file';
+  }
+  
+  return 'file';
 }
 
 export default function DocumentDetailPage() {
@@ -135,6 +117,7 @@ export default function DocumentDetailPage() {
   const documentId = params.id as string;
 
   const [document, setDocument] = useState<Document | null>(null);
+  const [documentAssets, setDocumentAssets] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("preview");
 
@@ -142,17 +125,24 @@ export default function DocumentDetailPage() {
     const fetchDocument = async () => {
       setLoading(true);
       try {
-        // In real app, fetch from API
-        // const response = await fetch(`/api/documents/${documentId}`);
-        // const data = await response.json();
-
-        // For development, use mock data with a delay
-        setTimeout(() => {
-          setDocument(MOCK_DOCUMENT);
-          setLoading(false);
-        }, 800);
+        const response = await DocumentsApi.getPublicDocumentById(documentId);
+        
+        if (response.status === 200 && response.data?.data?.document) {
+          const documentData = response.data.data.document;
+          setDocument(documentData);
+          
+          // Fetch document assets
+          if (documentData.assets) {
+            setDocumentAssets(documentData.assets);
+          }
+        } else {
+          console.error("Failed to fetch document:", response);
+          message.error("Failed to load document");
+        }
       } catch (error) {
         console.error("Error fetching document:", error);
+        message.error("Error loading document");
+      } finally {
         setLoading(false);
       }
     };
@@ -160,23 +150,77 @@ export default function DocumentDetailPage() {
     fetchDocument();
   }, [documentId]);
 
-  const handleDownload = () => {
-    // In real app, initiate download
-    console.log(`Downloading document ${documentId}`);
-    alert("Download started");
+  // Handle file download
+  const handleDownload = async () => {
+    try {
+      console.log('Download handler called, documentAssets:', documentAssets);
+      
+      if (!documentAssets || documentAssets.length === 0) {
+        message.warning('No document files available for download');
+        return;
+      }
+
+      // Get the first document file (non-cover)
+      const documentFile = documentAssets.find(asset => !asset.isCover);
+      if (!documentFile) {
+        message.warning('No document files available for download');
+        return;
+      }
+      
+      console.log('Using document file for download:', documentFile);
+      
+      if (!documentFile.s3Url) {
+        message.error('Asset does not have a valid S3 URL');
+        return;
+      }
+
+      // Extract keyPath from S3 URL
+      const url = new URL(documentFile.s3Url);
+      const keyPath = url.pathname.substring(1);
+      console.log('Extracted keyPath for download:', keyPath);
+      
+      const blob = await DocumentsApi.downloadFilePublic(keyPath);
+      console.log('Download successful, blob size:', blob.size);
+      
+      // Create download link
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = window.document.createElement('a');
+      link.href = downloadUrl;
+      link.download = documentFile.filename || 'document.pdf';
+      window.document.body.appendChild(link);
+      link.click();
+      window.document.body.removeChild(link);
+      window.URL.revokeObjectURL(downloadUrl);
+      
+      message.success('File downloaded successfully');
+    } catch (error) {
+      console.error('Download error:', error);
+      
+      // More specific error handling
+      if (error instanceof Error) {
+        if (error.message.includes('404')) {
+          message.error('File not found on server');
+        } else if (error.message.includes('403')) {
+          message.error('Access denied to file');
+        } else if (error.message.includes('timeout')) {
+          message.error('Download timeout - please try again');
+        } else {
+          message.error(`Download failed: ${error.message}`);
+        }
+      } else {
+        message.error('Failed to download file');
+      }
+    }
   };
 
   const handleShare = () => {
-    // In real app, show sharing options
-    console.log(`Sharing document ${documentId}`);
-    alert("Share dialog would open here");
-  };
-
-  const handleStar = () => {
-    // In real app, toggle star status
-    setDocument((prevDoc) =>
-      prevDoc ? { ...prevDoc, starred: !prevDoc.starred } : null
-    );
+    // Copy current URL to clipboard
+    const currentUrl = window.location.href;
+    navigator.clipboard.writeText(currentUrl).then(() => {
+      message.success('Document link copied to clipboard');
+    }).catch(() => {
+      message.error('Failed to copy link');
+    });
   };
 
   if (loading) {
@@ -197,8 +241,7 @@ export default function DocumentDetailPage() {
           <div className="text-center py-8">
             <Title level={3}>Document Not Found</Title>
             <Paragraph>
-              The document you are looking for doesn&apos;t exist or you
-              don&apos;t have permission to view it.
+              The document you are looking for doesn&apos;t exist or is not publicly accessible.
             </Paragraph>
             <Button type="primary">
               <Link href="/documents">Back to Documents</Link>
@@ -209,21 +252,10 @@ export default function DocumentDetailPage() {
     );
   }
 
-  // Determine file icon based on type
-  const getFileIcon = () => {
-    switch (document.fileType) {
-      case "pdf":
-        return "/icons/pdf.svg";
-      case "docx":
-        return "/icons/word.svg";
-      case "xlsx":
-        return "/icons/excel.svg";
-      case "pptx":
-        return "/icons/powerpoint.svg";
-      default:
-        return "/icons/file.svg";
-    }
-  };
+  // Get file type for icon display
+  const documentFile = documentAssets.find(asset => !asset.isCover);
+  const fileType = getFileType(documentFile?.filename, documentFile?.contentType);
+  const fileSize = documentFile ? parseInt(documentFile.sizeBytes) : 0;
 
   return (
     <div className="py-6">
@@ -242,16 +274,25 @@ export default function DocumentDetailPage() {
       <Card className="mb-6">
         <div className="flex flex-col md:flex-row gap-6">
           {/* Document thumbnail/preview */}
-          <div className="w-full md:w-64 flex-shrink-0 flex flex-col items-center">
-            <div className="w-full aspect-[3/4] bg-gray-50 border border-gray-200 rounded-lg flex items-center justify-center mb-4">
-              {/* Using standard img for now - can replace with Next.js Image in production */}
-              <Image
-                src={getFileIcon()}
-                alt={`${document.fileType.toUpperCase()} file`}
-                className="w-1/2 h-auto opacity-75"
-                width={120}
-                height={160}
-              />
+          <div className="w-40 h-52 flex-shrink-0 flex flex-col items-center">
+            <div className="w-40 h-52 bg-gray-50 border border-gray-200 rounded-lg flex items-center justify-center mb-4 overflow-hidden">
+              {/* Cover Image or File Icon */}
+              {document.cover?.s3Url ? (
+                <Image
+                  src={document.cover.s3Url}
+                  alt="Document cover"
+                  width={160}
+                  height={192}
+                  className="object-cover w-full h-full"
+                />
+              ) : (
+                <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
+                  <div className="text-center">
+                    {getFileIconForPlaceholder(fileType)}
+                    <p className="text-gray-500 text-sm mt-2">No Cover Image</p>
+                  </div>
+                </div>
+              )}
             </div>
 
             <Space direction="vertical" className="w-full">
@@ -260,6 +301,7 @@ export default function DocumentDetailPage() {
                 icon={<DownloadOutlined />}
                 onClick={handleDownload}
                 className="w-full"
+                disabled={!documentFile}
               >
                 Download
               </Button>
@@ -271,19 +313,6 @@ export default function DocumentDetailPage() {
                   className="flex-1"
                 >
                   Share
-                </Button>
-                <Button
-                  icon={
-                    document.starred ? (
-                      <StarFilled className="text-yellow-500" />
-                    ) : (
-                      <StarOutlined />
-                    )
-                  }
-                  onClick={handleStar}
-                  className="flex-1"
-                >
-                  {document.starred ? "Starred" : "Star"}
                 </Button>
               </div>
             </Space>
@@ -298,34 +327,17 @@ export default function DocumentDetailPage() {
             <div className="flex flex-wrap items-center gap-2 mb-4">
               <Space>
                 <Text type="secondary">
-                  {document.fileType.toUpperCase()} •{" "}
-                  {formatFileSize(document.size)}
+                  {fileType.toUpperCase()} {fileSize > 0 && `• ${formatFileSize(fileSize)}`}
                 </Text>
               </Space>
               <Divider type="vertical" className="!h-4" />
               <Space>
-                <Tooltip title="Downloads">
-                  <Space size={4}>
-                    <DownloadOutlined />
-                    <span>{document.downloads}</span>
-                  </Space>
-                </Tooltip>
+                <Tag color="green">{document.status}</Tag>
               </Space>
               <Divider type="vertical" className="!h-4" />
               <Space>
-                <Tooltip title="Views">
-                  <Space size={4}>
-                    <EyeOutlined />
-                    <span>{document.views}</span>
-                  </Space>
-                </Tooltip>
+                <Tag color="blue">{document.securityLevel}</Tag>
               </Space>
-              {document.starred && (
-                <>
-                  <Divider type="vertical" className="!h-4" />
-                  <StarFilled className="text-yellow-500" />
-                </>
-              )}
             </div>
 
             <div className="mb-4">
@@ -347,11 +359,11 @@ export default function DocumentDetailPage() {
               </Col>
               <Col xs={24} sm={12}>
                 <Text type="secondary">Created By:</Text>{" "}
-                <Text strong>{document.createdBy}</Text>
+                <Text strong>{document.creator.firstName} {document.creator.lastName}</Text>
               </Col>
               <Col xs={24} sm={12}>
                 <Text type="secondary">Department:</Text>{" "}
-                <Text strong>{document.department}</Text>
+                <Text strong>{document.department?.name || 'N/A'}</Text>
               </Col>
             </Row>
 
@@ -361,8 +373,8 @@ export default function DocumentDetailPage() {
               </Text>
               <div>
                 {document.tags.map((tag) => (
-                  <Tag key={tag} className="mr-2 mb-2">
-                    {tag}
+                  <Tag key={tag.id} className="mr-2 mb-2">
+                    {tag.name}
                   </Tag>
                 ))}
               </div>
@@ -387,21 +399,18 @@ export default function DocumentDetailPage() {
               children: (
                 <div className="min-h-[400px] bg-gray-50 border border-gray-200 rounded p-4 flex items-center justify-center">
                   <div className="text-center">
-                    <FileTextOutlined
-                      style={{ fontSize: 48 }}
-                      className="text-gray-400 mb-4"
-                    />
-                    <Title level={4}>Document Preview</Title>
+                    {getFileIconForPlaceholder(fileType)}
+                    <Title level={4} className="mt-4">Document Preview</Title>
                     <Paragraph className="text-gray-500">
-                      Preview is not available in this demo.
+                      Preview is not available for this document type.
                       <br />
-                      In a real application, the document would be rendered
-                      here.
+                      Download the document to view its content.
                     </Paragraph>
                     <Button
                       type="primary"
                       icon={<DownloadOutlined />}
                       onClick={handleDownload}
+                      disabled={!documentFile}
                     >
                       Download to View
                     </Button>
@@ -410,86 +419,64 @@ export default function DocumentDetailPage() {
               ),
             },
             {
-              key: "versions",
+              key: "info",
               label: (
                 <span>
-                  <HistoryOutlined /> Version History ({MOCK_VERSIONS.length})
+                  <CommentOutlined /> Document Info
                 </span>
               ),
               children: (
-                <div className="min-h-[400px]">
-                  <div className="space-y-4">
-                    {MOCK_VERSIONS.map((version) => (
-                      <Card
-                        key={version.version}
-                        size="small"
-                        className="bg-gray-50"
-                      >
-                        <div className="flex flex-col md:flex-row justify-between">
-                          <div>
-                            <Text strong>Version {version.version}</Text>
-                            <Paragraph className="!mb-1">
-                              {version.changes}
-                            </Paragraph>
-                          </div>
-                          <div className="text-right mt-2 md:mt-0">
-                            <Text type="secondary">
-                              {format(
-                                new Date(version.timestamp),
-                                "MMM d, yyyy 'at' h:mm a"
-                              )}
-                            </Text>
+                <div className="min-h-[400px] p-4">
+                  <Row gutter={[16, 16]}>
+                    <Col xs={24} sm={12}>
+                      <div className="mb-4">
+                        <Text strong>Document Number:</Text>
+                        <br />
+                        <Text>{document.documentNumber}</Text>
+                      </div>
+                    </Col>
+                    <Col xs={24} sm={12}>
+                      <div className="mb-4">
+                        <Text strong>Security Level:</Text>
+                        <br />
+                        <Tag color="blue">{document.securityLevel}</Tag>
+                      </div>
+                    </Col>
+                    <Col xs={24} sm={12}>
+                      <div className="mb-4">
+                        <Text strong>Status:</Text>
+                        <br />
+                        <Tag color="green">{document.status}</Tag>
+                      </div>
+                    </Col>
+                    <Col xs={24} sm={12}>
+                      <div className="mb-4">
+                        <Text strong>Confidential:</Text>
+                        <br />
+                        <Tag color={document.isConfidential ? "red" : "gray"}>
+                          {document.isConfidential ? "Yes" : "No"}
+                        </Tag>
+                      </div>
+                    </Col>
+                    {documentFile && (
+                      <>
+                        <Col xs={24} sm={12}>
+                          <div className="mb-4">
+                            <Text strong>File Type:</Text>
                             <br />
-                            <Text type="secondary">by {version.updatedBy}</Text>
+                            <Text>{documentFile.contentType}</Text>
                           </div>
-                        </div>
-                      </Card>
-                    ))}
-                  </div>
-                </div>
-              ),
-            },
-            {
-              key: "comments",
-              label: (
-                <span>
-                  <CommentOutlined /> Comments ({MOCK_COMMENTS.length})
-                </span>
-              ),
-              children: (
-                <div className="min-h-[400px]">
-                  <div className="space-y-4">
-                    {MOCK_COMMENTS.map((comment) => (
-                      <Card
-                        key={comment.id}
-                        size="small"
-                        className="bg-gray-50"
-                      >
-                        <div className="flex items-start gap-3">
-                          <div className="w-8 h-8 rounded-full bg-gray-300 flex-shrink-0 overflow-hidden">
-                            {/* Placeholder for avatar */}
-                            <div className="w-full h-full flex items-center justify-center text-gray-600">
-                              {comment.user.charAt(0)}
-                            </div>
+                        </Col>
+                        <Col xs={24} sm={12}>
+                          <div className="mb-4">
+                            <Text strong>File Size:</Text>
+                            <br />
+                            <Text>{formatFileSize(parseInt(documentFile.sizeBytes))}</Text>
                           </div>
-                          <div className="flex-1">
-                            <div className="flex flex-col sm:flex-row sm:justify-between">
-                              <Text strong>{comment.user}</Text>
-                              <Text type="secondary" className="text-xs">
-                                {format(
-                                  new Date(comment.timestamp),
-                                  "MMM d, yyyy 'at' h:mm a"
-                                )}
-                              </Text>
-                            </div>
-                            <Paragraph className="!mb-0 mt-1">
-                              {comment.content}
-                            </Paragraph>
-                          </div>
-                        </div>
-                      </Card>
-                    ))}
-                  </div>
+                        </Col>
+                      </>
+                    )}
+                  </Row>
                 </div>
               ),
             },

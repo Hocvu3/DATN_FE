@@ -40,7 +40,8 @@ export function middleware(request: NextRequest) {
     // Check if the user is accessing a protected route
     const isProtectedRoute = request.nextUrl.pathname.startsWith('/admin') ||
         request.nextUrl.pathname.startsWith('/employee') ||
-        request.nextUrl.pathname.startsWith('/department');
+        request.nextUrl.pathname.startsWith('/department') ||
+        request.nextUrl.pathname === '/dashboard'; // Add dashboard redirect
 
     // Check if the user is accessing auth routes
     const isAuthRoute = request.nextUrl.pathname.startsWith('/login') ||
@@ -170,6 +171,14 @@ export function middleware(request: NextRequest) {
 
     // For protected routes with valid auth, check if the user has access to the specific role area
     if (isProtectedRoute && hasValidAuth) {
+        // Handle /dashboard redirect to role-specific dashboard
+        if (request.nextUrl.pathname === '/dashboard') {
+            const normalizedUserRole = (userRole || '').toLowerCase();
+            const roleBasedDashboard = `/${normalizedUserRole}/dashboard`;
+            console.log(`Middleware [${requestId}]: Redirecting /dashboard to ${roleBasedDashboard}`);
+            return NextResponse.redirect(new URL(roleBasedDashboard, request.url));
+        }
+
         const pathRole = request.nextUrl.pathname.split('/')[1]; // Extract role from path
         const normalizedUserRole = (userRole || '').toLowerCase();
 
@@ -226,6 +235,7 @@ export const config = {
         '/admin/:path*',
         '/employee/:path*',
         '/department/:path*',
+        '/dashboard', // Add dashboard to trigger role-based redirect
 
         // Auth routes that should be inaccessible if logged in
         '/login',
