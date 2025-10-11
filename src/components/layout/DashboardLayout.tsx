@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, ReactNode, useMemo } from "react";
-import dynamic from "next/dynamic";
 import {
   Layout,
   Menu,
@@ -31,7 +30,6 @@ import {
   ExclamationCircleOutlined,
   SafetyOutlined,
   FolderOutlined,
-  SettingOutlined,
   DeploymentUnitOutlined,
 } from "@ant-design/icons";
 import Link from "next/link";
@@ -610,17 +608,6 @@ export default function DashboardLayout({
 
         <Content className="p-4 bg-gray-50">
           <div className="max-w-7xl mx-auto">
-            {/* Debug panel for development only */}
-            {process.env.NODE_ENV !== "production" && 
-              (() => {
-                // Use dynamic import to avoid issues in production
-                const DynamicDebugPanel = dynamic(() => 
-                  import("@/components/debug/DebugPanel"), {
-                  ssr: false,
-                });
-                return <DynamicDebugPanel />;
-              })()
-            }
             {children}
           </div>
         </Content>

@@ -1,7 +1,7 @@
 "use client";
 
-import React from "react";
-import { Card, Tag, Button, Tooltip, Avatar, Badge } from "antd";
+import React, { useState, useRef } from "react";
+import { Card, Tag, Button, Tooltip, Avatar, Badge, message } from "antd";
 import {
   EyeOutlined,
   DownloadOutlined,
@@ -14,10 +14,13 @@ import {
   FileWordOutlined,
   CalendarOutlined,
   UserOutlined,
+  CameraOutlined,
+  LoadingOutlined,
 } from "@ant-design/icons";
 import Image from "next/image";
 import Link from "next/link";
 import { format } from "date-fns";
+import { uploadDocumentCover } from "@/lib/documents-api";
 
 interface Document {
   id: string;
@@ -31,7 +34,11 @@ interface Document {
   status: "draft" | "pending_approval" | "approved" | "rejected" | "published";
   securityLevel: "public" | "internal" | "confidential" | "secret" | "top_secret";
   department: string;
-  coverImage?: string;
+  cover?: {
+    id: string;
+    s3Url: string;
+    filename: string;
+  } | null;
   owner: {
     id: string;
     name: string;
@@ -43,7 +50,9 @@ interface DocumentCardProps {
   document: Document;
   onEdit?: (document: Document) => void;
   onDelete?: (id: string) => void;
+  onCoverUpdate?: (documentId: string, newCoverUrl: string) => void;
   baseUrl?: string;
+  canEdit?: boolean;
 }
 
 // Helper function to format file size
@@ -94,34 +103,97 @@ const getStatusLabel = (status: string): string => {
   }
 };
 
-// Function to get a placeholder image based on document type
-const getPlaceholderImage = (fileType: string, index: number = 0) => {
-  const imageIndex = (index % 4) + 1;
-  return `/images/document-placeholder-${imageIndex}.jpg`;
+// Function to get file icon component for placeholder
+const getFileIconForPlaceholder = (fileType: string) => {
+  switch (fileType) {
+    case "pdf":
+      return <FilePdfOutlined style={{ color: "#F40F02", fontSize: "32px" }} />;
+    case "docx":
+      return <FileWordOutlined style={{ color: "#2B579A", fontSize: "32px" }} />;
+    case "xlsx":
+      return <FileExcelOutlined style={{ color: "#217346", fontSize: "32px" }} />;
+    case "pptx":
+      return <FilePptOutlined style={{ color: "#D04423", fontSize: "32px" }} />;
+    default:
+      return <FileTextOutlined style={{ color: "#5A5A5A", fontSize: "32px" }} />;
+  }
 };
 
 const DocumentCard: React.FC<DocumentCardProps> = ({
   document,
   onEdit,
   onDelete,
+  onCoverUpdate,
   baseUrl = "/documents",
+  canEdit = false,
 }) => {
+  const [uploadingCover, setUploadingCover] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Handle cover image upload
+  const handleCoverUpload = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      message.error('Please select an image file');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      message.error('File size must be less than 5MB');
+      return;
+    }
+
+    setUploadingCover(true);
+    try {
+      const newCoverUrl = await uploadDocumentCover(document.id, file);
+      message.success('Cover image updated successfully');
+      onCoverUpdate?.(document.id, newCoverUrl);
+    } catch (error) {
+      console.error('Error uploading cover:', error);
+      message.error('Failed to upload cover image');
+    } finally {
+      setUploadingCover(false);
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
   return (
     <Card
       hoverable
       className="document-card overflow-hidden shadow-sm hover:shadow-lg transition-all duration-200 border-0 group"
       cover={
         <div className="relative w-full h-48 bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden">
-          <Image
-            src={document.coverImage || getPlaceholderImage(document.fileType, parseInt(document.id))}
-            alt={document.title}
-            fill
-            className="object-cover transition-transform duration-300 group-hover:scale-105"
-            onError={(e) => {
-              const target = e.target as HTMLImageElement;
-              target.src = getPlaceholderImage(document.fileType, parseInt(document.id));
-            }}
-          />
+          {document.cover?.s3Url ? (
+            <Image
+              src={document.cover.s3Url}
+              alt={document.title}
+              fill
+              className="object-cover transition-transform duration-300 group-hover:scale-105"
+              onError={(e) => {
+                // Hide the image on error and let the fallback show
+                const target = e.target as HTMLImageElement;
+                target.style.display = 'none';
+              }}
+            />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
+              <div className="text-center">
+                {getFileIconForPlaceholder(document.fileType)}
+                <p className="text-gray-500 text-xs mt-2">No Cover</p>
+              </div>
+            </div>
+          )}
           
           {/* Overlay gradient */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
@@ -142,44 +214,80 @@ const DocumentCard: React.FC<DocumentCardProps> = ({
               }
             />
           </div>
-          
-          {/* Quick actions overlay */}
-          <div className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-            <div className="flex space-x-2">
-              <Tooltip title="View Document">
-                <Link href={`${baseUrl}/${document.id}`}>
+
+          {/* Upload Cover Button for authorized users - Center position */}
+          {canEdit && (
+            <>
+              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all duration-300 flex items-center justify-center">
+                <Tooltip title={uploadingCover ? 'Uploading...' : 'Upload Cover'}>
                   <Button
                     type="primary"
                     shape="circle"
-                    icon={<EyeOutlined />}
+                    icon={uploadingCover ? <LoadingOutlined spin /> : <CameraOutlined />}
+                    onClick={handleCoverUpload}
+                    loading={uploadingCover}
+                    className="bg-blue-500/90 border-blue-500 hover:bg-blue-600 shadow-xl backdrop-blur-sm transform transition-all duration-200 hover:scale-110"
                     size="large"
-                    className="bg-orange-500 border-orange-500 hover:bg-orange-600"
-                  />
-                </Link>
-              </Tooltip>
-              
-              {onEdit && (
-                <Tooltip title="Edit Document">
-                  <Button
-                    shape="circle"
-                    icon={<EditOutlined />}
-                    size="large"
-                    className="bg-white/20 border-white/30 text-white hover:bg-white/30"
-                    onClick={() => onEdit(document)}
+                    style={{
+                      width: '50px',
+                      height: '50px',
+                      fontSize: '20px',
+                      boxShadow: '0 6px 20px rgba(0,0,0,0.3)'
+                    }}
                   />
                 </Tooltip>
-              )}
+              </div>
               
-              <Tooltip title="Download">
-                <Button
-                  shape="circle"
-                  icon={<DownloadOutlined />}
-                  size="large"
-                  className="bg-white/20 border-white/30 text-white hover:bg-white/30"
-                />
-              </Tooltip>
+              {/* Hidden file input */}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleFileChange}
+                className="hidden"
+              />
+            </>
+          )}
+          
+          {/* Quick actions overlay - only show on hover when not uploading */}
+          {!uploadingCover && (
+            <div className="absolute inset-0 bg-black/60 flex items-end justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 pb-4">
+              <div className="flex space-x-2">
+                <Tooltip title="View Document">
+                  <Link href={`${baseUrl}/${document.id}`}>
+                    <Button
+                      type="primary"
+                      shape="circle"
+                      icon={<EyeOutlined />}
+                      size="small"
+                      className="bg-orange-500 border-orange-500 hover:bg-orange-600"
+                    />
+                  </Link>
+                </Tooltip>
+                
+                {onEdit && (
+                  <Tooltip title="Edit Document">
+                    <Button
+                      shape="circle"
+                      icon={<EditOutlined />}
+                      size="small"
+                      className="bg-white/20 border-white/30 text-white hover:bg-white/30"
+                      onClick={() => onEdit(document)}
+                    />
+                  </Tooltip>
+                )}
+                
+                <Tooltip title="Download">
+                  <Button
+                    shape="circle"
+                    icon={<DownloadOutlined />}
+                    size="small"
+                    className="bg-white/20 border-white/30 text-white hover:bg-white/30"
+                  />
+                </Tooltip>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       }
     >

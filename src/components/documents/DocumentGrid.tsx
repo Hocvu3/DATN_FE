@@ -17,7 +17,11 @@ interface Document {
   status: "draft" | "pending_approval" | "approved" | "rejected" | "published";
   securityLevel: "public" | "internal" | "confidential" | "secret" | "top_secret";
   department: string;
-  coverImage?: string;
+  cover?: {
+    id: string;
+    s3Url: string;
+    filename: string;
+  } | null;
   owner: {
     id: string;
     name: string;
@@ -29,18 +33,22 @@ interface DocumentGridProps {
   documents: Document[];
   onEdit?: (document: Document) => void;
   onDelete?: (id: string) => void;
+  onCoverUpdate?: (documentId: string, newCoverUrl: string) => void;
   baseUrl?: string;
   viewMode: "grid" | "table";
   onViewModeChange: (mode: "grid" | "table") => void;
+  canEdit?: boolean;
 }
 
 const DocumentGrid: React.FC<DocumentGridProps> = ({
   documents,
   onEdit,
   onDelete,
+  onCoverUpdate,
   baseUrl = "/admin/documents",
   viewMode,
   onViewModeChange,
+  canEdit = true, // Default to true for admin/department users
 }) => {
   return (
     <div className="document-grid">
@@ -83,7 +91,9 @@ const DocumentGrid: React.FC<DocumentGridProps> = ({
                 document={document}
                 onEdit={onEdit}
                 onDelete={onDelete}
+                onCoverUpdate={onCoverUpdate}
                 baseUrl={baseUrl}
+                canEdit={canEdit}
               />
             </Col>
           ))}

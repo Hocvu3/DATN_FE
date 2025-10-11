@@ -1,6 +1,4 @@
-"use client";
-
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { 
   Typography, 
   Button, 
@@ -28,10 +26,13 @@ import {
   FileWordOutlined,
   FileExcelOutlined,
   FilePptOutlined,
-  ArrowLeftOutlined
+  ArrowLeftOutlined,
+  CameraOutlined,
+  LoadingOutlined
 } from "@ant-design/icons";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { uploadDocumentCover, DocumentsApi } from "@/lib/documents-api";
 // import { format } from "date-fns";
 
 const { Title, Text } = Typography;
@@ -48,7 +49,11 @@ interface Document {
   status: "draft" | "pending_approval" | "approved" | "rejected" | "published";
   securityLevel: "public" | "internal" | "confidential" | "secret" | "top_secret";
   department: string;
-  coverImage?: string;
+  cover?: {
+    id: string;
+    s3Url: string;
+    filename: string;
+  } | null;
   owner: {
     id: string;
     name: string;
@@ -64,6 +69,7 @@ interface DocumentDetailPageProps {
   onDelete?: () => void;
   onDownload?: () => void;
   onShare?: () => void;
+  onCoverUpdate?: (newCoverUrl: string) => void;
 }
 
 // Helper functions
@@ -111,9 +117,20 @@ const getStatusLabel = (status: string): string => {
   }
 };
 
-const getPlaceholderImage = (fileType: string, index: number = 0) => {
-  const imageIndex = (index % 4) + 1;
-  return `/images/document-placeholder-${imageIndex}.jpg`;
+// Function to get file icon component for placeholder
+const getFileIconForPlaceholder = (fileType: string) => {
+  switch (fileType) {
+    case "pdf":
+      return <FileTextOutlined style={{ color: "#F40F02", fontSize: "40px" }} />;
+    case "docx":
+      return <FileTextOutlined style={{ color: "#2B579A", fontSize: "40px" }} />;
+    case "xlsx":
+      return <FileTextOutlined style={{ color: "#217346", fontSize: "40px" }} />;
+    case "pptx":
+      return <FileTextOutlined style={{ color: "#D04423", fontSize: "40px" }} />;
+    default:
+      return <FileTextOutlined style={{ color: "#5A5A5A", fontSize: "40px" }} />;
+  }
 };
 
 const DocumentDetailPage: React.FC<DocumentDetailPageProps> = ({
@@ -123,10 +140,42 @@ const DocumentDetailPage: React.FC<DocumentDetailPageProps> = ({
   onEdit,
   onDelete,
   onDownload,
-  onShare
+  onShare,
+  onCoverUpdate
 }) => {
   const router = useRouter();
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  const [uploadingCover, setUploadingCover] = useState(false);
+  const [documentAssets, setDocumentAssets] = useState<any[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Fetch document assets when component mounts
+  useEffect(() => {
+    const fetchDocumentAssets = async () => {
+      if (document?.id) {
+        try {
+          console.log('Fetching assets for document:', document.id);
+          const response = await DocumentsApi.getDocumentAssets(document.id);
+          console.log('Raw API response:', response);
+          
+          if (response.data && response.data.assets) {
+            // Filter out cover images to show only document files
+            const documentFiles = response.data.assets.filter((asset: any) => !asset.isCover);
+            console.log('Filtered document files:', documentFiles);
+            setDocumentAssets(documentFiles);
+          } else {
+            console.log('No assets found in response:', response.data);
+            setDocumentAssets([]);
+          }
+        } catch (error) {
+          console.error('Failed to fetch document assets:', error);
+          setDocumentAssets([]);
+        }
+      }
+    };
+
+    fetchDocumentAssets();
+  }, [document?.id]);
 
   if (loading) {
     return (
@@ -161,6 +210,214 @@ const DocumentDetailPage: React.FC<DocumentDetailPageProps> = ({
     router.push(`/${userRole}/documents`);
   };
 
+  // Handle cover image upload
+  const handleCoverUpload = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !document) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      message.error('Please select an image file');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      message.error('File size must be less than 5MB');
+      return;
+    }
+
+    setUploadingCover(true);
+    try {
+      const newCoverUrl = await uploadDocumentCover(document.id, file);
+      message.success('Cover image updated successfully');
+      onCoverUpdate?.(newCoverUrl);
+    } catch (error) {
+      console.error('Error uploading cover:', error);
+      message.error('Failed to upload cover image');
+    } finally {
+      setUploadingCover(false);
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  // Handle file download
+  const handleDownload = async () => {
+    try {
+      console.log('Download handler called, documentAssets:', documentAssets);
+      
+      if (!documentAssets || documentAssets.length === 0) {
+        message.warning('No document files available for download');
+        return;
+      }
+
+      // Get the first document file (URL đầu tiên)
+      const firstAsset = documentAssets[0];
+      console.log('Using first asset for download:', firstAsset);
+      
+      if (!firstAsset.s3Url) {
+        message.error('Asset does not have a valid S3 URL');
+        return;
+      }
+
+      // Extract keyPath from S3 URL - take the path after the bucket domain
+      // Example: https://bucket.s3.amazonaws.com/documents/2024/file.pdf -> documents/2024/file.pdf
+      const url = new URL(firstAsset.s3Url);
+      const keyPath = url.pathname.substring(1); // Remove leading slash
+      console.log('Extracted keyPath for download:', keyPath);
+      
+      const blob = await DocumentsApi.downloadFile(keyPath);
+      console.log('Download successful, blob size:', blob.size);
+      
+      // Create download link
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = window.document.createElement('a');
+      link.href = downloadUrl;
+      link.download = firstAsset.filename || 'download';
+      window.document.body.appendChild(link);
+      link.click();
+      window.document.body.removeChild(link);
+      window.URL.revokeObjectURL(downloadUrl);
+      
+      message.success('File downloaded successfully');
+    } catch (error) {
+      console.error('Error downloading file:', error);
+      message.error('Failed to download file: ' + (error instanceof Error ? error.message : 'Unknown error'));
+    }
+  };
+
+  // Handle file view
+  const handleView = () => {
+    try {
+      console.log('View handler called, documentAssets:', documentAssets);
+      
+      if (!documentAssets || documentAssets.length === 0) {
+        message.warning('No document files available for viewing');
+        return;
+      }
+
+      // Get the first document file (URL đầu tiên)  
+      const firstAsset = documentAssets[0];
+      console.log('Using first asset for view:', firstAsset);
+      
+      if (!firstAsset.s3Url) {
+        message.error('Asset does not have a valid S3 URL');
+        return;
+      }
+
+      // Extract keyPath from S3 URL
+      const url = new URL(firstAsset.s3Url);
+      const keyPath = url.pathname.substring(1); // Remove leading slash
+      console.log('Extracted keyPath for view:', keyPath);
+      
+      const viewUrl = DocumentsApi.getFileViewUrl(keyPath);
+      console.log('Opening view URL:', viewUrl);
+      window.open(viewUrl, '_blank');
+    } catch (error) {
+      console.error('Error viewing file:', error);
+      message.error('Failed to view file: ' + (error instanceof Error ? error.message : 'Unknown error'));
+    }
+  };
+
+  // Handle individual asset view
+  const handleViewAsset = (asset: any) => {
+    try {
+      console.log('Viewing asset:', asset);
+      
+      if (!asset.s3Url) {
+        message.error('Asset does not have a valid S3 URL');
+        return;
+      }
+
+      // Extract keyPath from S3 URL
+      const url = new URL(asset.s3Url);
+      const keyPath = url.pathname.substring(1); // Remove leading slash
+      console.log('Extracted keyPath for view:', keyPath);
+      
+      const viewUrl = DocumentsApi.getFileViewUrl(keyPath);
+      console.log('Opening view URL:', viewUrl);
+      window.open(viewUrl, '_blank');
+    } catch (error) {
+      console.error('Error viewing asset:', error);
+      message.error('Failed to view file: ' + (error instanceof Error ? error.message : 'Unknown error'));
+    }
+  };
+
+  // Handle individual asset download
+  const handleDownloadAsset = async (asset: any) => {
+    try {
+      console.log('Downloading asset:', asset);
+      
+      if (!asset.s3Url) {
+        message.error('Asset does not have a valid S3 URL');
+        return;
+      }
+
+      // Extract keyPath from S3 URL
+      const url = new URL(asset.s3Url);
+      const keyPath = url.pathname.substring(1); // Remove leading slash
+      console.log('Extracted keyPath for download:', keyPath);
+      
+      const blob = await DocumentsApi.downloadFile(keyPath);
+      console.log('Download successful, blob size:', blob.size);
+      
+      // Create download link
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = window.document.createElement('a');
+      link.href = downloadUrl;
+      link.download = asset.filename || 'download';
+      window.document.body.appendChild(link);
+      link.click();
+      window.document.body.removeChild(link);
+      window.URL.revokeObjectURL(downloadUrl);
+      
+      message.success('File downloaded successfully');
+    } catch (error) {
+      console.error('Error downloading asset:', error);
+      message.error('Failed to download file: ' + (error instanceof Error ? error.message : 'Unknown error'));
+    }
+  };
+
+  // Handle individual asset deletion
+  const handleDeleteAsset = (asset: any) => {
+    Modal.confirm({
+      title: 'Delete File',
+      content: `Are you sure you want to delete "${asset.filename}"? This action cannot be undone.`,
+      okText: 'Delete',
+      okType: 'danger',
+      cancelText: 'Cancel',
+      onOk: async () => {
+        try {
+          console.log('Deleting asset:', asset.id);
+          const response = await DocumentsApi.deleteDocumentAsset(document.id, asset.id);
+          console.log('Delete response:', response);
+          
+          if (response.status >= 200 && response.status < 300) {
+            message.success('File deleted successfully');
+            // Refresh assets list
+            const updatedResponse = await DocumentsApi.getDocumentAssets(document.id);
+            if (updatedResponse.data && updatedResponse.data.assets) {
+              const documentFiles = updatedResponse.data.assets.filter((a: any) => !a.isCover);
+              setDocumentAssets(documentFiles);
+            }
+          } else {
+            message.error('Failed to delete file');
+          }
+        } catch (error) {
+          console.error('Error deleting asset:', error);
+          message.error('Failed to delete file: ' + (error instanceof Error ? error.message : 'Unknown error'));
+        }
+      },
+    });
+  };
+
   // Check permissions based on role
   const canEdit = userRole === "admin" || 
                   (userRole === "department" && ["draft", "pending_approval"].includes(document.status)) ||
@@ -187,17 +444,23 @@ const DocumentDetailPage: React.FC<DocumentDetailPageProps> = ({
         <div className="flex flex-col lg:flex-row gap-6">
           {/* Cover Image */}
           <div className="w-full lg:w-80 flex-shrink-0">
-            <div className="relative w-full h-64 bg-gray-100 rounded-lg overflow-hidden">
-              <Image
-                src={document.coverImage || getPlaceholderImage(document.fileType, parseInt(document.id))}
-                alt={document.title}
-                fill
-                className="object-cover"
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement;
-                  target.src = getPlaceholderImage(document.fileType, parseInt(document.id));
-                }}
-              />
+            <div className="relative w-full h-64 bg-gray-100 rounded-lg overflow-hidden group border-2 border-dashed border-gray-300">
+              {/* Image or Placeholder */}
+              {document.cover?.s3Url ? (
+                <Image
+                  src={document.cover.s3Url}
+                  alt={document.title}
+                  fill
+                  className="object-cover"
+                />
+              ) : (
+                <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
+                  <div className="text-center">
+                    {getFileIconForPlaceholder(document.fileType)}
+                    <p className="text-gray-500 text-sm mt-2">No Cover Image</p>
+                  </div>
+                </div>
+              )}
               
               {/* File Type Overlay */}
               <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm rounded-lg p-2">
@@ -215,6 +478,51 @@ const DocumentDetailPage: React.FC<DocumentDetailPageProps> = ({
                   }
                 />
               </div>
+
+              {/* Upload Cover Button - Always show in center with better visibility */}
+              {canEdit && (
+                <>
+                  {/* Semi-transparent overlay for better button visibility */}
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-300 flex items-center justify-center">
+                    <Tooltip title={uploadingCover ? 'Uploading...' : 'Click to Upload Cover Image'}>
+                      <Button
+                        type="primary"
+                        shape="circle"
+                        icon={uploadingCover ? <LoadingOutlined spin /> : <CameraOutlined />}
+                        onClick={handleCoverUpload}
+                        loading={uploadingCover}
+                        className="bg-blue-500/90 border-blue-500 hover:bg-blue-600 shadow-xl backdrop-blur-sm transform transition-all duration-200 hover:scale-110"
+                        size="large"
+                        style={{
+                          width: '60px',
+                          height: '60px',
+                          fontSize: '24px',
+                          boxShadow: '0 8px 25px rgba(0,0,0,0.3)'
+                        }}
+                      />
+                    </Tooltip>
+                  </div>
+                  
+                  {/* Hidden file input */}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    className="hidden"
+                  />
+                </>
+              )}
+
+              {/* Show upload hint for non-edit users */}
+              {!canEdit && !document.cover?.s3Url && (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="text-center text-gray-400">
+                    <CameraOutlined className="text-3xl mb-2 opacity-50" />
+                    <p className="text-sm">No cover image</p>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
@@ -232,10 +540,22 @@ const DocumentDetailPage: React.FC<DocumentDetailPageProps> = ({
               
               {/* Action Buttons */}
               <Space>
-                <Tooltip title="Download">
+                <Tooltip title={(!documentAssets || documentAssets.length === 0) ? "No document files available for viewing" : "View Document"}>
+                  <Button 
+                    icon={<EyeOutlined />} 
+                    onClick={handleView}
+                    type="default"
+                    disabled={!documentAssets || documentAssets.length === 0}
+                  >
+                    View
+                  </Button>
+                </Tooltip>
+
+                <Tooltip title={(!documentAssets || documentAssets.length === 0) ? "No document files available for download" : "Download"}>
                   <Button 
                     icon={<DownloadOutlined />} 
-                    onClick={onDownload}
+                    onClick={handleDownload}
+                    disabled={!documentAssets || documentAssets.length === 0}
                   >
                     Download
                   </Button>
@@ -315,6 +635,18 @@ const DocumentDetailPage: React.FC<DocumentDetailPageProps> = ({
                 <Text>{document.fileType.toUpperCase()} • {formatFileSize(document.size)}</Text>
               </div>
             </div>
+
+            {/* Assets Status Info */}
+            <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+              <Text className="text-sm text-gray-600">
+                📎 Document Files: {documentAssets?.length || 0} file(s) attached
+                {(!documentAssets || documentAssets.length === 0) && (
+                  <Text className="block text-orange-600 text-xs mt-1">
+                    ⚠️ No document files uploaded yet. Upload files in Edit mode to enable view/download.
+                  </Text>
+                )}
+              </Text>
+            </div>
           </div>
         </div>
       </Card>
@@ -376,6 +708,62 @@ const DocumentDetailPage: React.FC<DocumentDetailPageProps> = ({
           </div>
         </div>
       </Card>
+
+      {/* Document Assets Section */}
+      {documentAssets && documentAssets.length > 0 && (
+        <Card title={`Document Files (${documentAssets.length})`} className="mb-6">
+          <div className="space-y-3">
+            {documentAssets.map((asset) => (
+              <div
+                key={asset.id}
+                className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border"
+              >
+                <div className="flex items-center space-x-3">
+                  <FileTextOutlined className="text-blue-500 text-lg" />
+                  <div>
+                    <Text strong className="block">
+                      {asset.filename}
+                    </Text>
+                    <Text type="secondary" className="text-sm">
+                      {asset.contentType} • {asset.sizeBytes ? `${Math.round(parseInt(asset.sizeBytes) / 1024)} KB` : 'Unknown size'}
+                    </Text>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Tooltip title="View File">
+                    <Button
+                      type="text"
+                      size="small"
+                      icon={<EyeOutlined />}
+                      onClick={() => handleViewAsset(asset)}
+                      className="text-blue-600 hover:text-blue-700"
+                    />
+                  </Tooltip>
+                  <Tooltip title="Download File">
+                    <Button
+                      type="text"
+                      size="small"
+                      icon={<DownloadOutlined />}
+                      onClick={() => handleDownloadAsset(asset)}
+                      className="text-green-600 hover:text-green-700"
+                    />
+                  </Tooltip>
+                  <Tooltip title="Delete File">
+                    <Button
+                      type="text"
+                      size="small"
+                      icon={<DeleteOutlined />}
+                      onClick={() => handleDeleteAsset(asset)}
+                      className="text-red-600 hover:text-red-700"
+                      danger
+                    />
+                  </Tooltip>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
 
       {/* Delete Confirmation Modal */}
       <Modal
