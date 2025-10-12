@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { notification } from 'antd';
 import { NotificationInstance } from 'antd/es/notification/interface';
 import Toast from '../common/Toast';
@@ -14,11 +14,22 @@ export default function NotificationSystem() {
     if (typeof window !== 'undefined' && api) {
       // Create a global notification handler that can be called from anywhere
       (window as any).showGlobalNotification = (type: 'success' | 'error' | 'info' | 'warning', message: string, description: string = '') => {
-        api[type]({
-          message,
-          description,
-          placement: 'topRight',
-        });
+        switch (type) {
+          case 'success':
+            api.success({ message, description, placement: 'topRight' });
+            break;
+          case 'error':
+            api.error({ message, description, placement: 'topRight' });
+            break;
+          case 'info':
+            api.info({ message, description, placement: 'topRight' });
+            break;
+          case 'warning':
+            api.warning({ message, description, placement: 'topRight' });
+            break;
+          default:
+            console.warn(`Unknown notification type: ${type}`);
+        }
       };
 
       // Create fallback system in case Toast fails
@@ -27,7 +38,7 @@ export default function NotificationSystem() {
 
     // Listen for custom events to show notifications
     const handleShowNotification = (event: CustomEvent) => {
-      const { type, message, description, duration } = event.detail;
+      const { type, message, duration } = event.detail;
       
       try {
         // Try Toast first
@@ -42,11 +53,38 @@ export default function NotificationSystem() {
         
         // Fallback to direct notification
         try {
-          api[type]({
-            message: type.charAt(0).toUpperCase() + type.slice(1),
-            description: message,
-            duration: duration || 4.5,
-          });
+          switch (type) {
+            case 'success':
+              api.success({
+                message: type.charAt(0).toUpperCase() + type.slice(1),
+                description: message,
+                duration: duration || 4.5,
+              });
+              break;
+            case 'error':
+              api.error({
+                message: type.charAt(0).toUpperCase() + type.slice(1),
+                description: message,
+                duration: duration || 4.5,
+              });
+              break;
+            case 'info':
+              api.info({
+                message: type.charAt(0).toUpperCase() + type.slice(1),
+                description: message,
+                duration: duration || 4.5,
+              });
+              break;
+            case 'warning':
+              api.warning({
+                message: type.charAt(0).toUpperCase() + type.slice(1),
+                description: message,
+                duration: duration || 4.5,
+              });
+              break;
+            default:
+              console.warn(`Unknown notification type: ${type}`);
+          }
         } catch (err) {
           console.error("Both notification systems failed:", err);
         }

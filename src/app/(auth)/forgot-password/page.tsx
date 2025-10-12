@@ -31,7 +31,7 @@ export default function ForgotPasswordPage() {
   const [emailSent, setEmailSent] = useState(false);
   const [error, setError] = useState("");
 
-  const handleSubmit = async (values: { email: string }) => {
+  const handleSubmit = async () => {
     setLoading(true);
     setError("");
 
@@ -42,7 +42,7 @@ export default function ForgotPasswordPage() {
       // For development
       await new Promise((resolve) => setTimeout(resolve, 1500));
       setEmailSent(true);
-    } catch (err) {
+    } catch {
       setError("Failed to send reset email. Please try again.");
     } finally {
       setLoading(false);
@@ -118,7 +118,7 @@ export default function ForgotPasswordPage() {
               </Title>
 
               <Paragraph className="text-gray-600 mb-8">
-                We've sent password reset instructions to{" "}
+                We&apos;ve sent password reset instructions to{" "}
                 <Text strong>{form.getFieldValue("email")}</Text>. Please check
                 your email and follow the link to reset your password.
               </Paragraph>
@@ -133,7 +133,7 @@ export default function ForgotPasswordPage() {
                   Return to Login
                 </Button>
                 <Button type="link" onClick={() => setEmailSent(false)}>
-                  Didn't receive the email? Try again
+                  Didn&apos;t receive the email? Try again
                 </Button>
               </Space>
             </div>
@@ -144,7 +144,7 @@ export default function ForgotPasswordPage() {
               </Title>
 
               <Paragraph className="text-gray-600 mb-6">
-                Enter your email address below and we'll send you instructions
+                Enter your email address below and we&apos;ll send you instructions
                 to reset your password.
               </Paragraph>
 

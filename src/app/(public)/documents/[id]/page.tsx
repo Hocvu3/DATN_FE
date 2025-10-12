@@ -26,49 +26,9 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import Image from "next/image";
 import { DocumentsApi } from "@/lib/documents-api";
+import { Document } from "@/lib/types/document.types";
 
 const { Title, Text, Paragraph } = Typography;
-
-// Interfaces - Updated to match API response
-interface Document {
-  id: string;
-  title: string;
-  description: string;
-  documentNumber: string;
-  status: string;
-  securityLevel: string;
-  isConfidential: boolean;
-  fileType?: string;
-  createdAt: string;
-  updatedAt: string;
-  creator: {
-    id: string;
-    email: string;
-    firstName: string;
-    lastName: string;
-  };
-  department?: {
-    id: string;
-    name: string;
-  };
-  tags: Array<{
-    id: string;
-    name: string;
-  }>;
-  cover?: {
-    id: string;
-    s3Url: string;
-    filename: string;
-  };
-  assets?: Array<{
-    id: string;
-    s3Url: string;
-    filename: string;
-    contentType: string;
-    sizeBytes: string;
-    isCover: boolean;
-  }>;
-}
 
 // Function to get file icon component for placeholder
 const getFileIconForPlaceholder = (fileType: string) => {
@@ -372,9 +332,9 @@ export default function DocumentDetailPage() {
                 Tags:
               </Text>
               <div>
-                {document.tags.map((tag) => (
-                  <Tag key={tag.id} className="mr-2 mb-2">
-                    {tag.name}
+                {document.tags.map((documentTag) => (
+                  <Tag key={documentTag.id} className="mr-2 mb-2">
+                    {documentTag.tag.name}
                   </Tag>
                 ))}
               </div>

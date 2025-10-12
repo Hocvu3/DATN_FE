@@ -210,7 +210,7 @@ const getFileIcon = (fileType: string) => {
 
 const AddDocumentModal: React.FC<AddDocumentModalProps> = ({
   open,
-  departmentId,
+  departmentId, // eslint-disable-line @typescript-eslint/no-unused-vars
   departmentName,
   onCancel,
   onSubmit,

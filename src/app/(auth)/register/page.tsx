@@ -58,7 +58,6 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [error, setError] = useState("");
-  const [registrationComplete, setRegistrationComplete] = useState(false);
 
   // Steps configuration
   const steps = [
@@ -76,46 +75,37 @@ export default function RegisterPage() {
     },
   ];
 
-  const handleAccountSubmit = async (values: any) => {
+  const handleAccountSubmit = async () => {
     setLoading(true);
     setError("");
 
     try {
-      // In production, check if email exists
-      // const emailExists = await AuthApi.checkEmail(values.email);
-      // if (emailExists) {
-      //   setError('This email is already registered. Please use a different email or sign in.');
-      //   setLoading(false);
-      //   return;
-      // }
+      // In production, call API
+      // await AuthApi.register(accountForm.getFieldsValue());
 
       // For development
-      await new Promise((resolve) => setTimeout(resolve, 800));
+      await new Promise((resolve) => setTimeout(resolve, 1500));
       setCurrentStep(1);
-    } catch (err) {
-      setError("An error occurred. Please try again.");
+    } catch {
+      setError("Registration failed. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleProfileSubmit = async (values: any) => {
+  const handleProfileSubmit = async () => {
     setLoading(true);
     setError("");
 
     try {
-      // In production, register the user
-      // await AuthApi.register({
-      //   ...accountForm.getFieldsValue(),
-      //   ...values,
-      // });
+      // In production, call API
+      // await AuthApi.updateProfile(profileForm.getFieldsValue());
 
       // For development
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 1500));
       setCurrentStep(2);
-      setRegistrationComplete(true);
-    } catch (err) {
-      setError("Failed to complete registration. Please try again.");
+    } catch {
+      setError("Profile update failed. Please try again.");
     } finally {
       setLoading(false);
     }

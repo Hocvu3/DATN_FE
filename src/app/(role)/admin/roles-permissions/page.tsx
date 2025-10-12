@@ -30,8 +30,6 @@ import {
   TeamOutlined,
   LockOutlined,
   UnlockOutlined,
-  KeyOutlined,
-  SecurityScanOutlined,
   DeleteOutlined,
   SettingOutlined,
   CrownOutlined,
@@ -458,7 +456,7 @@ const AdminRolesPermissionsPage = () => {
     {
       title: "Actions",
       key: "actions",
-      render: (_: any, record: any) => (
+      render: () => (
         <Space size="middle">
           <Button
             type="text"

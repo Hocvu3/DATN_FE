@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Button, Form, Input, Typography, Alert, Space, Result } from "antd";
+import { useState, useEffect, Suspense } from "react";
+import { Button, Form, Input, Typography, Alert, Result } from "antd";
 import {
   LockOutlined,
   ArrowLeftOutlined,
@@ -28,6 +28,14 @@ function Feature({ icon, title }: { icon: React.ReactNode; title: string }) {
 }
 
 export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <ResetPasswordContent />
+    </Suspense>
+  );
+}
+
+function ResetPasswordContent() {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [resetComplete, setResetComplete] = useState(false);
@@ -59,7 +67,7 @@ export default function ResetPasswordPage() {
         // For development, just mock a valid token
         await new Promise((resolve) => setTimeout(resolve, 500));
         setIsValidToken(true);
-      } catch (err) {
+      } catch {
         setIsValidToken(false);
         setError(
           "Failed to verify reset token. Please request a new password reset link."
@@ -84,10 +92,11 @@ export default function ResetPasswordPage() {
       //   password: values.password
       // });
 
-      // For development
+      // For development - simulate using the password
+      console.log('Resetting password:', values.password);
       await new Promise((resolve) => setTimeout(resolve, 1500));
       setResetComplete(true);
-    } catch (err) {
+    } catch {
       setError(
         "Failed to reset password. Please try again or request a new reset link."
       );

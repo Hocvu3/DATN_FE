@@ -39,6 +39,7 @@ import CoverImageUpload from "@/components/documents/CoverImageUpload";
 import DocumentGrid from "@/components/documents/DocumentGrid";
 import EditDocumentModal from "@/components/documents/EditDocumentModal";
 import { DocumentsApi } from "@/lib/documents-api";
+import { DocumentStatus, SecurityLevel } from "@/lib/types/document.types";
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -273,39 +274,39 @@ const AVAILABLE_TAGS = [
 //   else return (bytes / 1073741824).toFixed(1) + " GB";
 // };
 
-const getStatusColor = (status: string): string => {
-  switch (status) {
-    case "draft":
-      return "default";
-    case "pending_approval":
-      return "processing";
-    case "approved":
-      return "success";
-    case "rejected":
-      return "error";
-    case "published":
-      return "blue";
-    default:
-      return "default";
-  }
-};
+// const getStatusColor = (status: string): string => {
+//   switch (status) {
+//     case "draft":
+//       return "default";
+//     case "pending_approval":
+//       return "processing";
+//     case "approved":
+//       return "success";
+//     case "rejected":
+//       return "error";
+//     case "published":
+//       return "blue";
+//     default:
+//       return "default";
+//   }
+// };
 
-const getStatusLabel = (status: string): string => {
-  switch (status) {
-    case "draft":
-      return "Draft";
-    case "pending_approval":
-      return "Pending Approval";
-    case "approved":
-      return "Approved";
-    case "rejected":
-      return "Rejected";
-    case "published":
-      return "Published";
-    default:
-      return status;
-  }
-};
+// const getStatusLabel = (status: string): string => {
+//   switch (status) {
+//     case "draft":
+//       return "Draft";
+//     case "pending_approval":
+//       return "Pending Approval";
+//     case "approved":
+//       return "Approved";
+//     case "rejected":
+//       return "Rejected";
+//     case "published":
+//       return "Published";
+//     default:
+//       return status;
+//   }
+// };
 
 const getSecurityLevelColor = (level: string): string => {
   switch (level) {
@@ -354,6 +355,35 @@ const getFileIcon = (fileType: string) => {
       : "#5A5A5A";
 
   return <FileTextOutlined style={{ color: iconColor, fontSize: "18px" }} />;
+};
+
+// Convert local Document type to DocumentForEdit
+const convertDocumentForEdit = (doc: Document | null): any => {
+  if (!doc) return null;
+  
+  // Map string status to enum values
+  const statusMap: Record<string, DocumentStatus> = {
+    'draft': DocumentStatus.DRAFT,
+    'pending_approval': DocumentStatus.PENDING_APPROVAL,
+    'approved': DocumentStatus.APPROVED,
+    'rejected': DocumentStatus.REJECTED,
+    'published': DocumentStatus.APPROVED // Map published to approved
+  };
+
+  // Map string security level to enum values
+  const securityMap: Record<string, SecurityLevel> = {
+    'public': SecurityLevel.PUBLIC,
+    'internal': SecurityLevel.INTERNAL,
+    'confidential': SecurityLevel.CONFIDENTIAL,
+    'secret': SecurityLevel.SECRET,
+    'top_secret': SecurityLevel.TOP_SECRET
+  };
+
+  return {
+    ...doc,
+    status: statusMap[doc.status] || DocumentStatus.DRAFT,
+    securityLevel: securityMap[doc.securityLevel] || SecurityLevel.INTERNAL
+  };
 };
 
 export default function DepartmentDocumentsPage() {
@@ -1183,14 +1213,12 @@ export default function DepartmentDocumentsPage() {
       {/* Edit Document Modal */}
       <EditDocumentModal
         open={showEditModal}
-        document={editingDocument}
+        document={convertDocumentForEdit(editingDocument)}
         onCancel={() => {
           setShowEditModal(false);
           setEditingDocument(null);
         }}
         onSave={handleSaveEdit}
-        departments={DEPARTMENTS}
-        availableTags={AVAILABLE_TAGS}
       />
     </>
   );

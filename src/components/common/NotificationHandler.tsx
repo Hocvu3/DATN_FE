@@ -11,17 +11,25 @@ export default function NotificationHandler() {
     const handleNotification = (event: CustomEvent) => {
       const { type, message, duration } = event.detail || {};
       
-      if (type && message && Toast[type]) {
-        Toast[type](message, duration);
+      if (type && message) {
+        switch (type) {
+          case 'success':
+            Toast.success(message, duration);
+            break;
+          case 'error':
+            Toast.error(message, duration);
+            break;
+          case 'warning':
+            Toast.warning(message, duration);
+            break;
+          case 'info':
+            Toast.info(message, duration);
+            break;
+          default:
+            console.warn(`Unknown notification type: ${type}`);
+        }
       }
     };
-
-    // Create a custom event type
-    type CustomNotificationEvent = CustomEvent<{
-      type: 'success' | 'error' | 'info' | 'warning';
-      message: string;
-      duration?: number;
-    }>;
 
     // Add event listener
     window.addEventListener('showNotification', handleNotification as EventListener);

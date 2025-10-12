@@ -1,12 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import Toast from '@/components/common/Toast';
 import { message } from 'antd';
 
 export default function ToastInitializer() {
-  const [isInitialized, setIsInitialized] = useState(false);
-  
   // Function to show a direct message without Toast wrapper
   const showDirectMessage = (content: string, type: 'success' | 'error' | 'info') => {
     if (typeof window !== 'undefined') {
@@ -58,7 +56,6 @@ export default function ToastInitializer() {
       });
       
       console.log('Toast and message systems initialized');
-      setIsInitialized(true);
       
       // Test direct message in development mode only
       if (process.env.NODE_ENV === 'development') {

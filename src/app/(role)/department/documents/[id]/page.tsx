@@ -124,23 +124,6 @@ const DepartmentDocumentDetail: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [editModalVisible, setEditModalVisible] = useState(false);
 
-  // Mock data for dropdowns
-  const departments = [
-    { value: "Finance", label: "Finance" },
-    { value: "HR", label: "Human Resources" },
-    { value: "IT", label: "Information Technology" },
-    { value: "Marketing", label: "Marketing" },
-    { value: "Sales", label: "Sales" },
-    { value: "Product", label: "Product" },
-    { value: "Engineering", label: "Engineering" }
-  ];
-
-  const availableTags = [
-    "Finance", "HR", "IT", "Marketing", "Sales", "Product", "Engineering",
-    "Report", "Policy", "Analysis", "Strategy", "Documentation", "KPI",
-    "Q1", "Q2", "Q3", "Q4", "2024", "Budget", "Training", "Compliance"
-  ];
-
   useEffect(() => {
     // Simulate API call
     const fetchDocument = () => {
@@ -221,8 +204,6 @@ const DepartmentDocumentDetail: React.FC = () => {
         }}
         onSave={handleEditSave}
         document={document}
-        departments={departments}
-        availableTags={availableTags}
       />
     </>
   );

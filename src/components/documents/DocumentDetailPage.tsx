@@ -139,7 +139,7 @@ const DocumentDetailPage: React.FC<DocumentDetailPageProps> = ({
   userRole,
   onEdit,
   onDelete,
-  onDownload,
+  onDownload, // eslint-disable-line @typescript-eslint/no-unused-vars
   onShare,
   onCoverUpdate
 }) => {

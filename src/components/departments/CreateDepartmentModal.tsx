@@ -2,7 +2,7 @@
 
 import React, { useEffect } from "react";
 import { Modal, Form, Input, Select, Button, Upload, Avatar } from "antd";
-import { InboxOutlined, UserOutlined } from "@ant-design/icons";
+import { UserOutlined } from "@ant-design/icons";
 
 const { Option } = Select;
 const { TextArea } = Input;

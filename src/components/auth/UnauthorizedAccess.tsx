@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect } from 'react';
+import { useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Alert, message } from 'antd';
+import { message } from 'antd';
 
-export default function UnauthorizedAccess() {
+function UnauthorizedAccessContent() {
   const searchParams = useSearchParams();
   const unauthorized = searchParams.get('unauthorized');
   const attempted = searchParams.get('attempted');
@@ -30,4 +30,12 @@ export default function UnauthorizedAccess() {
   
   // Don't render anything visible - this is just for showing the error message
   return null;
+}
+
+export default function UnauthorizedAccess() {
+  return (
+    <Suspense fallback={null}>
+      <UnauthorizedAccessContent />
+    </Suspense>
+  );
 }
