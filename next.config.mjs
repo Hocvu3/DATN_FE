@@ -1,8 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'standalone',
+  output: "standalone",
   experimental: {
-    serverComponentsExternalPackages: ['react-pdf']
+    serverComponentsExternalPackages: ["react-pdf"],
   },
   images: {
     remotePatterns: [
