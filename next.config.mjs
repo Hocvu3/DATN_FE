@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: "standalone",
+  // output: "standalone", // Removed for Vercel compatibility
   serverExternalPackages: ["react-pdf"],
   images: {
     remotePatterns: [
