@@ -12,6 +12,7 @@ import {
   Modal,
   Form,
   Space,
+  message,
 } from "antd";
 import {
   PlusOutlined,
@@ -19,8 +20,10 @@ import {
   DeleteOutlined,
   SearchOutlined,
   FilterOutlined,
+  MailOutlined,
 } from "@ant-design/icons";
 import Image from "next/image";
+import { AuthApi } from "@/lib/api";
 
 // Mock data for user management
 const users = [
@@ -88,8 +91,11 @@ const statuses = ["Active", "Inactive"];
 
 const UsersPage = () => {
   const [isModalVisible, setIsModalVisible] = React.useState(false);
+  const [isInviteModalVisible, setIsInviteModalVisible] = React.useState(false);
   const [editingUser, setEditingUser] = React.useState<any>(null);
+  const [loading, setLoading] = React.useState(false);
   const [form] = Form.useForm();
+  const [inviteForm] = Form.useForm();
 
   const showModal = (user: any = null) => {
     setEditingUser(user);
@@ -113,6 +119,45 @@ const UsersPage = () => {
   const handleCancel = () => {
     form.resetFields();
     setIsModalVisible(false);
+  };
+
+  const showInviteModal = () => {
+    inviteForm.resetFields();
+    setIsInviteModalVisible(true);
+  };
+
+  const handleInviteOk = async () => {
+    try {
+      const values = await inviteForm.validateFields();
+      setLoading(true);
+      
+      // Call invite API
+      await AuthApi.inviteUser({
+        email: values.email,
+        firstName: values.firstName,
+        lastName: values.lastName,
+        username: values.username,
+        message: values.message,
+      });
+
+      message.success("Invitation sent successfully!");
+      inviteForm.resetFields();
+      setIsInviteModalVisible(false);
+    } catch (error: any) {
+      console.error("Invite error:", error);
+      if (error.response?.data?.message) {
+        message.error(error.response.data.message);
+      } else {
+        message.error("Failed to send invitation. Please try again.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleInviteCancel = () => {
+    inviteForm.resetFields();
+    setIsInviteModalVisible(false);
   };
 
   const columns = [
@@ -234,14 +279,23 @@ const UsersPage = () => {
               Filter
             </Button>
           </div>
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={() => showModal()}
-            className="bg-blue-600"
-          >
-            Add User
-          </Button>
+          <Space>
+            <Button
+              icon={<MailOutlined />}
+              onClick={showInviteModal}
+              className="border-orange-500 text-orange-500 hover:!bg-orange-50"
+            >
+              Invite User
+            </Button>
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={() => showModal()}
+              className="bg-blue-600"
+            >
+              Add User
+            </Button>
+          </Space>
         </div>
 
         <Table
@@ -359,6 +413,99 @@ const UsersPage = () => {
               </Form.Item>
             </>
           )}
+        </Form>
+      </Modal>
+
+      {/* Invite User Modal */}
+      <Modal
+        title={
+          <div className="flex items-center gap-2">
+            <MailOutlined className="text-orange-500" />
+            <span>Invite New User</span>
+          </div>
+        }
+        open={isInviteModalVisible}
+        onOk={handleInviteOk}
+        onCancel={handleInviteCancel}
+        okText="Send Invitation"
+        confirmLoading={loading}
+        okButtonProps={{ className: "bg-orange-500 hover:!bg-orange-600" }}
+        width={600}
+      >
+        <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+          <p className="text-sm text-blue-800">
+            An invitation email will be sent to the user with a link to set up their account.
+          </p>
+        </div>
+
+        <Form
+          form={inviteForm}
+          layout="vertical"
+          name="invite_form"
+          className="mt-4"
+        >
+          <Form.Item
+            name="email"
+            label="Email Address"
+            rules={[
+              { required: true, message: "Please enter email address" },
+              { type: "email", message: "Please enter a valid email address" },
+            ]}
+          >
+            <Input
+              placeholder="user@example.com"
+              prefix={<MailOutlined className="text-gray-400" />}
+            />
+          </Form.Item>
+
+          <div className="grid grid-cols-2 gap-4">
+            <Form.Item
+              name="firstName"
+              label="First Name"
+              rules={[
+                { required: true, message: "Please enter first name" },
+              ]}
+            >
+              <Input placeholder="John" />
+            </Form.Item>
+
+            <Form.Item
+              name="lastName"
+              label="Last Name"
+              rules={[
+                { required: true, message: "Please enter last name" },
+              ]}
+            >
+              <Input placeholder="Doe" />
+            </Form.Item>
+          </div>
+
+          <Form.Item
+            name="username"
+            label="Username"
+            rules={[
+              { required: true, message: "Please enter username" },
+              {
+                pattern: /^[a-zA-Z0-9_]+$/,
+                message: "Username can only contain letters, numbers and underscores",
+              },
+            ]}
+          >
+            <Input placeholder="johndoe" />
+          </Form.Item>
+
+          <Form.Item
+            name="message"
+            label="Welcome Message (Optional)"
+            help="This message will be included in the invitation email"
+          >
+            <Input.TextArea
+              placeholder="Welcome to our document management system! We're excited to have you on board."
+              rows={4}
+              maxLength={500}
+              showCount
+            />
+          </Form.Item>
         </Form>
       </Modal>
     </>

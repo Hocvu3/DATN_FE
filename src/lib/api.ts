@@ -336,6 +336,22 @@ export const AuthApi = {
   googleUrl() {
     return `${getBaseUrl()}/auth/google`;
   },
+
+  async inviteUser(payload: {
+    email: string;
+    firstName: string;
+    lastName: string;
+    username: string;
+    roleId?: string;
+    departmentId?: string;
+    message?: string;
+  }) {
+    return apiPost<{
+      message: string;
+      email: string;
+      invitationToken: string;
+    }>("/auth/invite", payload);
+  },
 };
 
 export const DocumentsApi = {
