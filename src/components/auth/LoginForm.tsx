@@ -148,7 +148,10 @@ export default function LoginForm() {
         
         // Determine where to redirect based on role
         const role = apiData.user?.role?.toLowerCase() || 'employee';
-        const fallbackUrl = `/${role}/dashboard?fallback=true&ts=${Date.now()}`;
+        // Special case: MANAGER redirects to /department/dashboard instead of /manager/dashboard
+        const fallbackUrl = role === 'manager' 
+          ? `/department/dashboard?fallback=true&ts=${Date.now()}`
+          : `/${role}/dashboard?fallback=true&ts=${Date.now()}`;
         console.log(`Fallback redirecting to ${fallbackUrl}`);
         window.location.href = fallbackUrl;
       }, 3000);
@@ -170,7 +173,10 @@ export default function LoginForm() {
           
           // Determine where to redirect based on role
           const role = apiData.user?.role?.toLowerCase() || 'employee';
-          const redirectUrl = `/${role}/dashboard?auth=direct&ts=${Date.now()}`;
+          // Special case: MANAGER redirects to /department/dashboard instead of /manager/dashboard
+          const redirectUrl = role === 'manager'
+            ? `/department/dashboard?auth=direct&ts=${Date.now()}`
+            : `/${role}/dashboard?auth=direct&ts=${Date.now()}`;
           
           console.log(`Direct redirecting to ${redirectUrl}`);
           

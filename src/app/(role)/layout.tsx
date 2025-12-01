@@ -128,8 +128,8 @@ export default function RoleLayout({ children }: RoleLayoutProps) {
       console.log("User not authorized for admin path");
       safeRedirect("/login?unauthorized=true", "Not authorized for admin path");
     } 
-    // Department paths require department role only
-    else if (roleFromPath === "department" && authUserRole !== "department") {
+    // Department paths require department or manager role
+    else if (roleFromPath === "department" && authUserRole !== "department" && authUserRole !== "manager") {
       console.log("User not authorized for department path");
       safeRedirect("/login?unauthorized=true", "Not authorized for department path");
     } 

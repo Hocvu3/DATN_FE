@@ -156,7 +156,9 @@ export function middleware(request: NextRequest) {
 
         // Otherwise use role-based defaults with timestamp to prevent caching
         const timestamp = Date.now();
-        const baseRedirect = new URL(`/${normalizedRole}/dashboard`, request.url);
+        // Special case: MANAGER redirects to /department/dashboard instead of /manager/dashboard
+        const redirectPath = normalizedRole === 'manager' ? '/department/dashboard' : `/${normalizedRole}/dashboard`;
+        const baseRedirect = new URL(redirectPath, request.url);
         baseRedirect.searchParams.set('redirected', 'true');
         baseRedirect.searchParams.set('ts', timestamp.toString());
 
@@ -165,7 +167,7 @@ export function middleware(request: NextRequest) {
             baseRedirect.searchParams.set('debug', 'true');
         }
 
-        console.log(`Middleware [${requestId}]: Redirecting ${normalizedRole} to dashboard:`, baseRedirect.pathname);
+        console.log(`Middleware [${requestId}]: Redirecting ${normalizedRole} to:`, baseRedirect.pathname);
         return NextResponse.redirect(baseRedirect);
     }
 
@@ -174,7 +176,10 @@ export function middleware(request: NextRequest) {
         // Handle /dashboard redirect to role-specific dashboard
         if (request.nextUrl.pathname === '/dashboard') {
             const normalizedUserRole = (userRole || '').toLowerCase();
-            const roleBasedDashboard = `/${normalizedUserRole}/dashboard`;
+            // Special case: MANAGER redirects to /department/dashboard instead of /manager/dashboard
+            const roleBasedDashboard = normalizedUserRole === 'manager' 
+              ? '/department/dashboard'
+              : `/${normalizedUserRole}/dashboard`;
             console.log(`Middleware [${requestId}]: Redirecting /dashboard to ${roleBasedDashboard}`);
             return NextResponse.redirect(new URL(roleBasedDashboard, request.url));
         }
@@ -191,9 +196,8 @@ export function middleware(request: NextRequest) {
             // Only admins can access admin area
             hasAccess = normalizedUserRole === 'admin';
         } else if (pathRole === 'department') {
-            // Only department managers can access department area
-            // Admins should use admin area, not department area
-            hasAccess = normalizedUserRole === 'department';
+            // Both 'manager' and 'department' roles can access department area
+            hasAccess = normalizedUserRole === 'department' || normalizedUserRole === 'manager';
         } else if (pathRole === 'employee') {
             // Only employees can access employee area
             // Department managers and admins should use their respective areas

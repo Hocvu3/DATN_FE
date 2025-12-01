@@ -71,7 +71,10 @@ function GoogleCallbackContent() {
 
         // Redirect based on user role with bypass parameters to prevent middleware loops
         const role = user.role.toLowerCase();
-        const redirectUrl = `/${role}/dashboard?google_auth=success&fresh=true&ts=${Date.now()}`;
+        // Special case: MANAGER redirects to /department/dashboard instead of /manager/dashboard
+        const redirectUrl = role === 'manager'
+          ? `/department/dashboard?google_auth=success&fresh=true&ts=${Date.now()}`
+          : `/${role}/dashboard?google_auth=success&fresh=true&ts=${Date.now()}`;
 
         // Wait a moment for user to see success, then redirect
         setTimeout(() => {
