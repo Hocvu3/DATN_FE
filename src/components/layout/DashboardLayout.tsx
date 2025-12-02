@@ -34,8 +34,8 @@ import {
 } from "@ant-design/icons";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-// Import directly from the auth module
-import { useAuth } from "@/lib/authProvider"; // This works because we use the named export
+import { useAuth } from "@/lib/authProvider";
+import { fetchUserProfile, UserProfile } from "@/lib/users-api";
 import Image from "next/image";
 
 const { Header, Sider, Content } = Layout;
@@ -52,9 +52,26 @@ export default function DashboardLayout({
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const pathname = usePathname();
 
   const { isAuthenticated, logout } = useAuth();
+
+  // Load user profile
+  useEffect(() => {
+    const loadProfile = async () => {
+      try {
+        const profile = await fetchUserProfile();
+        setUserProfile(profile);
+      } catch (error) {
+        // Silently fail
+      }
+    };
+
+    if (isAuthenticated) {
+      loadProfile();
+    }
+  }, [isAuthenticated]);
 
   // Handle authentication state more carefully
   useEffect(() => {
@@ -568,12 +585,19 @@ export default function DashboardLayout({
                 <Avatar
                   size="small"
                   icon={<UserOutlined />}
-                  src="https://i.pravatar.cc/150?img=12"
+                  src={userProfile?.avatar?.s3Url}
                   className="border-2 border-transparent group-hover:border-orange-300"
                 />
-                <span className="hidden md:inline ml-2 text-gray-700 group-hover:text-orange-500 transition-colors">
-                  John Smith
-                </span>
+                <div className="hidden md:flex flex-col ml-2">
+                  <span className="text-gray-700 group-hover:text-orange-500 transition-colors text-sm font-medium">
+                    {userProfile ? `${userProfile.firstName} ${userProfile.lastName}` : 'Loading...'}
+                  </span>
+                  {userProfile?.department && userRole !== 'admin' && (
+                    <span className="text-gray-500 text-xs font-semibold">
+                      {userProfile.department.name}
+                    </span>
+                  )}
+                </div>
               </div>
             </Dropdown>
           </div>

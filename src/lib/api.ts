@@ -221,6 +221,10 @@ export function apiPut<TResponse>(path: string, body?: unknown, options?: ApiOpt
   return apiRequest<TResponse>('PUT', path, body, options);
 }
 
+export function apiPatch<TResponse>(path: string, body?: unknown, options?: ApiOptions): Promise<ApiResult<TResponse>> {
+  return apiRequest<TResponse>('PATCH', path, body, options);
+}
+
 export function apiDelete<TResponse>(path: string, options?: ApiOptions): Promise<ApiResult<TResponse>> {
   return apiRequest<TResponse>('DELETE', path, undefined, options);
 }
