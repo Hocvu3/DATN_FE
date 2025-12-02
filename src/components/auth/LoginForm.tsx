@@ -21,41 +21,30 @@ export default function LoginForm() {
   const { login } = useAuth();
 
   const onFinish = async (values: LoginValues) => {
-    console.log('Login submitted with:', { email: values.email, passwordLength: values.password?.length });
     try {
       setLoading(true);
       
       // For the mock login case, use our centralized login function
       if (values.email === "admin@docuflow.com") {
-        console.log('Using mock login for admin@docuflow.com');
         try {
-          // Show success message immediately
           Toast.success("Login successful", 5);
           message.success("Login successful");
           
-          // Listen for redirect events
           const redirectListener = (event: Event) => {
             const customEvent = event as CustomEvent;
-            console.log('Redirect event received:', customEvent.detail);
           };
           window.addEventListener('auth-redirect', redirectListener);
           
-          // Add a fallback redirect timer in case the login function doesn't redirect
           const fallbackTimer = setTimeout(() => {
-            console.log('Fallback redirect timer triggered');
             window.removeEventListener('auth-redirect', redirectListener);
             window.location.href = '/admin/dashboard?fallback=true';
           }, 3000);
           
-          // Call login function
           await login(values.email, values.password);
-          console.log('Mock login successful, awaiting redirect');
           
-          // Clear fallback timer
           clearTimeout(fallbackTimer);
           window.removeEventListener('auth-redirect', redirectListener);
         } catch (mockError) {
-          console.error('Mock login failed:', mockError);
           Toast.error("Mock login failed. Please try again.");
           message.error("Mock login failed. Please try again.");
         }
@@ -63,55 +52,32 @@ export default function LoginForm() {
       }
       
       // For real API login
-      console.log('Calling AuthApi.login...');
       const response = await AuthApi.login({
         email: values.email,
         password: values.password,
       });
-      console.log('Login API response received:', response);
       
-      // The API client now handles the response structure normalization
       const apiData = response.data;
-      console.log('API data extracted:', apiData);
-      
-      // Log important authentication information
-      console.log('Login response data:', {
-        hasAccessToken: !!apiData?.accessToken,
-        hasRefreshToken: !!apiData?.refreshToken,
-        hasUserData: !!apiData?.user,
-        userRole: apiData?.user?.role
-      });
       
       // Validate the response data before proceeding
       if (!apiData?.accessToken || !apiData?.user || !apiData?.user.role) {
-        console.error("Invalid login response - missing required data:", {
-          apiData,
-          hasAccessToken: !!apiData?.accessToken,
-          hasUser: !!apiData?.user,
-          hasRole: !!apiData?.user?.role
-        });
-        console.error("Full response structure:", response);
         throw new Error("Login response missing required authentication data");
       }
       
       // Show success message using multiple methods to ensure visibility
       const successMessage = "Login successful";
       
-      // Use different notification methods for redundancy
       try {
         Toast.success(successMessage, 5);
         message.success(successMessage);
         
-        // Fire custom events for any listeners
         if (typeof window !== 'undefined') {
           try {
-            // Standard notification event
             const event = new CustomEvent('showNotification', {
               detail: { type: 'success', message: successMessage, duration: 5 }
             });
             window.dispatchEvent(event);
             
-            // Specific login success event
             const loginSuccessEvent = new CustomEvent('login-success', {
               detail: { 
                 message: successMessage,
@@ -120,129 +86,93 @@ export default function LoginForm() {
             });
             window.dispatchEvent(loginSuccessEvent);
           } catch (e) {
-            console.error("Failed to dispatch events:", e);
+            // Silently fail
           }
         }
       } catch (e) {
-        console.error("Error showing success notifications:", e);
+        // Silently fail
       }
       
-      // Now use the centralized login function to handle auth state
-      console.log('Passing login data to auth provider', {
-        email: apiData.user.email,
-        role: apiData.user.role,
-        tokenLength: apiData.accessToken.length
-      });
-      
-      // Listen for redirect events
       const redirectListener = (event: Event) => {
         const customEvent = event as CustomEvent;
-        console.log('Redirect event received:', customEvent.detail);
       };
       window.addEventListener('auth-redirect', redirectListener);
       
-      // Add a fallback redirect timer in case the login function doesn't redirect
       const fallbackTimer = setTimeout(() => {
-        console.log('API login fallback redirect timer triggered');
         window.removeEventListener('auth-redirect', redirectListener);
         
-        // Determine where to redirect based on role
         const role = apiData.user?.role?.toLowerCase() || 'employee';
-        // Special case: MANAGER redirects to /department/dashboard instead of /manager/dashboard
         const fallbackUrl = role === 'manager' 
           ? `/department/dashboard?fallback=true&ts=${Date.now()}`
           : `/${role}/dashboard?fallback=true&ts=${Date.now()}`;
-        console.log(`Fallback redirecting to ${fallbackUrl}`);
         window.location.href = fallbackUrl;
       }, 3000);
       
       // Do a direct hard redirect instead of waiting for the auth provider
       try {
-        // Set the authentication directly for immediate effect
         if (typeof window !== 'undefined') {
-          // Store tokens in localStorage for persistence
           localStorage.setItem('docuflow_access_token', apiData.accessToken);
           localStorage.setItem('docuflow_refresh_token', apiData.refreshToken);
           localStorage.setItem('docuflow_user', JSON.stringify(apiData.user));
           
-          // Set cookies directly for immediate effect
           const expires = new Date(Date.now() + 24 * 60 * 60 * 1000).toUTCString();
           document.cookie = `auth=true; path=/; expires=${expires}; SameSite=Lax`;
           document.cookie = `user_role=${apiData.user.role}; path=/; expires=${expires}; SameSite=Lax`;
           document.cookie = `x-user-role=${apiData.user.role}; path=/; expires=${expires}; SameSite=Lax`;
           
-          // Determine where to redirect based on role
           const role = apiData.user?.role?.toLowerCase() || 'employee';
-          // Special case: MANAGER redirects to /department/dashboard instead of /manager/dashboard
           const redirectUrl = role === 'manager'
             ? `/department/dashboard?auth=direct&ts=${Date.now()}`
             : `/${role}/dashboard?auth=direct&ts=${Date.now()}`;
           
-          console.log(`Direct redirecting to ${redirectUrl}`);
-          
-          // Use the most aggressive redirect approach
           window.location.replace(redirectUrl);
           
-          // As a desperate fallback, use document.write
           setTimeout(() => {
             document.write(`<html><body>Redirecting to dashboard...</body><script>window.location.href="${redirectUrl}";</script></html>`);
             window.location.reload();
           }, 1500);
         }
         
-        // Call the login function also, but don't wait for it since we're doing direct redirect
         login(apiData.user.email, "", apiData.accessToken, apiData.refreshToken, apiData.user)
-          .catch(e => console.error("Background login process error:", e));
+          .catch(() => {});
         
-        // Clean up
         clearTimeout(fallbackTimer);
         window.removeEventListener('auth-redirect', redirectListener);
       } catch (error) {
-        // Clear timers and listeners
         clearTimeout(fallbackTimer);
         window.removeEventListener('auth-redirect', redirectListener);
-        throw error; // Re-throw for the outer catch block
+        throw error;
       }
     } catch (err: any) {
-      // Handle login error with proper formatting
-      console.error("Login error:", err);
       
-      // Display login error directly (fallback)
       if (err.response?.status === 401) {
         const directErrorMsg = "Invalid email or password";
-        // Use all error display methods to ensure at least one works
         
         try {
           Toast.error(directErrorMsg, 8);
           message.error(directErrorMsg);
           
-          // Custom events
           if (typeof window !== 'undefined') {
-            // Standard notification event
             const event = new CustomEvent('showNotification', {
               detail: { type: 'error', message: directErrorMsg, duration: 6 }
             });
             window.dispatchEvent(event);
             
-            // Login-specific error event
             const loginEvent = new CustomEvent('login-error', {
               detail: { message: directErrorMsg }
             });
             window.dispatchEvent(loginEvent);
           }
         } catch (e) {
-          console.error("Failed to show error notifications:", e);
+          // Silently fail
         }
         
-        return; // Don't process further
+        return;
       }
       
-      // Handle other cases if response data exists
       if (err.response && err.response.data) {
-        // Format the error message from the API response
         let errorMessage = err.response.data.message || "Login failed";
         
-        // Add validation errors if they exist
         if (err.response.data.errors) {
           const errors = err.response.data.errors;
           if (errors.email) errorMessage += `\nEmail: ${errors.email.join(', ')}`;
@@ -250,21 +180,19 @@ export default function LoginForm() {
           if (errors.general) errorMessage += `\n${errors.general.join(', ')}`;
         }
         
-        // Display the error
         try {
           Toast.error(errorMessage, 6);
           message.error(errorMessage);
         } catch (e) {
-          console.error("Failed to show error notifications:", e);
+          // Silently fail
         }
       } else {
-        // Fallback for network errors or other issues
         const errorMessage = err?.message || "Login failed. Please try again.";
         try {
           Toast.error(errorMessage);
           message.error(errorMessage);
         } catch (e) {
-          console.error("Failed to show error notifications:", e);
+          // Silently fail
         }
       }
     } finally {

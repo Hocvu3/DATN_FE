@@ -61,9 +61,7 @@ export default function DashboardLayout({
     // Unique key for this specific path to avoid checking on every component re-render
     const pathKey = pathname ? `dashboard_auth_${pathname.replace(/\//g, '_')}` : 'dashboard_auth_root';
     
-    // Skip the check if we've already completed it for this specific path
     if (sessionStorage.getItem(pathKey) === 'true') {
-      console.log(`DashboardLayout - Auth already checked for ${pathname}`);
       return;
     }
     
@@ -73,63 +71,38 @@ export default function DashboardLayout({
     // Only check authentication after a short delay to give auth state time to initialize
     const authCheckTimer = setTimeout(() => {
       if (!isAuthenticated && typeof window !== "undefined") {
-        console.log("DashboardLayout - Not authenticated");
-        
-        // Double check authentication state directly from storage and cookies
         const hasAuthCookie = document.cookie.includes('auth=true');
         const hasToken = localStorage.getItem('docuflow_access_token');
         const hasUserData = localStorage.getItem('docuflow_user');
         
-        // Check for role in cookies as well
         const roleCookie = document.cookie.split('; ')
           .find(row => row.startsWith('user_role='))
           ?.split('=')[1];
-          
-        console.log("DashboardLayout auth check:", {
-          hasAuthCookie,
-          hasToken,
-          hasUserData,
-          roleCookie,
-          isAuthenticated
-        });
         
-        // If we have inconsistent state (cookies and localStorage have auth but context doesn't)
-        // then reload the page to reset the auth context
         if (hasAuthCookie && hasToken && hasUserData) {
-          console.log("Auth state inconsistent - refreshing page to reload auth context");
-          
-          // Parse user data to determine where to redirect
           try {
             const userData = JSON.parse(hasUserData);
             const role = userData.role?.toLowerCase();
-            console.log("User role from localStorage:", role);
             
-            // If we have valid user data with role, force navigate to correct dashboard
             if (role) {
-              console.log(`Force redirecting to ${role} dashboard`);
               window.location.href = `/${role}/dashboard?forceReload=true`;
               return;
             }
           } catch (e) {
-            console.error("Error parsing user data from localStorage:", e);
+            // Silently fail
           }
           
-          // If we couldn't get role from localStorage, try from cookie
           if (roleCookie) {
-            console.log(`Role from cookie: ${roleCookie}, redirecting to dashboard`);
             window.location.href = `/${roleCookie}/dashboard?forceReload=true`;
             return;
           }
           
-          // If all else fails, just reload the current page
           window.location.reload();
         } else {
-          // Otherwise, truly not authenticated
-          console.log("DashboardLayout - Redirecting to login");
           window.location.href = "/login";
         }
       }
-    }, 300); // Short delay to allow auth state to initialize
+    }, 300);
     
     return () => {
       clearTimeout(authCheckTimer);

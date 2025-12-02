@@ -13,23 +13,7 @@ export function middleware(request: NextRequest) {
     const requestId = Math.random().toString(36).substring(2, 10);
     const debugMode = request.nextUrl.searchParams.get('debug') === 'true';
 
-    if (debugMode) {
-        console.log(`Middleware [${requestId}]: Processing request for ${request.nextUrl.pathname}`);
-        console.log(`Middleware [${requestId}]: Auth cookie present: ${isAuthenticated}, value: ${authCookieValue}`);
-        console.log(`Middleware [${requestId}]: User role from cookie: ${userRole || 'not set'}`);
-    }
-
-    // Fallback to querying all cookies if direct get fails (for debugging)
     if (!userRole) {
-        const allCookies = request.cookies.getAll();
-        console.log(`Middleware [${requestId}]: No direct role cookie, checking all cookies:`,
-            allCookies.map(c => `${c.name}=${c.value}`).join(', '));
-
-        const roleCookie = allCookies.find(c => c.name === 'user_role');
-        if (roleCookie) {
-            userRole = roleCookie.value;
-            console.log(`Middleware [${requestId}]: Found role in all cookies: ${userRole}`);
-        }
     }
 
     // Check for special parameters that affect middleware behavior
@@ -54,24 +38,7 @@ export function middleware(request: NextRequest) {
         allCookies[cookie.name] = cookie.value;
     });
 
-    // Log the current state for debugging - only if debug mode is enabled
-    if (debugMode) {
-        console.log('Middleware state:', {
-            path: request.nextUrl.pathname,
-            isProtectedRoute,
-            isAuthRoute,
-            isAuthenticated,
-            authCookieValue,
-            hasValidAuth,
-            forceLogin,
-            userRole,
-            cookies: allCookies
-        });
-    }
-
-    // If user is not authenticated and trying to access protected route, redirect to login
     if (isProtectedRoute && !hasValidAuth) {
-        console.log(`Middleware [${requestId}]: Redirecting to login - not authenticated for protected route`);
 
         // Check for parameters that indicate we should bypass middleware
         const forceReload = request.nextUrl.searchParams.get('forceReload') === 'true';
@@ -79,7 +46,6 @@ export function middleware(request: NextRequest) {
         const isFresh = request.nextUrl.searchParams.has('fresh');
 
         if (forceReload || bypassAuth || isFresh) {
-            console.log(`Middleware [${requestId}]: Special parameter detected, bypassing redirect`);
             return NextResponse.next();
         }
 
@@ -103,25 +69,17 @@ export function middleware(request: NextRequest) {
 
     // Don't redirect if we're in a fallback redirect or have fresh param (already redirecting)
     if (isAuthRoute && hasValidAuth && !forceLogin && !unauthorizedAttempt && !isFallback && !isFresh) {
-        console.log(`Middleware [${requestId}]: User already logged in, redirecting based on role:`, userRole);
-
-        // Try to get user role from headers as a backup
         const headerRole = request.headers.get('x-user-role');
         if (!userRole && headerRole) {
             userRole = headerRole;
-            console.log(`Middleware [${requestId}]: Found role in header: ${userRole}`);
         }
 
-        // If still no role, check for login type in query params
         const loginType = url.searchParams.get('type');
         if (!userRole && loginType && ['admin', 'department', 'employee'].includes(loginType)) {
             userRole = loginType;
-            console.log(`Middleware [${requestId}]: Using login type as role: ${userRole}`);
         }
 
         if (!userRole) {
-            console.warn(`Middleware [${requestId}]: No role found for authenticated user! Using default role.`);
-            // Still redirect to a safe default
             return NextResponse.redirect(new URL('/employee/dashboard?role_missing=true', request.url));
         }
 
@@ -144,13 +102,10 @@ export function middleware(request: NextRequest) {
             }
 
             if (canAccessFrom) {
-                console.log(`Middleware [${requestId}]: Redirecting to original location:`, from);
                 const redirectUrl = new URL(`${from}`, request.url);
                 redirectUrl.searchParams.set('redirected', 'true');
                 redirectUrl.searchParams.set('ts', Date.now().toString());
                 return NextResponse.redirect(redirectUrl);
-            } else {
-                console.log(`Middleware [${requestId}]: User ${normalizedRole} cannot access ${fromRole} area, redirecting to appropriate dashboard`);
             }
         }
 
@@ -167,7 +122,6 @@ export function middleware(request: NextRequest) {
             baseRedirect.searchParams.set('debug', 'true');
         }
 
-        console.log(`Middleware [${requestId}]: Redirecting ${normalizedRole} to:`, baseRedirect.pathname);
         return NextResponse.redirect(baseRedirect);
     }
 
@@ -176,18 +130,14 @@ export function middleware(request: NextRequest) {
         // Handle /dashboard redirect to role-specific dashboard
         if (request.nextUrl.pathname === '/dashboard') {
             const normalizedUserRole = (userRole || '').toLowerCase();
-            // Special case: MANAGER redirects to /department/dashboard instead of /manager/dashboard
             const roleBasedDashboard = normalizedUserRole === 'manager' 
               ? '/department/dashboard'
               : `/${normalizedUserRole}/dashboard`;
-            console.log(`Middleware [${requestId}]: Redirecting /dashboard to ${roleBasedDashboard}`);
             return NextResponse.redirect(new URL(roleBasedDashboard, request.url));
         }
 
-        const pathRole = request.nextUrl.pathname.split('/')[1]; // Extract role from path
+        const pathRole = request.nextUrl.pathname.split('/')[1];
         const normalizedUserRole = (userRole || '').toLowerCase();
-
-        console.log(`Middleware [${requestId}]: Checking access - User role: ${normalizedUserRole}, Path role: ${pathRole}`);
 
         // Strict role-based access control with proper hierarchy
         let hasAccess = false;
@@ -205,20 +155,12 @@ export function middleware(request: NextRequest) {
         }
 
         if (!hasAccess) {
-            console.log(`Middleware [${requestId}]: Access DENIED - User with role "${normalizedUserRole}" attempted to access "${pathRole}" area`);
-            // Redirect to their appropriate dashboard with unauthorized flag
             const appropriateRole = normalizedUserRole || 'employee';
             const redirectUrl = new URL(`/${appropriateRole}/dashboard?unauthorized=true&attempted=${pathRole}`, request.url);
             return NextResponse.redirect(redirectUrl);
         }
-
-        console.log(`Middleware [${requestId}]: Access GRANTED to ${pathRole} area for user with role ${normalizedUserRole}`);
     }
 
-    // Minimal logging for proceeding requests  
-    if (debugMode) {
-        console.log(`Middleware [${requestId}]: Allowing request to proceed`);
-    }
     const response = NextResponse.next();
 
     // Add debugging headers if in debug mode
