@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Button, Checkbox, Form, Input, message } from "antd";
+import { Button, Checkbox, Form, Input, App } from "antd";
 import {
   LockOutlined,
   MailOutlined,
@@ -12,11 +12,11 @@ import {
 import Link from "next/link";
 import { AuthApi } from "@/lib/api";
 import { useAuth } from "@/lib/authProvider";
-import Toast from "@/components/common/Toast";
 
 type LoginValues = { email: string; password: string; remember?: boolean };
 
 export default function LoginForm() {
+  const { message } = App.useApp();
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
 
@@ -27,8 +27,7 @@ export default function LoginForm() {
       // For the mock login case, use our centralized login function
       if (values.email === "admin@docuflow.com") {
         try {
-          Toast.success("Login successful", 5);
-          message.success("Login successful");
+          message.success("Login successful", 5);
           
           const redirectListener = (event: Event) => {
             const customEvent = event as CustomEvent;
@@ -45,7 +44,6 @@ export default function LoginForm() {
           clearTimeout(fallbackTimer);
           window.removeEventListener('auth-redirect', redirectListener);
         } catch (mockError) {
-          Toast.error("Mock login failed. Please try again.");
           message.error("Mock login failed. Please try again.");
         }
         return;
@@ -64,34 +62,8 @@ export default function LoginForm() {
         throw new Error("Login response missing required authentication data");
       }
       
-      // Show success message using multiple methods to ensure visibility
-      const successMessage = "Login successful";
-      
-      try {
-        Toast.success(successMessage, 5);
-        message.success(successMessage);
-        
-        if (typeof window !== 'undefined') {
-          try {
-            const event = new CustomEvent('showNotification', {
-              detail: { type: 'success', message: successMessage, duration: 5 }
-            });
-            window.dispatchEvent(event);
-            
-            const loginSuccessEvent = new CustomEvent('login-success', {
-              detail: { 
-                message: successMessage,
-                userData: apiData.user
-              }
-            });
-            window.dispatchEvent(loginSuccessEvent);
-          } catch (e) {
-            // Silently fail
-          }
-        }
-      } catch (e) {
-        // Silently fail
-      }
+      // Show success message
+      message.success("Login successful", 5);
       
       const redirectListener = (event: Event) => {
         const customEvent = event as CustomEvent;
@@ -146,27 +118,7 @@ export default function LoginForm() {
     } catch (err: any) {
       
       if (err.response?.status === 401) {
-        const directErrorMsg = "Invalid email or password";
-        
-        try {
-          Toast.error(directErrorMsg, 8);
-          message.error(directErrorMsg);
-          
-          if (typeof window !== 'undefined') {
-            const event = new CustomEvent('showNotification', {
-              detail: { type: 'error', message: directErrorMsg, duration: 6 }
-            });
-            window.dispatchEvent(event);
-            
-            const loginEvent = new CustomEvent('login-error', {
-              detail: { message: directErrorMsg }
-            });
-            window.dispatchEvent(loginEvent);
-          }
-        } catch (e) {
-          // Silently fail
-        }
-        
+        message.error("Invalid email or password", 8);
         return;
       }
       
@@ -180,20 +132,10 @@ export default function LoginForm() {
           if (errors.general) errorMessage += `\n${errors.general.join(', ')}`;
         }
         
-        try {
-          Toast.error(errorMessage, 6);
-          message.error(errorMessage);
-        } catch (e) {
-          // Silently fail
-        }
+        message.error(errorMessage, 6);
       } else {
         const errorMessage = err?.message || "Login failed. Please try again.";
-        try {
-          Toast.error(errorMessage);
-          message.error(errorMessage);
-        } catch (e) {
-          // Silently fail
-        }
+        message.error(errorMessage);
       }
     } finally {
       setLoading(false);

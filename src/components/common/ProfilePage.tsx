@@ -1,28 +1,38 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Card, Form, Input, Button, Avatar, Upload, Spin, Typography } from 'antd';
+import { Card, Form, Input, Button, Avatar, Upload, Spin, Typography, Row, Col, App } from 'antd';
 import { UserOutlined, CameraOutlined, LoadingOutlined } from '@ant-design/icons';
 import type { UploadFile } from 'antd';
 import {
   fetchUserProfile,
   updateUserProfile,
   uploadUserAvatar,
-  getAvatarUrl,
   type UserProfile,
   type UpdateProfileRequest,
 } from '@/lib/users-api';
-import { showNotification } from '@/utils/notification';
+import Toast from '@/components/common/Toast';
 
 const { Title, Text } = Typography;
 
 export default function ProfilePage() {
+  const { message } = App.useApp();
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string>('');
+
+  // Helper function to dispatch notification events
+  const showDirectNotification = (type: 'success' | 'error', content: string, duration?: number) => {
+    // Use hook-based message from App context
+    if (type === 'success') {
+      message.success(content, duration);
+    } else if (type === 'error') {
+      message.error(content, duration);
+    }
+  };
 
   useEffect(() => {
     loadProfile();
@@ -42,7 +52,8 @@ export default function ProfilePage() {
         username: data.username,
       });
     } catch (error: any) {
-      showNotification('error', 'Failed to load profile. Please try again later');
+      const errorMessage = error?.message || 'Failed to load profile. Please try again later';
+      showDirectNotification('error', errorMessage);
     } finally {
       setLoading(false);
     }
@@ -54,9 +65,10 @@ export default function ProfilePage() {
       const updated = await updateUserProfile(values);
       setProfile(updated);
       
-      showNotification('success', 'Profile updated successfully');
+      showDirectNotification('success', 'Profile updated successfully', 5);
     } catch (error: any) {
-      showNotification('error', 'Failed to update profile. Please try again later');
+      const errorMessage = error?.message || 'Failed to update profile. Please try again later';
+      showDirectNotification('error', errorMessage);
     } finally {
       setSaving(false);
     }
@@ -68,11 +80,12 @@ export default function ProfilePage() {
       const newAvatarUrl = await uploadUserAvatar(file);
       setAvatarUrl(newAvatarUrl);
       
-      showNotification('success', 'Avatar updated successfully');
+      showDirectNotification('success', 'Avatar updated successfully', 5);
       
       await loadProfile();
     } catch (error: any) {
-      showNotification('error', 'Failed to upload avatar. Please try again later');
+      const errorMessage = error?.message || 'Failed to upload avatar. Please try again later';
+      showDirectNotification('error', errorMessage);
     } finally {
       setUploadingAvatar(false);
     }
@@ -81,13 +94,13 @@ export default function ProfilePage() {
   const beforeUpload = (file: File) => {
     const isImage = file.type.startsWith('image/');
     if (!isImage) {
-      showNotification('error', 'You can only upload image files!');
+      showDirectNotification('error', 'You can only upload image files!');
       return false;
     }
     
     const isLt5M = file.size / 1024 / 1024 < 5;
     if (!isLt5M) {
-      showNotification('error', 'Image must be smaller than 5MB!');
+      showDirectNotification('error', 'Image must be smaller than 5MB!');
       return false;
     }
     
@@ -148,40 +161,50 @@ export default function ProfilePage() {
           layout="vertical"
           onFinish={handleSubmit}
         >
-          <Form.Item
-            label="First Name"
-            name="firstName"
-            rules={[{ required: true, message: 'Please enter your first name' }]}
-          >
-            <Input size="large" placeholder="Enter first name" />
-          </Form.Item>
+          <Row gutter={16}>
+            <Col xs={24} sm={12}>
+              <Form.Item
+                label="First Name"
+                name="firstName"
+                rules={[{ required: true, message: 'Please enter your first name' }]}
+              >
+                <Input size="large" placeholder="Enter first name" />
+              </Form.Item>
+            </Col>
+            <Col xs={24} sm={12}>
+              <Form.Item
+                label="Last Name"
+                name="lastName"
+                rules={[{ required: true, message: 'Please enter your last name' }]}
+              >
+                <Input size="large" placeholder="Enter last name" />
+              </Form.Item>
+            </Col>
+          </Row>
 
-          <Form.Item
-            label="Last Name"
-            name="lastName"
-            rules={[{ required: true, message: 'Please enter your last name' }]}
-          >
-            <Input size="large" placeholder="Enter last name" />
-          </Form.Item>
-
-          <Form.Item
-            label="Username"
-            name="username"
-            rules={[{ required: true, message: 'Please enter your username' }]}
-          >
-            <Input size="large" placeholder="Enter username" />
-          </Form.Item>
-
-          <Form.Item
-            label="Email"
-            name="email"
-            rules={[
-              { required: true, message: 'Please enter your email' },
-              { type: 'email', message: 'Please enter a valid email' },
-            ]}
-          >
-            <Input size="large" placeholder="Enter email" />
-          </Form.Item>
+          <Row gutter={16}>
+            <Col xs={24} sm={12}>
+              <Form.Item
+                label="Username"
+                name="username"
+                rules={[{ required: true, message: 'Please enter your username' }]}
+              >
+                <Input size="large" placeholder="Enter username" />
+              </Form.Item>
+            </Col>
+            <Col xs={24} sm={12}>
+              <Form.Item
+                label="Email"
+                name="email"
+                rules={[
+                  { required: true, message: 'Please enter your email' },
+                  { type: 'email', message: 'Please enter a valid email' },
+                ]}
+              >
+                <Input size="large" placeholder="Enter email" />
+              </Form.Item>
+            </Col>
+          </Row>
 
           <Form.Item>
             <Button

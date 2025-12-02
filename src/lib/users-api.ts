@@ -45,12 +45,18 @@ export async function fetchUserProfile(): Promise<UserProfile> {
  * Update user profile
  */
 export async function updateUserProfile(data: UpdateProfileRequest): Promise<UserProfile> {
-  const response = await apiPut<{ data: UserProfile }>('/users/profile', data);
-  return response.data.data;
+  const response = await apiPut<{ data: { message: string; user: UserProfile } }>('/users/profile', data);
+  // Backend returns: { data: { message: "...", user: {...} } }
+  const responseData = response.data.data;
+  if (responseData && typeof responseData === 'object' && 'user' in responseData) {
+    return responseData.user;
+  }
+  // Fallback for direct data structure
+  return responseData as any as UserProfile;
 }
 
 /**
- * Upload user avatar
+ * Upload user avatar (similar to document cover upload)
  */
 export async function uploadUserAvatar(file: File): Promise<string> {
   const presignedResponse = await apiPost<{ data: { uploadUrl: string; avatarUrl: string } }>(
@@ -61,8 +67,18 @@ export async function uploadUserAvatar(file: File): Promise<string> {
     }
   );
 
-  const { uploadUrl, avatarUrl } = presignedResponse.data.data;
+  // Handle nested response structure from backend
+  let presignedData;
+  const responseData = presignedResponse.data as any;
+  if (responseData.data) {
+    presignedData = responseData.data;
+  } else {
+    presignedData = responseData;
+  }
 
+  const { uploadUrl, avatarUrl } = presignedData;
+
+  // Upload to S3 using presigned URL
   await fetch(uploadUrl, {
     method: 'PUT',
     body: file,
@@ -71,6 +87,7 @@ export async function uploadUserAvatar(file: File): Promise<string> {
     },
   });
 
+  // Link uploaded avatar to user profile
   await apiPost<{ data: UserProfile }>('/users/avatar', { avatarUrl });
 
   return avatarUrl;
