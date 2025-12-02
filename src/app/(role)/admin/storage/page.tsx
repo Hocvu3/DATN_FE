@@ -182,7 +182,6 @@ const AdminStoragePage = () => {
 
   const handleStorageOk = () => {
     form.validateFields().then((values) => {
-      console.log("Storage form values:", values);
       form.resetFields();
       setIsStorageModalVisible(false);
     });

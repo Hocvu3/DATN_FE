@@ -25,7 +25,6 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     // You can log the error to an error reporting service
-    console.error("React Error Boundary caught an error:", error, errorInfo);
     
     // Log to server or analytics
     if (typeof window !== 'undefined') {
@@ -42,7 +41,6 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
         });
         window.dispatchEvent(event);
       } catch (e) {
-        console.error("Failed to dispatch error event:", e);
       }
     }
   }
@@ -92,7 +90,6 @@ export default function ErrorBoundaryWrapper({ children }: ErrorBoundaryProps) {
   useEffect(() => {
     // Listen for unhandled promise rejections
     const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
-      console.error('Unhandled promise rejection:', event.reason);
       
       // Show a toast or notification
       if (typeof window !== 'undefined') {
@@ -106,7 +103,6 @@ export default function ErrorBoundaryWrapper({ children }: ErrorBoundaryProps) {
           });
           window.dispatchEvent(notificationEvent);
         } catch (e) {
-          console.error("Failed to dispatch notification:", e);
         }
       }
     };

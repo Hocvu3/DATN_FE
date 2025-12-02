@@ -315,26 +315,17 @@ export function getDocumentCoverUrl(coverAsset?: { s3Url: string } | null): stri
  */
 export async function uploadDocumentCover(documentId: string, file: File): Promise<string> {
     try {
-        console.log('Starting cover upload for document:', documentId, 'file:', file.name);
-
-        // Step 0: Setup CORS policy if needed (one-time setup)
         try {
             await DocumentsApi.setupS3Cors();
-            console.log('S3 CORS setup successful');
         } catch (corsError) {
-            console.warn('CORS setup failed (might already be configured):', corsError);
             // Continue anyway - CORS might already be configured
         }
 
-        // Step 1: Generate presigned URL
-        console.log('Generating presigned URL...');
         const presignedResponse = await DocumentsApi.generateCoverPresignedUrl(
             documentId,
             file.name,
             file.type
         );
-
-        console.log('Full presigned response:', presignedResponse);
 
         // Handle nested response structure from backend
         let presignedData;
@@ -347,10 +338,6 @@ export async function uploadDocumentCover(documentId: string, file: File): Promi
             presignedData = responseData;
         }
 
-        console.log('Presigned data:', presignedData);
-
-        // Step 2: Upload file to S3 using presigned URL (normal CORS mode)
-        console.log('Uploading to S3...');
         const uploadResponse = await fetch(presignedData.presignedUrl, {
             method: 'PUT',
             body: file,
@@ -358,9 +345,6 @@ export async function uploadDocumentCover(documentId: string, file: File): Promi
                 'Content-Type': file.type,
             },
         });
-
-        console.log('S3 upload response status:', uploadResponse.status);
-        console.log('S3 upload response headers:', uploadResponse.headers);
 
         if (!uploadResponse.ok) {
             throw new Error(`Failed to upload file to S3: ${uploadResponse.status} ${uploadResponse.statusText}`);
@@ -374,22 +358,14 @@ export async function uploadDocumentCover(documentId: string, file: File): Promi
             sizeBytes: file.size
         };
 
-        console.log('Linking to document with payload:', linkPayload);
-
         const linkResponse = await DocumentsApi.linkCoverImage(documentId, linkPayload);
-        console.log('Link response:', linkResponse);
-        console.log('Link response status:', linkResponse.status);
-        console.log('Link response data:', linkResponse.data);
 
-        // Check if link was successful - be more lenient with status codes
         if (linkResponse.status >= 200 && linkResponse.status < 300) {
-            console.log('Cover upload completed successfully');
             return presignedData.publicUrl;
         } else {
             throw new Error(`Failed to link cover image to document. Status: ${linkResponse.status}`);
         }
     } catch (error) {
-        console.error('Error uploading cover image:', error);
 
         // Provide more specific error messages
         if (error instanceof Error) {
@@ -411,26 +387,17 @@ export async function uploadDocumentCover(documentId: string, file: File): Promi
  */
 export async function uploadDocumentFile(documentId: string, file: File): Promise<string> {
     try {
-        console.log('Starting document file upload for document:', documentId, 'file:', file.name);
-
-        // Step 0: Setup CORS policy if needed (one-time setup)
         try {
             await DocumentsApi.setupS3Cors();
-            console.log('S3 CORS setup successful');
         } catch (corsError) {
-            console.warn('CORS setup failed (might already be configured):', corsError);
             // Continue anyway - CORS might already be configured
         }
 
-        // Step 1: Generate presigned URL
-        console.log('Generating presigned URL...');
         const presignedResponse = await DocumentsApi.generateDocumentPresignedUrl(
             documentId,
             file.name,
             file.type
         );
-
-        console.log('Full presigned response:', presignedResponse);
 
         // Handle nested response structure from backend
         let presignedData;
@@ -441,10 +408,6 @@ export async function uploadDocumentFile(documentId: string, file: File): Promis
             presignedData = responseData;
         }
 
-        console.log('Presigned data:', presignedData);
-
-        // Step 2: Upload file to S3 using presigned URL
-        console.log('Uploading to S3...');
         const uploadResponse = await fetch(presignedData.presignedUrl, {
             method: 'PUT',
             body: file,
@@ -452,8 +415,6 @@ export async function uploadDocumentFile(documentId: string, file: File): Promis
                 'Content-Type': file.type,
             },
         });
-
-        console.log('S3 upload response status:', uploadResponse.status);
 
         if (!uploadResponse.ok) {
             throw new Error(`Failed to upload file to S3: ${uploadResponse.status} ${uploadResponse.statusText}`);
@@ -467,20 +428,14 @@ export async function uploadDocumentFile(documentId: string, file: File): Promis
             sizeBytes: file.size
         };
 
-        console.log('Linking document file with payload:', linkPayload);
-
         const linkResponse = await DocumentsApi.linkDocumentFile(documentId, linkPayload);
-        console.log('Link response:', linkResponse);
 
-        // Check if link was successful
         if (linkResponse.status >= 200 && linkResponse.status < 300) {
-            console.log('Document file upload completed successfully');
             return presignedData.publicUrl;
         } else {
             throw new Error(`Failed to link document file. Status: ${linkResponse.status}`);
         }
     } catch (error) {
-        console.error('Error uploading document file:', error);
 
         // Provide more specific error messages
         if (error instanceof Error) {

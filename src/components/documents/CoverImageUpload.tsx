@@ -67,7 +67,6 @@ const CoverImageUpload: React.FC<CoverImageUploadProps> = ({
       onSuccess?.("ok");
       message.success("Cover image uploaded successfully!");
     } catch (error) {
-      console.error("Upload error:", error);
       message.error("Failed to upload image");
       onError?.(error as Error);
     } finally {

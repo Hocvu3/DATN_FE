@@ -516,7 +516,6 @@ export default function DepartmentDocumentsPage() {
           setLoading(false);
         }, 600); // Simulate network delay
       } catch (error) {
-        console.error("Error fetching documents:", error);
         message.error("Failed to load documents");
         setLoading(false);
       }
@@ -575,7 +574,6 @@ export default function DepartmentDocumentsPage() {
         ...prev,
       ]);
     } catch (error) {
-      console.error("Error uploading document:", error);
       message.error("Failed to upload document");
     }
   };
@@ -590,7 +588,6 @@ export default function DepartmentDocumentsPage() {
       setDocuments((prev) => prev.filter((doc) => doc.id !== id));
       message.success("Document deleted successfully!");
     } catch (error) {
-      console.error("Error deleting document:", error);
       message.error("Failed to delete document");
     } finally {
       setConfirmDelete(null);
@@ -605,7 +602,6 @@ export default function DepartmentDocumentsPage() {
 
   // Handle save edit
   const handleSaveEdit = async (values: any) => {
-    console.log("Saving document edit:", values);
     try {
       // In production, call API
       // await DocumentsApi.updateDocument(values.id, values);
@@ -626,7 +622,6 @@ export default function DepartmentDocumentsPage() {
       setShowEditModal(false);
       setEditingDocument(null);
     } catch (error) {
-      console.error("Error updating document:", error);
       message.error("Failed to update document");
     }
   };
@@ -979,7 +974,6 @@ export default function DepartmentDocumentsPage() {
           onViewModeChange={setViewMode}
           onEdit={(document) => {
             // Handle edit - could open edit modal
-            console.log("Edit document:", document);
           }}
           onDelete={(id) => setConfirmDelete(id)}
           baseUrl="/department/documents"

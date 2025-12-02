@@ -115,7 +115,6 @@ const UploadDocumentModal: React.FC<UploadDocumentModalProps> = ({
       setUploadProgress(0);
       
     } catch (error) {
-      console.error("Upload failed:", error);
       message.error("Failed to upload document");
     } finally {
       setLoading(false);

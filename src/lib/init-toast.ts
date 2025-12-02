@@ -1,4 +1,3 @@
-console.log('Initializing global toast module...');
 
 const initToast = () => {
     try {
@@ -11,13 +10,10 @@ const initToast = () => {
                     duration: 3,
                     maxCount: 3,
                 });
-                console.log('Toast system (Ant Design message) configured successfully.');
             }
         }).catch(err => {
-            console.error('Failed to import antd:', err);
         });
     } catch (e) {
-        console.error('Failed to initialize Toast:', e);
     }
 };
 

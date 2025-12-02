@@ -57,7 +57,6 @@ export default function ContactPage() {
     setSubmitting(true);
     try {
       // In a real app, this would be an API call
-      console.log("Form values:", values);
 
       // Simulate API call
       await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -67,7 +66,6 @@ export default function ContactPage() {
       );
       form.resetFields();
     } catch (error) {
-      console.error("Error submitting form:", error);
       message.error(
         "There was an error sending your message. Please try again."
       );

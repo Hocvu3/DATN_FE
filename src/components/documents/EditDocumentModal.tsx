@@ -75,7 +75,6 @@ const EditDocumentModal: React.FC<EditDocumentModalProps> = ({
             setDepartments(data.data.departments);
           }
         } catch (error) {
-          console.error('Failed to fetch departments:', error);
           message.error('Failed to load departments');
         } finally {
           setLoadingDepartments(false);
@@ -92,7 +91,6 @@ const EditDocumentModal: React.FC<EditDocumentModalProps> = ({
             setTags(data.data.tags);
           }
         } catch (error) {
-          console.error('Failed to fetch tags:', error);
           message.error('Failed to load tags');
         } finally {
           setLoadingTags(false);
@@ -110,7 +108,6 @@ const EditDocumentModal: React.FC<EditDocumentModalProps> = ({
             setDocumentAssets(documentFiles);
           }
         } catch (error) {
-          console.error('Failed to fetch document assets:', error);
           // Don't show error message as it's not critical
         }
       }
@@ -124,7 +121,6 @@ const EditDocumentModal: React.FC<EditDocumentModalProps> = ({
   // Initialize form with document data when modal opens
   useEffect(() => {
     if (open && document) {
-      console.log("Setting form values for document:", document);
       setCurrentCover(document.cover?.s3Url || null);
       form.setFieldsValue({
         title: document.title,
@@ -168,7 +164,6 @@ const EditDocumentModal: React.FC<EditDocumentModalProps> = ({
       message.success('Cover image updated successfully');
       onCoverUpdate?.(newCoverUrl);
     } catch (error) {
-      console.error('Error uploading cover:', error);
       message.error('Failed to upload cover image');
     } finally {
       setUploadingCover(false);
@@ -180,7 +175,6 @@ const EditDocumentModal: React.FC<EditDocumentModalProps> = ({
   };
 
   const handleSave = async (values: any) => {
-    console.log("Modal handleSave called with values:", values);
     try {
       setLoading(true);
       
@@ -201,7 +195,6 @@ const EditDocumentModal: React.FC<EditDocumentModalProps> = ({
       await onSave(updateData);
       form.resetFields();
     } catch (error) {
-      console.error("Error updating document:", error);
       message.error("Failed to update document");
     } finally {
       setLoading(false);
@@ -250,10 +243,8 @@ const EditDocumentModal: React.FC<EditDocumentModalProps> = ({
           setDocumentAssets(documentFiles);
         }
       } catch (assetError) {
-        console.error('Failed to refresh assets:', assetError);
       }
     } catch (error) {
-      console.error('Error uploading document file:', error);
       message.error('Failed to upload document file');
     } finally {
       setUploadingFile(false);
@@ -294,7 +285,6 @@ const EditDocumentModal: React.FC<EditDocumentModalProps> = ({
       
       message.success('File downloaded successfully');
     } catch (error) {
-      console.error('Error downloading file:', error);
       message.error('Failed to download file');
     }
   };
@@ -309,12 +299,10 @@ const EditDocumentModal: React.FC<EditDocumentModalProps> = ({
       const viewUrl = DocumentsApi.getFileViewUrl(keyPath);
       window.open(viewUrl, '_blank');
     } catch (error) {
-      console.error('Error viewing file:', error);
       message.error('Failed to view file');
     }
   };
 
-  console.log("EditDocumentModal render - open:", open, "document:", document?.title);
 
   return (
     <Modal

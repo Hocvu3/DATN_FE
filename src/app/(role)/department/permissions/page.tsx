@@ -178,7 +178,6 @@ const DepartmentPermissionsPage = () => {
 
   const handleOk = () => {
     form.validateFields().then((values) => {
-      console.log("Form values:", values);
       // Here we would handle saving the role data
       form.resetFields();
       setIsModalVisible(false);
@@ -272,7 +271,6 @@ const DepartmentPermissionsPage = () => {
                     okType: "danger",
                     cancelText: "Cancel",
                     onOk() {
-                      console.log("Delete role");
                     },
                   })
                 }

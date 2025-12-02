@@ -26,7 +26,6 @@ export default function NotificationHandler() {
             Toast.info(message, duration);
             break;
           default:
-            console.warn(`Unknown notification type: ${type}`);
         }
       }
     };
@@ -35,7 +34,6 @@ export default function NotificationHandler() {
     window.addEventListener('showNotification', handleNotification as EventListener);
     
     // Log initialization
-    console.log('Global notification handler initialized');
 
     // Demo notification after 2 seconds if in development mode
     if (process.env.NODE_ENV === 'development') {

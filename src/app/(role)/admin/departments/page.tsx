@@ -151,14 +151,12 @@ const DepartmentsPage = () => {
   };
 
   const handleAddMembers = (memberIds: string[]) => {
-    console.log("Adding members:", memberIds, "to department:", selectedDepartment?.id);
     setShowAddMemberModal(false);
     setSelectedDepartment(null);
     message.success(`${memberIds.length} members added to department!`);
   };
 
   const handleAddDocuments = (documentIds: string[]) => {
-    console.log("Adding documents:", documentIds, "to department:", selectedDepartment?.id);
     setShowAddDocumentModal(false);
     setSelectedDepartment(null);
     message.success(`${documentIds.length} documents added to department!`);

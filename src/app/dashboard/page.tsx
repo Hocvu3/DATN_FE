@@ -22,7 +22,6 @@ export default function DashboardRedirectPage() {
         router.replace('/login');
       }
     } catch (error) {
-      console.error('Error redirecting from dashboard:', error);
       router.replace('/login');
     }
   }, [router]);

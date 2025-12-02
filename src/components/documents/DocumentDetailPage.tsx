@@ -154,21 +154,16 @@ const DocumentDetailPage: React.FC<DocumentDetailPageProps> = ({
     const fetchDocumentAssets = async () => {
       if (document?.id) {
         try {
-          console.log('Fetching assets for document:', document.id);
           const response = await DocumentsApi.getDocumentAssets(document.id);
-          console.log('Raw API response:', response);
           
           if (response.data && response.data.assets) {
             // Filter out cover images to show only document files
             const documentFiles = response.data.assets.filter((asset: any) => !asset.isCover);
-            console.log('Filtered document files:', documentFiles);
             setDocumentAssets(documentFiles);
           } else {
-            console.log('No assets found in response:', response.data);
             setDocumentAssets([]);
           }
         } catch (error) {
-          console.error('Failed to fetch document assets:', error);
           setDocumentAssets([]);
         }
       }
@@ -237,7 +232,6 @@ const DocumentDetailPage: React.FC<DocumentDetailPageProps> = ({
       message.success('Cover image updated successfully');
       onCoverUpdate?.(newCoverUrl);
     } catch (error) {
-      console.error('Error uploading cover:', error);
       message.error('Failed to upload cover image');
     } finally {
       setUploadingCover(false);
@@ -251,7 +245,6 @@ const DocumentDetailPage: React.FC<DocumentDetailPageProps> = ({
   // Handle file download
   const handleDownload = async () => {
     try {
-      console.log('Download handler called, documentAssets:', documentAssets);
       
       if (!documentAssets || documentAssets.length === 0) {
         message.warning('No document files available for download');
@@ -260,7 +253,6 @@ const DocumentDetailPage: React.FC<DocumentDetailPageProps> = ({
 
       // Get the first document file (URL đầu tiên)
       const firstAsset = documentAssets[0];
-      console.log('Using first asset for download:', firstAsset);
       
       if (!firstAsset.s3Url) {
         message.error('Asset does not have a valid S3 URL');
@@ -271,10 +263,8 @@ const DocumentDetailPage: React.FC<DocumentDetailPageProps> = ({
       // Example: https://bucket.s3.amazonaws.com/documents/2024/file.pdf -> documents/2024/file.pdf
       const url = new URL(firstAsset.s3Url);
       const keyPath = url.pathname.substring(1); // Remove leading slash
-      console.log('Extracted keyPath for download:', keyPath);
       
       const blob = await DocumentsApi.downloadFile(keyPath);
-      console.log('Download successful, blob size:', blob.size);
       
       // Create download link
       const downloadUrl = window.URL.createObjectURL(blob);
@@ -288,7 +278,6 @@ const DocumentDetailPage: React.FC<DocumentDetailPageProps> = ({
       
       message.success('File downloaded successfully');
     } catch (error) {
-      console.error('Error downloading file:', error);
       message.error('Failed to download file: ' + (error instanceof Error ? error.message : 'Unknown error'));
     }
   };
@@ -296,7 +285,6 @@ const DocumentDetailPage: React.FC<DocumentDetailPageProps> = ({
   // Handle file view
   const handleView = () => {
     try {
-      console.log('View handler called, documentAssets:', documentAssets);
       
       if (!documentAssets || documentAssets.length === 0) {
         message.warning('No document files available for viewing');
@@ -305,7 +293,6 @@ const DocumentDetailPage: React.FC<DocumentDetailPageProps> = ({
 
       // Get the first document file (URL đầu tiên)  
       const firstAsset = documentAssets[0];
-      console.log('Using first asset for view:', firstAsset);
       
       if (!firstAsset.s3Url) {
         message.error('Asset does not have a valid S3 URL');
@@ -315,13 +302,10 @@ const DocumentDetailPage: React.FC<DocumentDetailPageProps> = ({
       // Extract keyPath from S3 URL
       const url = new URL(firstAsset.s3Url);
       const keyPath = url.pathname.substring(1); // Remove leading slash
-      console.log('Extracted keyPath for view:', keyPath);
       
       const viewUrl = DocumentsApi.getFileViewUrl(keyPath);
-      console.log('Opening view URL:', viewUrl);
       window.open(viewUrl, '_blank');
     } catch (error) {
-      console.error('Error viewing file:', error);
       message.error('Failed to view file: ' + (error instanceof Error ? error.message : 'Unknown error'));
     }
   };
@@ -329,7 +313,6 @@ const DocumentDetailPage: React.FC<DocumentDetailPageProps> = ({
   // Handle individual asset view
   const handleViewAsset = (asset: any) => {
     try {
-      console.log('Viewing asset:', asset);
       
       if (!asset.s3Url) {
         message.error('Asset does not have a valid S3 URL');
@@ -339,13 +322,10 @@ const DocumentDetailPage: React.FC<DocumentDetailPageProps> = ({
       // Extract keyPath from S3 URL
       const url = new URL(asset.s3Url);
       const keyPath = url.pathname.substring(1); // Remove leading slash
-      console.log('Extracted keyPath for view:', keyPath);
       
       const viewUrl = DocumentsApi.getFileViewUrl(keyPath);
-      console.log('Opening view URL:', viewUrl);
       window.open(viewUrl, '_blank');
     } catch (error) {
-      console.error('Error viewing asset:', error);
       message.error('Failed to view file: ' + (error instanceof Error ? error.message : 'Unknown error'));
     }
   };
@@ -353,7 +333,6 @@ const DocumentDetailPage: React.FC<DocumentDetailPageProps> = ({
   // Handle individual asset download
   const handleDownloadAsset = async (asset: any) => {
     try {
-      console.log('Downloading asset:', asset);
       
       if (!asset.s3Url) {
         message.error('Asset does not have a valid S3 URL');
@@ -363,10 +342,8 @@ const DocumentDetailPage: React.FC<DocumentDetailPageProps> = ({
       // Extract keyPath from S3 URL
       const url = new URL(asset.s3Url);
       const keyPath = url.pathname.substring(1); // Remove leading slash
-      console.log('Extracted keyPath for download:', keyPath);
       
       const blob = await DocumentsApi.downloadFile(keyPath);
-      console.log('Download successful, blob size:', blob.size);
       
       // Create download link
       const downloadUrl = window.URL.createObjectURL(blob);
@@ -380,7 +357,6 @@ const DocumentDetailPage: React.FC<DocumentDetailPageProps> = ({
       
       message.success('File downloaded successfully');
     } catch (error) {
-      console.error('Error downloading asset:', error);
       message.error('Failed to download file: ' + (error instanceof Error ? error.message : 'Unknown error'));
     }
   };
@@ -395,9 +371,7 @@ const DocumentDetailPage: React.FC<DocumentDetailPageProps> = ({
       cancelText: 'Cancel',
       onOk: async () => {
         try {
-          console.log('Deleting asset:', asset.id);
           const response = await DocumentsApi.deleteDocumentAsset(document.id, asset.id);
-          console.log('Delete response:', response);
           
           if (response.status >= 200 && response.status < 300) {
             message.success('File deleted successfully');
@@ -411,7 +385,6 @@ const DocumentDetailPage: React.FC<DocumentDetailPageProps> = ({
             message.error('Failed to delete file');
           }
         } catch (error) {
-          console.error('Error deleting asset:', error);
           message.error('Failed to delete file: ' + (error instanceof Error ? error.message : 'Unknown error'));
         }
       },
@@ -576,8 +549,6 @@ const DocumentDetailPage: React.FC<DocumentDetailPageProps> = ({
                       type="primary" 
                       icon={<EditOutlined />} 
                       onClick={() => {
-                        console.log("Edit button clicked, document:", document);
-                        console.log("onEdit function:", onEdit);
                         onEdit?.();
                       }}
                       className="bg-orange-500 border-orange-500 hover:bg-orange-600"

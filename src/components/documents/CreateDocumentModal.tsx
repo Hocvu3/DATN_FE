@@ -67,7 +67,6 @@ export default function CreateDocumentModal({
             setDepartments(data.data.departments);
           }
         } catch (error) {
-          console.error('Failed to fetch departments:', error);
           message.error('Failed to load departments');
         } finally {
           setLoadingDepartments(false);
@@ -84,7 +83,6 @@ export default function CreateDocumentModal({
             setTags(data.data.tags);
           }
         } catch (error) {
-          console.error('Failed to fetch tags:', error);
           message.error('Failed to load tags');
         } finally {
           setLoadingTags(false);
@@ -108,7 +106,6 @@ export default function CreateDocumentModal({
   const handleSubmit = async (values: any) => {
     try {
       setLoading(true);
-      console.log('Creating document with values:', values);
       
       // Step 1: Create the document
       const { data } = await DocumentsApi.createDocument(values);
@@ -121,9 +118,7 @@ export default function CreateDocumentModal({
         if (tempCoverFile) {
           try {
             await uploadDocumentCover(documentId, tempCoverFile);
-            console.log('Cover uploaded successfully');
           } catch (coverError) {
-            console.error('Failed to upload cover:', coverError);
             message.warning('Document created but cover upload failed');
           }
         }
@@ -134,9 +129,7 @@ export default function CreateDocumentModal({
           if (tempFile) {
             try {
               await uploadDocumentFile(documentId, tempFile);
-              console.log('File uploaded successfully:', asset.filename);
             } catch (fileError) {
-              console.error('Failed to upload file:', fileError);
               message.warning(`Document created but file "${asset.filename}" upload failed`);
             }
           }
@@ -149,7 +142,6 @@ export default function CreateDocumentModal({
         message.error('Failed to create document');
       }
     } catch (error) {
-      console.error('Error creating document:', error);
       message.error('Error creating document');
     } finally {
       setLoading(false);
@@ -183,7 +175,6 @@ export default function CreateDocumentModal({
       
       message.success('Cover image selected');
     } catch (error) {
-      console.error('Error selecting cover:', error);
       message.error('Failed to select cover image');
     } finally {
       setUploadingCover(false);
@@ -217,7 +208,6 @@ export default function CreateDocumentModal({
       setDocumentAssets(prev => [...prev, newAsset]);
       message.success('Document file selected');
     } catch (error) {
-      console.error('Error selecting document file:', error);
       message.error('Failed to select document file');
     } finally {
       setUploadingFile(false);

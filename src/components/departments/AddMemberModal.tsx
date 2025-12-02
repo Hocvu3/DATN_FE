@@ -196,7 +196,6 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({
       setSelectedUserIds([]);
       setSearchTerm("");
     } catch (error) {
-      console.error("Error adding members:", error);
       message.error("Failed to add members");
     } finally {
       setLoading(false);

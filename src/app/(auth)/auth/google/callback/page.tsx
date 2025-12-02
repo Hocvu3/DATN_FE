@@ -43,14 +43,6 @@ function GoogleCallbackContent() {
           throw new Error('Invalid user data structure');
         }
 
-        console.log('Google OAuth callback data:', {
-          hasAccessToken: !!accessToken,
-          hasRefreshToken: !!refreshToken,
-          userEmail: user.email,
-          userRole: user.role
-        });
-
-        // Store authentication data directly (bypass login function redirect)
         if (typeof window !== 'undefined') {
           localStorage.setItem('docuflow_access_token', accessToken);
           if (refreshToken) {
@@ -83,7 +75,6 @@ function GoogleCallbackContent() {
         }, 1500);
 
       } catch (error) {
-        console.error('Google OAuth callback error:', error);
         setStatus('error');
         
         const errorMsg = error instanceof Error ? error.message : 'Google login failed';

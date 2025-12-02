@@ -8,7 +8,6 @@ export default function ToastInitializer() {
   // Function to show a direct message without Toast wrapper
   const showDirectMessage = (content: string, type: 'success' | 'error' | 'info') => {
     if (typeof window !== 'undefined') {
-      console.log(`Showing direct ${type} message: ${content}`);
       
       // Temporarily suppress console.warn for antd compatibility warnings
       const originalWarn = console.warn;
@@ -55,7 +54,6 @@ export default function ToastInitializer() {
         maxCount: 3,
       });
       
-      console.log('Toast and message systems initialized');
       
       // Test direct message in development mode only
       if (process.env.NODE_ENV === 'development') {
@@ -76,7 +74,6 @@ export default function ToastInitializer() {
         showDirectMessage(message, 'error');
       }) as EventListener);
     } catch (e) {
-      console.error('Error initializing toast:', e);
     }
   }, []);
   

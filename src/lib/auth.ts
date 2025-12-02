@@ -55,7 +55,6 @@ export function getUserData(): User | null {
   try {
     return JSON.parse(userData) as User;
   } catch (e) {
-    console.error('Failed to parse user data:', e);
     return null;
   }
 }

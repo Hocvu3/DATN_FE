@@ -28,7 +28,6 @@ export default function NotificationSystem() {
             api.warning({ message, description, placement: 'topRight' });
             break;
           default:
-            console.warn(`Unknown notification type: ${type}`);
         }
       };
 
@@ -47,9 +46,7 @@ export default function NotificationSystem() {
         else if (type === 'info') Toast.info(message, duration);
         else if (type === 'warning') Toast.warning(message, duration);
         
-        console.log("Displayed via Toast:", message);
       } catch (e) {
-        console.error("Toast failed, falling back to direct notification:", e);
         
         // Fallback to direct notification
         try {
@@ -83,10 +80,8 @@ export default function NotificationSystem() {
               });
               break;
             default:
-              console.warn(`Unknown notification type: ${type}`);
           }
         } catch (err) {
-          console.error("Both notification systems failed:", err);
         }
       }
     };
@@ -132,7 +127,6 @@ export const GlobalNotification = {
         });
         window.dispatchEvent(event);
       } catch (e) {
-        console.error("All notification systems failed:", e);
         alert(`${type.toUpperCase()}: ${message}\n${description}`);
       }
     }

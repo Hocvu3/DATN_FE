@@ -127,12 +127,10 @@ const EmployeeDocumentDetail: React.FC = () => {
   useEffect(() => {
     // Simulate API call
     const fetchDocument = () => {
-      console.log("Employee - Fetching document with ID:", params.id);
       setLoading(true);
       
       // Find document by ID
       const foundDocument = mockDocuments.find(doc => doc.id === params.id);
-      console.log("Employee - Found document:", foundDocument);
       
       setTimeout(() => {
         setDocument(foundDocument || null);
@@ -146,14 +144,12 @@ const EmployeeDocumentDetail: React.FC = () => {
   }, [params]);
 
   const handleEdit = () => {
-    console.log("Employee edit clicked, document:", document);
     if (document) {
       setEditModalVisible(true);
     }
   };
 
   const handleEditSave = async (values: any) => {
-    console.log("Employee edit document:", values);
     // Simulate API call
     return new Promise<void>((resolve) => {
       setTimeout(() => {
@@ -170,17 +166,14 @@ const EmployeeDocumentDetail: React.FC = () => {
   };
 
   const handleDelete = () => {
-    console.log("Employee delete document:", params.id);
     // Delete logic would be implemented here
   };
 
   const handleDownload = () => {
-    console.log("Employee download document:", params.id);
     message.info("Download started...");
   };
 
   const handleShare = () => {
-    console.log("Employee share document:", params.id);
     message.info("Share dialog would open here");
   };
 
@@ -199,7 +192,6 @@ const EmployeeDocumentDetail: React.FC = () => {
       <EditDocumentModal
         open={editModalVisible}
         onCancel={() => {
-          console.log("Employee modal cancel clicked");
           setEditModalVisible(false);
         }}
         onSave={handleEditSave}

@@ -314,7 +314,6 @@ const AddDocumentModal: React.FC<AddDocumentModalProps> = ({
       setSelectedDocumentIds([]);
       setSearchTerm("");
     } catch (error) {
-      console.error("Error adding documents:", error);
       message.error("Failed to add documents");
     } finally {
       setLoading(false);

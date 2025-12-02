@@ -57,7 +57,6 @@ export default function EmployeeDashboardPage() {
   };
 
   const handleUploadSubmit = (values: any) => {
-    console.log("Document uploaded:", values);
     setIsUploadModalVisible(false);
   };
 

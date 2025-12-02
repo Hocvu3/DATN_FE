@@ -134,7 +134,7 @@ export default function RegisterPage() {
               size="large"
               icon={<GoogleOutlined />}
               className="mb-6"
-              onClick={() => console.log("Google Sign up clicked")}
+              onClick={() => {}}
             >
               Sign up with Google
             </Button>

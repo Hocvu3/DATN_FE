@@ -93,7 +93,6 @@ function ResetPasswordContent() {
       // });
 
       // For development - simulate using the password
-      console.log('Resetting password:', values.password);
       await new Promise((resolve) => setTimeout(resolve, 1500));
       setResetComplete(true);
     } catch {

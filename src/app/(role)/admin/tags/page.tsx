@@ -90,7 +90,6 @@ const TagsPage = () => {
 
   const handleOk = () => {
     form.validateFields().then((values) => {
-      console.log("Form values:", { ...values, color: values.tagColor });
       // Here we would handle saving the tag data
       form.resetFields();
       setIsModalVisible(false);
@@ -158,7 +157,6 @@ const TagsPage = () => {
                   okType: "danger",
                   cancelText: "No",
                   onOk() {
-                    console.log("OK");
                     // Here we would handle the deletion
                   },
                 })

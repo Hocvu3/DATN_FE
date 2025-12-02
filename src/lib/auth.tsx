@@ -32,7 +32,6 @@ export function getCurrentUser(): any | null {
     try {
       return JSON.parse(userData);
     } catch (e) {
-      console.error("Error parsing user data:", e);
       return null;
     }
   }
@@ -108,7 +107,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           removeCookie("auth");
         }
       } catch (error) {
-        console.error("Auth check error:", error);
         setUser(null);
         removeCookie("auth");
       } finally {
@@ -156,7 +154,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         message.error("Invalid credentials");
       }
     } catch (error) {
-      console.error("Login error:", error);
       message.error("Login failed");
     } finally {
       setLoading(false);

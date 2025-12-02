@@ -47,26 +47,15 @@ export default function DocumentDetail({ documentId }: DocumentDetailProps) {
       if (data && data.data && data.data.document) {
         const documentData = data.data.document;
         setDocument(documentData);
-        console.log('Fetched document:', documentData);
         
         // Set assets directly from document response
         if (documentData.assets && documentData.assets.length > 0) {
-          console.log('Setting assets from document response:', documentData.assets);
-          console.log('Number of assets found:', documentData.assets.length);
-          console.log('Assets details:', documentData.assets.map(asset => ({
-            id: asset.id,
-            filename: asset.filename,
-            isCover: asset.isCover,
-            contentType: asset.contentType
-          })));
           setDocumentAssets(documentData.assets);
         } else {
-          console.log('No assets found in document response');
           setDocumentAssets([]);
         }
       }
     } catch (error) {
-      console.error('Failed to fetch document:', error);
     } finally {
       setLoading(false);
     }
@@ -97,7 +86,6 @@ export default function DocumentDetail({ documentId }: DocumentDetailProps) {
         message.error('Failed to update document');
       }
     } catch (error) {
-      console.error('Error updating document:', error);
       message.error('Error updating document');
     }
   };
@@ -105,7 +93,6 @@ export default function DocumentDetail({ documentId }: DocumentDetailProps) {
   // Handle file download
   const handleDownload = async () => {
     try {
-      console.log('Download handler called, documentAssets:', documentAssets);
       
       if (!documentAssets || documentAssets.length === 0) {
         message.warning('No document files available for download');
@@ -114,7 +101,6 @@ export default function DocumentDetail({ documentId }: DocumentDetailProps) {
 
       // Get the first document file (URL đầu tiên)
       const firstAsset = documentAssets[0];
-      console.log('Using first asset for download:', firstAsset);
       
       if (!firstAsset.s3Url) {
         message.error('Asset does not have a valid S3 URL');
@@ -124,10 +110,8 @@ export default function DocumentDetail({ documentId }: DocumentDetailProps) {
       // Extract keyPath from S3 URL - take the path after the bucket domain
       const url = new URL(firstAsset.s3Url);
       const keyPath = url.pathname.substring(1); // Remove leading slash
-      console.log('Extracted keyPath for download:', keyPath);
       
       const blob = await DocumentsApi.downloadFile(keyPath);
-      console.log('Download successful, blob size:', blob.size);
       
       // Create download link
       const downloadUrl = window.URL.createObjectURL(blob);
@@ -141,7 +125,6 @@ export default function DocumentDetail({ documentId }: DocumentDetailProps) {
       
       message.success('File downloaded successfully');
     } catch (error) {
-      console.error('Error downloading file:', error);
       message.error('Failed to download file: ' + (error instanceof Error ? error.message : 'Unknown error'));
     }
   };
@@ -149,7 +132,6 @@ export default function DocumentDetail({ documentId }: DocumentDetailProps) {
   // Handle file view
   const handleView = () => {
     try {
-      console.log('View handler called, documentAssets:', documentAssets);
       
       if (!documentAssets || documentAssets.length === 0) {
         message.warning('No document files available for viewing');
@@ -158,7 +140,6 @@ export default function DocumentDetail({ documentId }: DocumentDetailProps) {
 
       // Get the first document file (URL đầu tiên)  
       const firstAsset = documentAssets[0];
-      console.log('Using first asset for view:', firstAsset);
       
       if (!firstAsset.s3Url) {
         message.error('Asset does not have a valid S3 URL');
@@ -168,13 +149,10 @@ export default function DocumentDetail({ documentId }: DocumentDetailProps) {
       // Extract keyPath from S3 URL
       const url = new URL(firstAsset.s3Url);
       const keyPath = url.pathname.substring(1); // Remove leading slash
-      console.log('Extracted keyPath for view:', keyPath);
       
       const viewUrl = DocumentsApi.getFileViewUrl(keyPath);
-      console.log('Opening view URL:', viewUrl);
       window.open(viewUrl, '_blank');
     } catch (error) {
-      console.error('Error viewing file:', error);
       message.error('Failed to view file: ' + (error instanceof Error ? error.message : 'Unknown error'));
     }
   };
@@ -189,9 +167,7 @@ export default function DocumentDetail({ documentId }: DocumentDetailProps) {
       cancelText: 'Cancel',
       onOk: async () => {
         try {
-          console.log('Deleting asset:', assetId);
           const response = await DocumentsApi.deleteDocumentAsset(documentId, assetId);
-          console.log('Delete response:', response);
           
           if (response.status >= 200 && response.status < 300) {
             message.success('Asset deleted successfully');
@@ -201,7 +177,6 @@ export default function DocumentDetail({ documentId }: DocumentDetailProps) {
             message.error('Failed to delete asset');
           }
         } catch (error) {
-          console.error('Error deleting asset:', error);
           message.error('Failed to delete asset: ' + (error instanceof Error ? error.message : 'Unknown error'));
         }
       },
@@ -406,7 +381,6 @@ export default function DocumentDetail({ documentId }: DocumentDetailProps) {
                             const viewUrl = DocumentsApi.getFileViewUrl(keyPath);
                             window.open(viewUrl, '_blank');
                           } catch (error) {
-                            console.error('Error viewing asset:', error);
                             message.error('Failed to view file');
                           }
                         }}
@@ -434,7 +408,6 @@ export default function DocumentDetail({ documentId }: DocumentDetailProps) {
                             
                             message.success('File downloaded successfully');
                           } catch (error) {
-                            console.error('Error downloading asset:', error);
                             message.error('Failed to download file');
                           }
                         }}

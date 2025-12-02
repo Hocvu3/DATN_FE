@@ -24,7 +24,6 @@ function UnauthorizedAccessContent() {
       }
       
       message.error(errorMessage, 8);
-      console.warn(`Unauthorized access attempt to ${attempted || 'protected'} area`);
     }
   }, [unauthorized, attempted]);
   

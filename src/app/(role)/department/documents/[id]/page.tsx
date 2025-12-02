@@ -127,12 +127,10 @@ const DepartmentDocumentDetail: React.FC = () => {
   useEffect(() => {
     // Simulate API call
     const fetchDocument = () => {
-      console.log("Department - Fetching document with ID:", params.id);
       setLoading(true);
       
       // Find document by ID
       const foundDocument = mockDocuments.find(doc => doc.id === params.id);
-      console.log("Department - Found document:", foundDocument);
       
       setTimeout(() => {
         setDocument(foundDocument || null);
@@ -146,14 +144,12 @@ const DepartmentDocumentDetail: React.FC = () => {
   }, [params]);
 
   const handleEdit = () => {
-    console.log("Department edit clicked, document:", document);
     if (document) {
       setEditModalVisible(true);
     }
   };
 
   const handleEditSave = async (values: any) => {
-    console.log("Department edit document:", values);
     // Simulate API call
     return new Promise<void>((resolve) => {
       setTimeout(() => {
@@ -170,17 +166,14 @@ const DepartmentDocumentDetail: React.FC = () => {
   };
 
   const handleDelete = () => {
-    console.log("Department delete document:", params.id);
     // Delete logic would be implemented here
   };
 
   const handleDownload = () => {
-    console.log("Department download document:", params.id);
     message.info("Download started...");
   };
 
   const handleShare = () => {
-    console.log("Department share document:", params.id);
     message.info("Share dialog would open here");
   };
 
@@ -199,7 +192,6 @@ const DepartmentDocumentDetail: React.FC = () => {
       <EditDocumentModal
         open={editModalVisible}
         onCancel={() => {
-          console.log("Department modal cancel clicked");
           setEditModalVisible(false);
         }}
         onSave={handleEditSave}

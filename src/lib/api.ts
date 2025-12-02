@@ -36,11 +36,9 @@ async function refreshAccessToken(): Promise<boolean> {
   try {
     const refreshToken = getRefreshToken();
     if (!refreshToken) {
-      console.error('No refresh token available');
       return false;
     }
 
-    console.log('Attempting to refresh access token');
 
     // Make direct fetch request to refresh endpoint
     const response = await fetch(`${getBaseUrl()}/auth/refresh`, {
@@ -53,19 +51,16 @@ async function refreshAccessToken(): Promise<boolean> {
     });
 
     if (!response.ok) {
-      console.error('Failed to refresh token:', response.status, response.statusText);
       return false;
     }
 
     const data = await response.json();
     if (!data.accessToken) {
-      console.error('Invalid refresh response:', data);
       return false;
     }
 
     // Update tokens in storage
     saveAuthTokens(data.accessToken, data.refreshToken || refreshToken);
-    console.log('Token refresh successful');
 
     // Process the queue of waiting requests
     refreshQueue.forEach(callback => callback());
@@ -73,7 +68,6 @@ async function refreshAccessToken(): Promise<boolean> {
 
     return true;
   } catch (error) {
-    console.error('Error refreshing token:', error);
     return false;
   } finally {
     isRefreshingToken = false;
@@ -130,17 +124,14 @@ async function apiRequest<TResponse>(
 
     // Handle 401 Unauthorized with token refresh
     if (res.status === 401 && options?.requiresAuth !== false && path !== '/auth/refresh') {
-      console.log('Received 401 response, attempting token refresh');
 
       // Try to refresh the token
       const refreshSuccessful = await refreshAccessToken();
 
       if (refreshSuccessful) {
-        console.log('Token refresh successful, retrying original request');
         // Retry the original request with new token
         return apiRequest<TResponse>(method, path, body, options);
       } else {
-        console.error('Token refresh failed, redirecting to login');
         // Force redirect to login page
         if (typeof window !== 'undefined') {
           // Clear auth state before redirecting
@@ -166,16 +157,7 @@ async function apiRequest<TResponse>(
           // JSON parsing failed, continue with empty data
         }
 
-        // Log the error response for debugging
-        console.error('API error response:', {
-          status: res.status,
-          data: responseData,
-          url: path
-        });
-
-        // Extract error message with more detailed debugging
         const message = (responseData as any).message || res.statusText || "Request failed";
-        console.debug('Error message extracted:', message);
 
         // Create error with full details
         const error = new Error(message);
@@ -250,7 +232,6 @@ export const AuthApi = {
     if (process.env.NEXT_PUBLIC_MOCK_AUTH === "true" ||
       (payload.email === "admin@docuflow.com" && payload.password === "password")) {
 
-      console.log('Using mock login in API client');
       await new Promise((r) => setTimeout(r, 600));
 
       // Create a realistic looking JWT token
@@ -264,7 +245,6 @@ export const AuthApi = {
         role = "department";
       }
 
-      console.log(`Mock login with role: ${role}`);
 
       return {
         data: {
@@ -311,7 +291,6 @@ export const AuthApi = {
     }
 
     // If the structure is unexpected, log and return the original response
-    console.warn('Unexpected login response structure:', loginResponse);
     return loginResponse;
   },
 
@@ -327,7 +306,6 @@ export const AuthApi = {
     try {
       return await apiPost("/auth/logout", {});
     } catch (error) {
-      console.warn("Error calling logout endpoint:", error);
       // Return a fake successful response even if the API call fails
       return { data: { success: true }, status: 200 };
     }

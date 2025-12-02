@@ -109,7 +109,6 @@ const UsersPage = () => {
 
   const handleOk = () => {
     form.validateFields().then((values) => {
-      console.log("Form values:", values);
       // Here we would handle saving the user data
       form.resetFields();
       setIsModalVisible(false);
@@ -144,7 +143,6 @@ const UsersPage = () => {
       inviteForm.resetFields();
       setIsInviteModalVisible(false);
     } catch (error: any) {
-      console.error("Invite error:", error);
       if (error.response?.data?.message) {
         message.error(error.response.data.message);
       } else {
@@ -232,7 +230,6 @@ const UsersPage = () => {
                   okType: "danger",
                   cancelText: "No",
                   onOk() {
-                    console.log("OK");
                     // Here we would handle the deletion
                   },
                 })

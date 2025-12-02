@@ -37,12 +37,9 @@ const TestDocumentDetail: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    console.log("Params:", params);
-    console.log("Document ID:", params.id);
     
     // Find document by ID
     const foundDocument = mockDocuments.find(doc => doc.id === params.id);
-    console.log("Found document:", foundDocument);
     
     setTimeout(() => {
       setDocument(foundDocument || null);

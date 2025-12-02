@@ -129,7 +129,6 @@ export default function ProfileSettings() {
           setLoading(false);
         }, 500);
       } catch (error) {
-        console.error("Failed to load profile:", error);
         message.error("Failed to load profile. Please try again.");
         setLoading(false);
       }
@@ -161,7 +160,6 @@ export default function ProfileSettings() {
         message.success("Profile updated successfully!");
       }, 1000);
     } catch (error) {
-      console.error("Failed to update profile:", error);
       message.error("Failed to update profile. Please try again.");
       setLoading(false);
     }
@@ -181,7 +179,6 @@ export default function ProfileSettings() {
         message.success("Password changed successfully!");
       }, 1000);
     } catch (error) {
-      console.error("Failed to change password:", error);
       message.error("Failed to change password. Please try again.");
       setLoading(false);
     }
@@ -189,7 +186,6 @@ export default function ProfileSettings() {
 
   // Handle notification preference toggle
   const handleNotificationToggle = (key: string, enabled: boolean) => {
-    console.log(`Notification ${key} set to ${enabled}`);
     message.success(`Notification preference updated!`);
   };
 

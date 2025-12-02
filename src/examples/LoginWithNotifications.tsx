@@ -115,7 +115,6 @@ const LoginExample: React.FC = () => {
       );
     } catch (error: unknown) {
       // Errors will be handled automatically by ApiService
-      console.error("Password reset failed:", error);
     }
   };
 

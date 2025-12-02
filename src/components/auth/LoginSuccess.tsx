@@ -15,7 +15,6 @@ export default function LoginSuccess() {
       const successMsg = event.detail?.message || 'Login successful';
       const userData = event.detail?.userData;
       
-      console.log('LoginSuccess received:', successMsg, userData);
       setMessage(successMsg);
       setVisible(true);
       

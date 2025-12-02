@@ -377,7 +377,6 @@ export default function EmployeeDocumentsPage() {
           setLoading(false);
         }, 600);
       } catch (error) {
-        console.error("Error fetching documents:", error);
         message.error("Failed to load documents");
         setLoading(false);
       }
@@ -432,7 +431,6 @@ export default function EmployeeDocumentsPage() {
         ...prev,
       ]);
     } catch (error) {
-      console.error("Error uploading document:", error);
       message.error("Failed to upload document");
     }
   };
@@ -443,7 +441,6 @@ export default function EmployeeDocumentsPage() {
       setDocuments((prev) => prev.filter((doc) => doc.id !== id));
       message.success("Document deleted successfully!");
     } catch (error) {
-      console.error("Error deleting document:", error);
       message.error("Failed to delete document");
     } finally {
       setConfirmDelete(null);
@@ -458,7 +455,6 @@ export default function EmployeeDocumentsPage() {
 
   // Handle save edit
   const handleSaveEdit = async (values: any) => {
-    console.log("Saving document edit:", values);
     try {
       setDocuments((prev) =>
         prev.map((doc) =>
@@ -475,7 +471,6 @@ export default function EmployeeDocumentsPage() {
       setShowEditModal(false);
       setEditingDocument(null);
     } catch (error) {
-      console.error("Error updating document:", error);
       message.error("Failed to update document");
     }
   };

@@ -59,7 +59,6 @@ export default function DocumentsList() {
         total: data.data.total,
       });
     } catch (error) {
-      console.error('Failed to fetch documents:', error);
     } finally {
       setLoading(false);
     }
@@ -114,7 +113,6 @@ export default function DocumentsList() {
       setEditingDocument(null);
       fetchDocuments(); // Refresh the list
     } catch (error) {
-      console.error('Error updating document:', error);
       message.error('Failed to update document');
     }
   };
@@ -135,7 +133,6 @@ export default function DocumentsList() {
       setDocuments(prev => prev.filter(doc => doc.id !== id));
       message.success("Document deleted successfully!");
     } catch (error) {
-      console.error("Error deleting document:", error);
       message.error("Failed to delete document");
     } finally {
       setConfirmDelete(null);

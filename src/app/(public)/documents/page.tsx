@@ -110,7 +110,6 @@ export default function PublicDocumentsPage() {
     const fetchDocuments = async () => {
       setLoading(true);
       try {
-        console.log('Fetching public documents with filters:', filters);
         
         // Call the real API for public documents
         const response = await DocumentsApi.getPublicDocuments({
@@ -120,7 +119,6 @@ export default function PublicDocumentsPage() {
           // Note: securityLevel is automatically set to PUBLIC by the backend endpoint
         });
 
-        console.log('API response:', response);
 
         if (response.status === 200 && response.data) {
           // Handle the nested response structure
@@ -137,7 +135,6 @@ export default function PublicDocumentsPage() {
             rawDocuments = responseData.data.documents || [];
             totalCount = responseData.data.total || 0;
           } else {
-            console.warn('Unexpected response structure:', responseData);
             rawDocuments = [];
             totalCount = 0;
           }
@@ -146,14 +143,12 @@ export default function PublicDocumentsPage() {
           setDocuments(rawDocuments);
           setTotal(totalCount);
         } else {
-          console.error('Failed to fetch documents:', response);
           setDocuments([]);
           setTotal(0);
         }
 
         setLoading(false);
       } catch (error) {
-        console.error("Error fetching public documents:", error);
         setDocuments([]);
         setTotal(0);
         setLoading(false);
@@ -206,7 +201,6 @@ export default function PublicDocumentsPage() {
       const url = new URL(documentFile.s3Url);
       const keyPath = url.pathname.substring(1);
       
-      console.log('Downloading file with keyPath:', keyPath);
       
       const blob = await DocumentsApi.downloadFilePublic(keyPath);
       
@@ -222,7 +216,6 @@ export default function PublicDocumentsPage() {
       
       message.success('File downloaded successfully');
     } catch (error) {
-      console.error('Download error:', error);
       
       // More specific error handling
       if (error instanceof Error) {

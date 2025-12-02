@@ -35,7 +35,6 @@ export default function DebugLogin() {
           window.location.href = '/login?force=true&reset=true';
         }, 1000);
       } catch (e) {
-        console.error('Error clearing auth state:', e);
         message.error('Failed to clear auth state');
       }
     }

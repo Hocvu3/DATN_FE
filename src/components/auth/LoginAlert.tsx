@@ -12,7 +12,6 @@ export default function LoginAlert() {
     // Listen for login errors
     const handleLoginError = (event: CustomEvent) => {
       const message = event.detail?.message || 'Login failed';
-      console.log('LoginAlert received error:', message);
       setError(message);
       setVisible(true);
       

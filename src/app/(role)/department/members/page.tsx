@@ -149,7 +149,6 @@ const DepartmentMembersPage = () => {
 
   const handleOk = () => {
     form.validateFields().then((values) => {
-      console.log("Form values:", values);
       // Here we would handle saving the member data
       form.resetFields();
       setIsModalVisible(false);
@@ -262,7 +261,6 @@ const DepartmentMembersPage = () => {
                   okType: "danger",
                   cancelText: "Cancel",
                   onOk() {
-                    console.log("OK");
                     // Here we would handle the removal
                   },
                 })

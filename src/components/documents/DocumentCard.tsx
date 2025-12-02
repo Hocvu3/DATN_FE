@@ -157,7 +157,6 @@ const DocumentCard: React.FC<DocumentCardProps> = ({
       message.success('Cover image updated successfully');
       onCoverUpdate?.(document.id, newCoverUrl);
     } catch (error) {
-      console.error('Error uploading cover:', error);
       message.error('Failed to upload cover image');
     } finally {
       setUploadingCover(false);

@@ -96,11 +96,9 @@ export default function DocumentDetailPage() {
             setDocumentAssets(documentData.assets);
           }
         } else {
-          console.error("Failed to fetch document:", response);
           message.error("Failed to load document");
         }
       } catch (error) {
-        console.error("Error fetching document:", error);
         message.error("Error loading document");
       } finally {
         setLoading(false);
@@ -113,7 +111,6 @@ export default function DocumentDetailPage() {
   // Handle file download
   const handleDownload = async () => {
     try {
-      console.log('Download handler called, documentAssets:', documentAssets);
       
       if (!documentAssets || documentAssets.length === 0) {
         message.warning('No document files available for download');
@@ -127,7 +124,6 @@ export default function DocumentDetailPage() {
         return;
       }
       
-      console.log('Using document file for download:', documentFile);
       
       if (!documentFile.s3Url) {
         message.error('Asset does not have a valid S3 URL');
@@ -137,10 +133,8 @@ export default function DocumentDetailPage() {
       // Extract keyPath from S3 URL
       const url = new URL(documentFile.s3Url);
       const keyPath = url.pathname.substring(1);
-      console.log('Extracted keyPath for download:', keyPath);
       
       const blob = await DocumentsApi.downloadFilePublic(keyPath);
-      console.log('Download successful, blob size:', blob.size);
       
       // Create download link
       const downloadUrl = window.URL.createObjectURL(blob);
@@ -154,7 +148,6 @@ export default function DocumentDetailPage() {
       
       message.success('File downloaded successfully');
     } catch (error) {
-      console.error('Download error:', error);
       
       // More specific error handling
       if (error instanceof Error) {

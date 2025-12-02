@@ -188,7 +188,6 @@ const AdminWorkflowsPage = () => {
 
   const handleWorkflowOk = () => {
     form.validateFields().then((values) => {
-      console.log("Workflow form values:", values);
       form.resetFields();
       setIsWorkflowModalVisible(false);
     });
@@ -333,7 +332,6 @@ const AdminWorkflowsPage = () => {
                   okType: "danger",
                   cancelText: "Cancel",
                   onOk() {
-                    console.log("Delete workflow");
                   },
                 })
               }

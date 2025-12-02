@@ -266,7 +266,6 @@ const AdminRolesPermissionsPage = () => {
 
   const handleRoleOk = () => {
     form.validateFields().then((values) => {
-      console.log("Role form values:", values);
       form.resetFields();
       setIsRoleModalVisible(false);
     });
@@ -284,7 +283,6 @@ const AdminRolesPermissionsPage = () => {
 
   const handleAssignOk = () => {
     assignForm.validateFields().then((values) => {
-      console.log("Assignment form values:", values);
       assignForm.resetFields();
       setIsAssignModalVisible(false);
     });
@@ -397,7 +395,6 @@ const AdminRolesPermissionsPage = () => {
                     okType: "danger",
                     cancelText: "Cancel",
                     onOk() {
-                      console.log("Delete role");
                     },
                   })
                 }

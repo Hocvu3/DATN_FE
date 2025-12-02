@@ -238,7 +238,6 @@ const SignaturesPage = () => {
       message.success("Digital signature created successfully!");
       handleCreateCancel();
     } catch (error) {
-      console.error("Validation failed:", error);
     }
   };
 
@@ -255,7 +254,6 @@ const SignaturesPage = () => {
       message.success("Digital signature updated successfully!");
       handleEditCancel();
     } catch (error) {
-      console.error("Validation failed:", error);
     }
   };
 
