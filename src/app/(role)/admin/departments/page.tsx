@@ -9,8 +9,6 @@ import {
   Avatar,
   Tooltip,
   Modal,
-  message,
-  Tabs,
   Input,
   Spin,
   Alert,
@@ -37,7 +35,6 @@ const DepartmentsPage = () => {
   const { message: msg, modal } = App.useApp();
 
   // State management
-  const [activeTab, setActiveTab] = useState("departments");
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showAddMemberModal, setShowAddMemberModal] = useState(false);
@@ -158,47 +155,16 @@ const DepartmentsPage = () => {
   const handleAddMembers = (memberIds: string[]) => {
     setShowAddMemberModal(false);
     setSelectedDepartment(null);
-    message.success(`${memberIds.length} member(s) added to department!`);
+    msg.success(`${memberIds.length} member(s) added to department!`);
     fetchDepartments(searchQuery || undefined); // Refresh to update member counts
   };
 
   const handleAddDocuments = (documentIds: string[]) => {
     setShowAddDocumentModal(false);
     setSelectedDepartment(null);
-    message.success(`${documentIds.length} document(s) added to department!`);
+    msg.success(`${documentIds.length} document(s) added to department!`);
     fetchDepartments(searchQuery || undefined); // Refresh to update document counts
   };
-
-  // Tab items for the sub-navigation
-  const tabItems = [
-    {
-      key: "departments",
-      label: (
-        <span className="flex items-center gap-2">
-          <Building className="h-4 w-4" />
-          Departments
-        </span>
-      ),
-    },
-    {
-      key: "members",
-      label: (
-        <span className="flex items-center gap-2">
-          <Users className="h-4 w-4" />
-          Members
-        </span>
-      ),
-    },
-    {
-      key: "documents",
-      label: (
-        <span className="flex items-center gap-2">
-          <FileText className="h-4 w-4" />
-          Documents
-        </span>
-      ),
-    },
-  ];
 
   // Department table columns
   const departmentColumns = [
@@ -382,30 +348,20 @@ const DepartmentsPage = () => {
         </Card>
       </div>
 
-      {/* Tabs Navigation */}
+      {/* Main Content */}
       <Card className="border-0 shadow-sm">
-        <Tabs
-          activeKey={activeTab}
-          onChange={setActiveTab}
-          items={tabItems}
-          className="custom-tabs"
-        />
-
-        {/* Departments Tab Content */}
-        {activeTab === "departments" && (
-          <div className="mt-6">
-            {/* Search Bar */}
-            <div className="mb-4">
-              <Input
-                placeholder="Search departments by name or description..."
-                prefix={<Search className="h-4 w-4 text-gray-400" />}
-                size="large"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                allowClear
-                className="max-w-md"
-              />
-            </div>
+        {/* Search Bar */}
+        <div className="mb-4">
+          <Input
+            placeholder="Search departments by name or description..."
+            prefix={<Search className="h-4 w-4 text-gray-400" />}
+            size="large"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            allowClear
+            className="max-w-md"
+          />
+        </div>
 
             {/* Error Alert */}
             {error && (
@@ -436,30 +392,6 @@ const DepartmentsPage = () => {
                 className="custom-table"
               />
             </Spin>
-          </div>
-        )}
-
-        {/* Members Tab Content - Placeholder */}
-        {activeTab === "members" && (
-          <div className="mt-6 text-center py-12">
-            <Users className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Members Management</h3>
-            <p className="text-gray-500 max-w-md mx-auto">
-              View and manage all department members. This feature is coming soon.
-            </p>
-          </div>
-        )}
-
-        {/* Documents Tab Content - Placeholder */}
-        {activeTab === "documents" && (
-          <div className="mt-6 text-center py-12">
-            <FileText className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Documents Management</h3>
-            <p className="text-gray-500 max-w-md mx-auto">
-              View and manage all department documents. This feature is coming soon.
-            </p>
-          </div>
-        )}
       </Card>
 
       {/* Modals */}

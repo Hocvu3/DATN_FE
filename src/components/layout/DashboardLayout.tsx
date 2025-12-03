@@ -180,6 +180,18 @@ export default function DashboardLayout({
           path: "/admin/departments",
         },
         {
+          key: "tags",
+          icon: <TagOutlined />,
+          label: <Link href="/admin/tags">Tags</Link>,
+          path: "/admin/tags",
+        },
+        {
+          key: "users",
+          icon: <TeamOutlined />,
+          label: <Link href="/admin/users">Users</Link>,
+          path: "/admin/users",
+        },
+        {
           key: "signatures",
           icon: <SecurityScanOutlined />,
           label: <Link href="/admin/signatures">Digital Signatures</Link>,
@@ -202,18 +214,6 @@ export default function DashboardLayout({
           icon: <FolderOutlined />,
           label: <Link href="/admin/storage">Storage</Link>,
           path: "/admin/storage",
-        },
-        {
-          key: "tags",
-          icon: <TagOutlined />,
-          label: <Link href="/admin/tags">Tags</Link>,
-          path: "/admin/tags",
-        },
-        {
-          key: "users",
-          icon: <TeamOutlined />,
-          label: <Link href="/admin/users">Users</Link>,
-          path: "/admin/users",
         },
         profileItem,
       ];
