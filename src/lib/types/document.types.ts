@@ -129,6 +129,7 @@ export interface Comment {
         email: string;
         firstName: string;
         lastName: string;
+        avatar?: Asset | null;
     };
 }
 

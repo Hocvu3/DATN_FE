@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { Spin, Typography, Descriptions, Tag, Button, Card, Tabs, Divider, Space, Badge, List, Avatar, message, Modal } from 'antd';
-import { ArrowLeftOutlined, DownloadOutlined, EditOutlined, LockOutlined, EyeOutlined, HistoryOutlined, DeleteOutlined } from '@ant-design/icons';
+import { Spin, Typography, Descriptions, Tag, Button, Card, Tabs, Divider, Space, Badge, List, Avatar, App, Modal, Upload, Input, Form, Dropdown, Menu } from 'antd';
+import type { MenuProps } from 'antd';
+import { ArrowLeftOutlined, DownloadOutlined, EditOutlined, LockOutlined, EyeOutlined, HistoryOutlined, DeleteOutlined, UploadOutlined, SendOutlined } from '@ant-design/icons';
 import { Document, DocumentStatus, DocumentVersion, SecurityLevel } from '@/lib/types/document.types';
 import { DocumentsApi, getDocumentCoverUrl } from '@/lib/documents-api';
 import Image from 'next/image';
@@ -34,11 +35,19 @@ interface DocumentDetailProps {
 }
 
 export default function DocumentDetail({ documentId }: DocumentDetailProps) {
+  const { message } = App.useApp();
   const [document, setDocument] = useState<Document | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [activeTab, setActiveTab] = useState<string>('details');
   const [showEditModal, setShowEditModal] = useState<boolean>(false);
   const [documentAssets, setDocumentAssets] = useState<any[]>([]);
+  const [uploadingVersion, setUploadingVersion] = useState<boolean>(false);
+  const [versionComment, setVersionComment] = useState<string>('');
+  const [commentText, setCommentText] = useState<string>('');
+  const [submittingComment, setSubmittingComment] = useState<boolean>(false);
+  const [form] = Form.useForm();
+  const [viewModalVisible, setViewModalVisible] = useState<boolean>(false);
+  const [selectedVersionForView, setSelectedVersionForView] = useState<DocumentVersion | null>(null);
 
   const fetchDocument = useCallback(async () => {
     setLoading(true);
@@ -90,71 +99,92 @@ export default function DocumentDetail({ documentId }: DocumentDetailProps) {
     }
   };
 
-  // Handle file download
-  const handleDownload = async () => {
+  // Handle download version
+  const handleDownloadVersion = async (version: DocumentVersion) => {
     try {
-      
-      if (!documentAssets || documentAssets.length === 0) {
-        message.warning('No document files available for download');
+      if (!version.s3Key) {
+        message.error('Version does not have a valid S3 key');
         return;
       }
 
-      // Get the first document file (URL đầu tiên)
-      const firstAsset = documentAssets[0];
-      
-      if (!firstAsset.s3Url) {
-        message.error('Asset does not have a valid S3 URL');
-        return;
-      }
-
-      // Extract keyPath from S3 URL - take the path after the bucket domain
-      const url = new URL(firstAsset.s3Url);
-      const keyPath = url.pathname.substring(1); // Remove leading slash
-      
-      const blob = await DocumentsApi.downloadFile(keyPath);
+      const blob = await DocumentsApi.downloadFile(version.s3Key);
       
       // Create download link
       const downloadUrl = window.URL.createObjectURL(blob);
       const link = window.document.createElement('a');
       link.href = downloadUrl;
-      link.download = firstAsset.filename || 'download';
+      link.download = `${document?.title || 'document'}-v${version.versionNumber}.pdf`;
       window.document.body.appendChild(link);
       link.click();
       window.document.body.removeChild(link);
       window.URL.revokeObjectURL(downloadUrl);
       
-      message.success('File downloaded successfully');
+      message.success('File downloaded successfully', 5);
     } catch (error) {
-      message.error('Failed to download file: ' + (error instanceof Error ? error.message : 'Unknown error'));
+      message.error('Failed to download file: ' + (error instanceof Error ? error.message : 'Unknown error'), 6);
     }
   };
 
-  // Handle file view
-  const handleView = () => {
-    try {
-      
-      if (!documentAssets || documentAssets.length === 0) {
-        message.warning('No document files available for viewing');
-        return;
-      }
-
-      // Get the first document file (URL đầu tiên)  
-      const firstAsset = documentAssets[0];
-      
-      if (!firstAsset.s3Url) {
-        message.error('Asset does not have a valid S3 URL');
-        return;
-      }
-
-      // Extract keyPath from S3 URL
-      const url = new URL(firstAsset.s3Url);
-      const keyPath = url.pathname.substring(1); // Remove leading slash
-      
-      const viewUrl = DocumentsApi.getFileViewUrl(keyPath);
-      window.open(viewUrl, '_blank');
-    } catch (error) {
-      message.error('Failed to view file: ' + (error instanceof Error ? error.message : 'Unknown error'));
+  // Handle download latest version
+  const handleDownloadLatest = () => {
+    if (!document?.versions || document.versions.length === 0) {
+      message.warning('No document versions available for download');
+      return;
     }
+    const latestVersion = document.versions[document.versions.length - 1];
+    handleDownloadVersion(latestVersion);
+  };
+
+  // Generate download menu items for versions
+  const getDownloadMenuItems = (): MenuProps['items'] => {
+    if (!document?.versions || document.versions.length === 0) return [];
+    
+    return document.versions.map((version, index) => ({
+      key: version.id,
+      label: (
+        <div className="flex items-center justify-between">
+          <span>Version {version.versionNumber}</span>
+          {index === document.versions.length - 1 && (
+            <Tag color="green" className="ml-2">Latest</Tag>
+          )}
+        </div>
+      ),
+      onClick: () => handleDownloadVersion(version),
+    }));
+  };
+
+  // Handle view version selection
+  const handleViewVersion = (version: DocumentVersion) => {
+    setSelectedVersionForView(version);
+    setViewModalVisible(true);
+  };
+
+  // Handle view latest version (default)
+  const handleViewLatest = () => {
+    if (!document?.versions || document.versions.length === 0) {
+      message.warning('No document versions available for viewing');
+      return;
+    }
+    const latestVersion = document.versions[document.versions.length - 1];
+    handleViewVersion(latestVersion);
+  };
+
+  // Generate view menu items for versions
+  const getViewMenuItems = (): MenuProps['items'] => {
+    if (!document?.versions || document.versions.length === 0) return [];
+    
+    return document.versions.map((version, index) => ({
+      key: version.id,
+      label: (
+        <div className="flex items-center justify-between">
+          <span>Version {version.versionNumber}</span>
+          {index === document.versions.length - 1 && (
+            <Tag color="green" className="ml-2">Latest</Tag>
+          )}
+        </div>
+      ),
+      onClick: () => handleViewVersion(version),
+    }));
   };
 
   // Handle asset deletion
@@ -181,6 +211,85 @@ export default function DocumentDetail({ documentId }: DocumentDetailProps) {
         }
       },
     });
+  };
+
+  // Handle version upload
+  const handleVersionUpload = async (file: File) => {
+    if (!file) return false;
+    
+    try {
+      setUploadingVersion(true);
+      
+      // Step 1: Get presigned URL
+      const presignedResponse = await DocumentsApi.generateVersionPresignedUrl(
+        documentId,
+        file.name,
+        file.type
+      );
+      
+      // Backend response structure: { success, data: { presignedUrl, key, publicUrl, message }, ... }
+      // Our API wrapper returns: { data: <backend response>, status }
+      const backendResponse = presignedResponse.data as any;
+      const presignedData = backendResponse.data || backendResponse;
+      
+      // Step 2: Upload to S3
+      const uploadResponse = await fetch(presignedData.presignedUrl, {
+        method: 'PUT',
+        body: file,
+        headers: {
+          'Content-Type': file.type,
+        },
+      });
+      
+      if (!uploadResponse.ok) {
+        throw new Error('Failed to upload file to S3');
+      }
+      
+      // Step 3: Create version record
+      await DocumentsApi.createDocumentVersion(documentId, {
+        s3Key: presignedData.key || '',
+        s3Url: presignedData.publicUrl || '',
+        fileSize: file.size,
+        mimeType: file.type,
+        checksum: '', // Empty string fallback
+        // Don't send versionNumber - let backend auto-increment
+      });
+      
+      message.success('New version uploaded successfully', 5);
+      setVersionComment('');
+      form.resetFields();
+      fetchDocument(); // Refresh to show new version
+    } catch (error) {
+      message.error('Failed to upload version: ' + (error instanceof Error ? error.message : 'Unknown error'), 6);
+    } finally {
+      setUploadingVersion(false);
+    }
+    
+    return false; // Prevent default upload
+  };
+
+  // Handle comment submission
+  const handleCommentSubmit = async () => {
+    if (!commentText.trim()) {
+      message.warning('Please enter a comment');
+      return;
+    }
+    
+    try {
+      setSubmittingComment(true);
+      await DocumentsApi.createDocumentComment(documentId, {
+        content: commentText,
+        isInternal: false,
+      });
+      
+      message.success('Comment added successfully', 3);
+      setCommentText('');
+      fetchDocument(); // Refresh to show new comment
+    } catch (error) {
+      message.error('Failed to add comment: ' + (error instanceof Error ? error.message : 'Unknown error'));
+    } finally {
+      setSubmittingComment(false);
+    }
   };
 
   if (!document) {
@@ -214,13 +323,18 @@ export default function DocumentDetail({ documentId }: DocumentDetailProps) {
         </div>
 
         <Space>
-          <Button 
-            icon={<EyeOutlined />}
-            onClick={handleView}
-            disabled={!documentAssets || documentAssets.length === 0}
+          <Dropdown
+            menu={{ items: getViewMenuItems() }}
+            trigger={['click']}
+            disabled={!document?.versions || document.versions.length === 0}
           >
-            View
-          </Button>
+            <Button 
+              icon={<EyeOutlined />}
+              disabled={!document?.versions || document.versions.length === 0}
+            >
+              View
+            </Button>
+          </Dropdown>
 
           <Button 
             icon={<EditOutlined />} 
@@ -230,13 +344,18 @@ export default function DocumentDetail({ documentId }: DocumentDetailProps) {
             Edit Document
           </Button>
           
-          <Button 
-            icon={<DownloadOutlined />}
-            onClick={handleDownload}
-            disabled={!documentAssets || documentAssets.length === 0}
+          <Dropdown
+            menu={{ items: getDownloadMenuItems() }}
+            trigger={['click']}
+            disabled={!document?.versions || document.versions.length === 0}
           >
-            Download
-          </Button>
+            <Button 
+              icon={<DownloadOutlined />}
+              disabled={!document?.versions || document.versions.length === 0}
+            >
+              Download
+            </Button>
+          </Dropdown>
         </Space>
       </div>
 
@@ -298,9 +417,36 @@ export default function DocumentDetail({ documentId }: DocumentDetailProps) {
               </TabPane>
 
               <TabPane tab={<><HistoryOutlined /> Version History</>} key="versions">
+                <div className="mb-4">
+                  <Card size="small" title="Upload New Version">
+                    <Form form={form} layout="vertical">
+                      <Form.Item label="Version Comment (Optional)" name="comment">
+                        <Input.TextArea
+                          rows={3}
+                          placeholder="Describe what changed in this version..."
+                          value={versionComment}
+                          onChange={(e) => setVersionComment(e.target.value)}
+                        />
+                      </Form.Item>
+                      <Form.Item>
+                        <Upload
+                          beforeUpload={handleVersionUpload}
+                          showUploadList={false}
+                          accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx"
+                        >
+                          <Button icon={<UploadOutlined />} loading={uploadingVersion} type="primary">
+                            Upload New Version
+                          </Button>
+                        </Upload>
+                      </Form.Item>
+                    </Form>
+                  </Card>
+                </div>
+                
                 <List
                   itemLayout="horizontal"
                   dataSource={document.versions || []}
+                  locale={{ emptyText: 'No versions yet' }}
                   renderItem={(version: DocumentVersion) => (
                     <List.Item
                       actions={[
@@ -309,11 +455,12 @@ export default function DocumentDetail({ documentId }: DocumentDetailProps) {
                       ]}
                     >
                       <List.Item.Meta
-                        title={<>Version {version.versionNumber} {version.versionNumber === 1 && <Tag color="green">Latest</Tag>}</>}
+                        title={<>Version {version.versionNumber} {version.versionNumber === (document.versions?.length || 1) && <Tag color="green">Latest</Tag>}</>}
                         description={
                           <>
                             <div>Created on {dayjs(version.createdAt).format('YYYY-MM-DD HH:mm')}</div>
                             <div>{version.comment || 'No comment'}</div>
+                            <div className="text-xs text-gray-400">Size: {version.fileSize ? `${Math.round(version.fileSize / 1024)} KB` : 'Unknown'}</div>
                           </>
                         }
                       />
@@ -323,21 +470,51 @@ export default function DocumentDetail({ documentId }: DocumentDetailProps) {
               </TabPane>
 
               <TabPane tab="Comments & Activity" key="comments">
+                <div className="mb-4">
+                  <Card size="small" title="Add Comment">
+                    <Input.TextArea
+                      rows={4}
+                      placeholder="Write your comment here..."
+                      value={commentText}
+                      onChange={(e) => setCommentText(e.target.value)}
+                      style={{ marginBottom: 16 }}
+                    />
+                    <div>
+                      <Button
+                        type="primary"
+                        icon={<SendOutlined />}
+                        loading={submittingComment}
+                        onClick={handleCommentSubmit}
+                        disabled={!commentText.trim()}
+                        size="large"
+                      >
+                        Post Comment
+                      </Button>
+                    </div>
+                  </Card>
+                </div>
+                
                 <List
                   className="comment-list"
                   header={`${document.comments?.length || 0} comments`}
                   itemLayout="horizontal"
                   dataSource={document.comments || []}
+                  locale={{ emptyText: 'No comments yet. Be the first to comment!' }}
                   renderItem={comment => (
                     <li className="p-4 border-b border-gray-100">
                       <div className="flex">
                         <div className="mr-3">
-                          <Avatar src={'/images/default-avatar.png'} />
+                          <Avatar 
+                            src={comment.author?.avatar?.s3Url || '/images/default-avatar.png'}
+                            alt={`${comment.author?.firstName || ''} ${comment.author?.lastName || ''}`}
+                          >
+                            {!comment.author?.avatar?.s3Url && (comment.author?.firstName?.[0] || 'U')}
+                          </Avatar>
                         </div>
-                        <div>
+                        <div className="flex-1">
                           <div className="font-medium">{`${comment.author?.firstName || ''} ${comment.author?.lastName || ''}`}</div>
                           <div className="text-gray-400 text-sm mb-2">{dayjs(comment.createdAt).format('YYYY-MM-DD HH:mm:ss')}</div>
-                          <div>{comment.content}</div>
+                          <div className="text-gray-700">{comment.content}</div>
                         </div>
                       </div>
                     </li>
@@ -359,92 +536,6 @@ export default function DocumentDetail({ documentId }: DocumentDetailProps) {
                 className="object-contain"
               />
             </div>
-          </Card>
-
-          {/* Show all assets, whether cover or documents */}
-          <Card title={`Document Assets (${documentAssets?.length || 0})`} className="mb-6">
-            {documentAssets && documentAssets.length > 0 ? (
-              <List
-                itemLayout="horizontal"
-                dataSource={documentAssets}
-                renderItem={asset => (
-                  <List.Item
-                    actions={[
-                      <Button 
-                        key="view" 
-                        icon={<EyeOutlined />} 
-                        size="small"
-                        onClick={() => {
-                          try {
-                            const url = new URL(asset.s3Url);
-                            const keyPath = url.pathname.substring(1);
-                            const viewUrl = DocumentsApi.getFileViewUrl(keyPath);
-                            window.open(viewUrl, '_blank');
-                          } catch (error) {
-                            message.error('Failed to view file');
-                          }
-                        }}
-                      >
-                        View
-                      </Button>,
-                      <Button 
-                        key="download" 
-                        icon={<DownloadOutlined />} 
-                        size="small"
-                        onClick={async () => {
-                          try {
-                            const url = new URL(asset.s3Url);
-                            const keyPath = url.pathname.substring(1);
-                            const blob = await DocumentsApi.downloadFile(keyPath);
-                            
-                            const downloadUrl = window.URL.createObjectURL(blob);
-                            const link = window.document.createElement('a');
-                            link.href = downloadUrl;
-                            link.download = asset.filename;
-                            window.document.body.appendChild(link);
-                            link.click();
-                            window.document.body.removeChild(link);
-                            window.URL.revokeObjectURL(downloadUrl);
-                            
-                            message.success('File downloaded successfully');
-                          } catch (error) {
-                            message.error('Failed to download file');
-                          }
-                        }}
-                      >
-                        Download
-                      </Button>,
-                      <Button 
-                        key="delete" 
-                        icon={<DeleteOutlined />} 
-                        size="small"
-                        danger
-                        onClick={() => handleDeleteAsset(asset.id, asset.filename)}
-                      >
-                        Delete
-                      </Button>
-                    ]}
-                  >
-                    <List.Item.Meta
-                      avatar={<LockOutlined className="text-gray-500 text-xl" />}
-                      title={
-                        <div className="flex items-center gap-2">
-                          {asset.filename}
-                          {asset.isCover && <Tag color="blue">Cover</Tag>}
-                        </div>
-                      }
-                      description={`${asset.contentType || 'Unknown type'} · ${asset.sizeBytes ? `${Math.round(parseInt(asset.sizeBytes) / 1024)} KB` : 'Unknown size'}`}
-                    />
-                  </List.Item>
-                )}
-              />
-            ) : (
-              <div className="text-center py-4 text-gray-500">
-                <LockOutlined className="text-2xl mb-2" />
-                <div>No document files uploaded yet</div>
-                <div className="text-xs">Upload files in Edit mode to enable view/download</div>
-              </div>
-            )}
           </Card>
 
           <Card title="Access Control" className="mb-6">
@@ -495,6 +586,49 @@ export default function DocumentDetail({ documentId }: DocumentDetailProps) {
           onSave={handleEditSave}
         />
       )}
+
+      {/* PDF Viewer Modal */}
+      <Modal
+        title={
+          selectedVersionForView ? (
+            <div className="flex items-center gap-2">
+              <span>{document?.title} - Version {selectedVersionForView.versionNumber}</span>
+              {document?.versions && 
+               document.versions[document.versions.length - 1]?.id === selectedVersionForView.id && (
+                <Tag color="green">Latest</Tag>
+              )}
+            </div>
+          ) : 'Document Viewer'
+        }
+        open={viewModalVisible}
+        onCancel={() => {
+          setViewModalVisible(false);
+          setSelectedVersionForView(null);
+        }}
+        width="90%"
+        style={{ top: 20 }}
+        footer={[
+          <Button key="close" onClick={() => setViewModalVisible(false)}>
+            Close
+          </Button>,
+          <Button
+            key="download"
+            type="primary"
+            icon={<DownloadOutlined />}
+            onClick={() => selectedVersionForView && handleDownloadVersion(selectedVersionForView)}
+          >
+            Download
+          </Button>,
+        ]}
+      >
+        {selectedVersionForView?.s3Key && (
+          <iframe
+            src={DocumentsApi.getFileViewUrl(selectedVersionForView.s3Key)}
+            style={{ width: '100%', height: '80vh', border: 'none' }}
+            title="PDF Viewer"
+          />
+        )}
+      </Modal>
     </div>
   );
 }

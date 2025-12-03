@@ -139,16 +139,23 @@ export default function DocumentsList() {
     }
   };
   
-  const handleStatusChange = (docId: string, newStatus: DocumentStatus) => {
-    // Quick status update
-    setDocuments(prev =>
-      prev.map(doc =>
-        doc.id === docId
-          ? { ...doc, status: newStatus, updatedAt: new Date().toISOString() }
-          : doc
-      )
-    );
-    message.success("Status updated successfully!");
+  const handleStatusChange = async (docId: string, newStatus: DocumentStatus) => {
+    try {
+      // Call API to update status
+      await DocumentsApi.updateDocumentStatus(docId, newStatus);
+      
+      // Update local state
+      setDocuments(prev =>
+        prev.map(doc =>
+          doc.id === docId
+            ? { ...doc, status: newStatus, updatedAt: new Date().toISOString() }
+            : doc
+        )
+      );
+      message.success("Status updated successfully!");
+    } catch (error) {
+      message.error("Failed to update status");
+    }
   };
 
   const columns = [
