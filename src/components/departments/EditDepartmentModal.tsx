@@ -1,8 +1,7 @@
 "use client";
 
 import React, { useEffect } from "react";
-import { Modal, Form, Input, Select, Button, Upload, Avatar } from "antd";
-import { UserOutlined } from "@ant-design/icons";
+import { Modal, Form, Input, Select, Button } from "antd";
 
 const { Option } = Select;
 const { TextArea } = Input;
@@ -10,16 +9,12 @@ const { TextArea } = Input;
 interface Department {
   id: string;
   name: string;
-  code: string;
   description?: string;
-  managerId: string;
-  location?: string;
-  status: "active" | "inactive" | "pending";
+  isActive?: boolean;
   members: number;
   documents: number;
   createdAt: string;
   updatedAt: string;
-  icon?: string;
 }
 
 interface EditDepartmentModalProps {
@@ -42,11 +37,8 @@ const EditDepartmentModal: React.FC<EditDepartmentModalProps> = ({
     if (open && department) {
       form.setFieldsValue({
         name: department.name,
-        code: department.code,
         description: department.description,
-        managerId: department.managerId,
-        location: department.location,
-        status: department.status,
+        isActive: department.isActive,
       });
     } else if (open) {
       form.resetFields();
@@ -54,16 +46,7 @@ const EditDepartmentModal: React.FC<EditDepartmentModalProps> = ({
   }, [open, department, form]);
 
   const handleSubmit = (values: any) => {
-    const departmentData = {
-      ...values,
-      id: department?.id,
-      updatedAt: new Date().toISOString(),
-      members: department?.members || 0,
-      documents: department?.documents || 0,
-      createdAt: department?.createdAt || new Date().toISOString(),
-    };
-
-    onSubmit(departmentData);
+    onSubmit(values);
   };
 
   return (
@@ -81,21 +64,6 @@ const EditDepartmentModal: React.FC<EditDepartmentModalProps> = ({
         onFinish={handleSubmit}
         className="mt-4"
       >
-        {/* Department Icon/Avatar */}
-        <Form.Item label="Department Icon">
-          <div className="flex items-center space-x-4">
-            <Avatar size={64} icon={<UserOutlined />} src={department?.icon} />
-            <Upload
-              name="icon"
-              beforeUpload={() => false}
-              maxCount={1}
-              accept="image/*"
-            >
-              <Button>Change Icon</Button>
-            </Upload>
-          </div>
-        </Form.Item>
-
         {/* Department Name */}
         <Form.Item
           name="name"
@@ -109,28 +77,6 @@ const EditDepartmentModal: React.FC<EditDepartmentModalProps> = ({
           <Input 
             placeholder="e.g., Marketing, Finance, IT" 
             size="large"
-          />
-        </Form.Item>
-
-        {/* Department Code */}
-        <Form.Item
-          name="code"
-          label="Department Code"
-          rules={[
-            { required: true, message: "Please enter department code" },
-            { min: 2, message: "Code must be at least 2 characters" },
-            { max: 10, message: "Code cannot exceed 10 characters" },
-            { pattern: /^[A-Z0-9]+$/, message: "Code must contain only uppercase letters and numbers" },
-          ]}
-        >
-          <Input 
-            placeholder="e.g., MKT, FIN, IT" 
-            size="large"
-            style={{ textTransform: 'uppercase' }}
-            onChange={(e) => {
-              const value = e.target.value.toUpperCase();
-              form.setFieldsValue({ code: value });
-            }}
           />
         </Form.Item>
 
@@ -150,74 +96,25 @@ const EditDepartmentModal: React.FC<EditDepartmentModalProps> = ({
           />
         </Form.Item>
 
-        {/* Manager */}
-        <Form.Item
-          name="managerId"
-          label="Department Manager"
-          rules={[
-            { required: true, message: "Please select a department manager" },
-          ]}
-        >
-          <Select
-            placeholder="Select department manager"
-            size="large"
-            showSearch
-            filterOption={(input, option) =>
-              option?.children?.toString().toLowerCase().includes(input.toLowerCase()) ?? false
-            }
-          >
-            <Option value="1">John Smith - Senior Manager</Option>
-            <Option value="2">Sarah Johnson - Team Lead</Option>
-            <Option value="3">Michael Chen - Director</Option>
-            <Option value="4">Emily Davis - Senior Lead</Option>
-            <Option value="5">David Wilson - Manager</Option>
-          </Select>
-        </Form.Item>
-
-        {/* Location */}
-        <Form.Item
-          name="location"
-          label="Office Location"
-        >
-          <Select
-            placeholder="Select office location"
-            size="large"
-          >
-            <Option value="floor1">1st Floor</Option>
-            <Option value="floor2">2nd Floor</Option>
-            <Option value="floor3">3rd Floor</Option>
-            <Option value="floor4">4th Floor</Option>
-            <Option value="remote">Remote</Option>
-          </Select>
-        </Form.Item>
-
-
-
         {/* Status */}
         <Form.Item
-          name="status"
+          name="isActive"
           label="Status"
           rules={[
             { required: true, message: "Please select status" },
           ]}
         >
           <Select size="large">
-            <Option value="active">
+            <Option value={true}>
               <span className="flex items-center">
                 <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
                 Active
               </span>
             </Option>
-            <Option value="inactive">
+            <Option value={false}>
               <span className="flex items-center">
-                <span className="w-2 h-2 bg-gray-500 rounded-full mr-2"></span>
+                <span className="w-2 h-2 bg-red-500 rounded-full mr-2"></span>
                 Inactive
-              </span>
-            </Option>
-            <Option value="pending">
-              <span className="flex items-center">
-                <span className="w-2 h-2 bg-yellow-500 rounded-full mr-2"></span>
-                Pending Setup
               </span>
             </Option>
           </Select>

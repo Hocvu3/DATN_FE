@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
 import {
   Card,
   Table,
@@ -11,6 +11,10 @@ import {
   Modal,
   message,
   Tabs,
+  Input,
+  Spin,
+  Alert,
+  App,
 } from "antd";
 import {
   Building,
@@ -21,86 +25,16 @@ import {
   Trash2,
   UserPlus,
   AlertCircle,
+  Search,
 } from "lucide-react";
 import CreateDepartmentModal from "@/components/departments/CreateDepartmentModal";
 import EditDepartmentModal from "@/components/departments/EditDepartmentModal";
 import AddMemberModal from "@/components/departments/AddMemberModal";
 import AddDocumentModal from "@/components/departments/AddDocumentModal";
+import { DepartmentsApi } from "@/lib/departments-api";
 
 const DepartmentsPage = () => {
-  // Mock data for departments with expanded fields
-  const mockDepartments = [
-    {
-      id: "1",
-      name: "Marketing",
-      code: "MKT",
-      description: "Responsible for brand promotion, advertising, and market analysis",
-      managerId: "2",
-      location: "floor2",
-      status: "active",
-      members: 8,
-      documents: 32,
-      icon: "/departments-illustration.svg",
-      createdAt: "2023-01-15T10:00:00Z",
-      updatedAt: "2025-09-30T14:30:00Z",
-    },
-    {
-      id: "2", 
-      name: "Finance",
-      code: "FIN",
-      description: "Financial planning, accounting, and financial operations",
-      managerId: "1",
-      location: "floor3",
-      status: "active",
-      members: 6,
-      documents: 45,
-      icon: "/departments-illustration.svg",
-      createdAt: "2023-01-10T09:00:00Z",
-      updatedAt: "2025-09-29T16:45:00Z",
-    },
-    {
-      id: "3",
-      name: "Human Resources", 
-      code: "HR",
-      description: "Employee management, recruitment, and organizational development",
-      managerId: "4",
-      location: "floor1",
-      status: "active",
-      members: 5,
-      documents: 27,
-      icon: "/departments-illustration.svg",
-      createdAt: "2023-01-05T11:30:00Z",
-      updatedAt: "2025-09-28T13:20:00Z",
-    },
-    {
-      id: "4",
-      name: "Information Technology",
-      code: "IT", 
-      description: "Software development, infrastructure, and technical support",
-      managerId: "3",
-      location: "floor4",
-      status: "active",
-      members: 12,
-      documents: 54,
-      icon: "/departments-illustration.svg",
-      createdAt: "2023-01-01T08:00:00Z",
-      updatedAt: "2025-09-30T11:15:00Z",
-    },
-    {
-      id: "5",
-      name: "Sales",
-      code: "SLS",
-      description: "Customer acquisition, relationship management, and revenue generation",
-      managerId: "5",
-      location: "floor2",
-      status: "active",
-      members: 10,
-      documents: 38,
-      icon: "/departments-illustration.svg",
-      createdAt: "2023-01-20T14:00:00Z",
-      updatedAt: "2025-09-27T09:30:00Z",
-    },
-  ];
+  const { message: msg, modal } = App.useApp();
 
   // State management
   const [activeTab, setActiveTab] = useState("departments");
@@ -109,45 +43,116 @@ const DepartmentsPage = () => {
   const [showAddMemberModal, setShowAddMemberModal] = useState(false);
   const [showAddDocumentModal, setShowAddDocumentModal] = useState(false);
   const [selectedDepartment, setSelectedDepartment] = useState<any>(null);
-  const [departments, setDepartments] = useState(mockDepartments);
-  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const [departments, setDepartments] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Memoized empty arrays to prevent unnecessary re-renders
   const emptyMemberIds = useMemo(() => [], []);
   const emptyDocumentIds = useMemo(() => [], []);
 
+  // Fetch departments function
+  const fetchDepartments = useCallback(async (search?: string) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await DepartmentsApi.getAll(search || undefined);
+      if (result.data.success && result.data.data) {
+        setDepartments(result.data.data.departments || []);
+      } else {
+        setError(result.data.message || "Failed to fetch departments");
+        setDepartments([]); // Set empty array on error
+      }
+    } catch (err: any) {
+      const errorMessage = err?.response?.data?.message || err?.message || "An error occurred while fetching departments";
+      setError(errorMessage);
+      setDepartments([]); // Set empty array on error
+      console.error("Fetch departments error:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // Fetch departments on mount only
+  useEffect(() => {
+    fetchDepartments();
+  }, []); // Only run once on mount
+
+  // Debounced search effect
+  useEffect(() => {
+    if (searchQuery === "") {
+      // If search is cleared, fetch immediately
+      fetchDepartments();
+      return;
+    }
+
+    // Debounce search for 500ms
+    const timeoutId = setTimeout(() => {
+      fetchDepartments(searchQuery);
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery, fetchDepartments]);
+
   // Event handlers
-  const handleCreateDepartment = (departmentData: any) => {
-    const newDepartment = {
-      ...departmentData,
-      id: String(departments.length + 1),
-      members: 0,
-      documents: 0,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    setDepartments([...departments, newDepartment]);
-    setShowCreateModal(false);
-    message.success("Department created successfully!");
+  const handleCreateDepartment = async (departmentData: any) => {
+    try {
+      const result = await DepartmentsApi.create(departmentData);
+      if (result.data.success) {
+        msg.success("Department created successfully!");
+        setShowCreateModal(false);
+        fetchDepartments(searchQuery || undefined); // Refresh with current search
+      } else {
+        msg.error(result.data.message || "Failed to create department");
+      }
+    } catch (err) {
+      msg.error("An error occurred while creating department");
+      console.error(err);
+    }
   };
 
-  const handleEditDepartment = (departmentData: any) => {
-    setDepartments(
-      departments.map((dept) =>
-        dept.id === selectedDepartment?.id
-          ? { ...dept, ...departmentData, updatedAt: new Date().toISOString() }
-          : dept
-      )
-    );
-    setShowEditModal(false);
-    setSelectedDepartment(null);
-    message.success("Department updated successfully!");
+  const handleEditDepartment = async (departmentData: any) => {
+    if (!selectedDepartment?.id) return;
+    
+    try {
+      const result = await DepartmentsApi.update(selectedDepartment.id, departmentData);
+      if (result.data.success) {
+        msg.success("Department updated successfully!");
+        setShowEditModal(false);
+        setSelectedDepartment(null);
+        fetchDepartments(searchQuery || undefined); // Refresh with current search
+      } else {
+        msg.error(result.data.message || "Failed to update department");
+      }
+    } catch (err) {
+      msg.error("An error occurred while updating department");
+      console.error(err);
+    }
   };
 
-  const handleDeleteDepartment = (departmentId: string) => {
-    setDepartments(departments.filter((dept) => dept.id !== departmentId));
-    setConfirmDelete(null);
-    message.success("Department deleted successfully!");
+  const handleDeleteDepartment = async (departmentId: string) => {
+    modal.confirm({
+      title: "Delete Department",
+      content: "Are you sure you want to delete this department? This action cannot be undone.",
+      okText: "Delete",
+      okType: "danger",
+      cancelText: "Cancel",
+      onOk: async () => {
+        try {
+          const result = await DepartmentsApi.delete(departmentId);
+          if (result.data.success) {
+            msg.success("Department deleted successfully!");
+            fetchDepartments(searchQuery || undefined); // Refresh with current search
+          } else {
+            msg.error(result.data.message || "Failed to delete department");
+          }
+        } catch (err) {
+          msg.error("An error occurred while deleting department");
+          console.error(err);
+        }
+      },
+    });
   };
 
   const handleAddMembers = (memberIds: string[]) => {
@@ -203,14 +208,13 @@ const DepartmentsPage = () => {
         <div className="flex items-center gap-3">
           <Avatar
             size={40}
-            src={record.icon}
             className="bg-blue-100 text-blue-600"
           >
             <Building className="h-5 w-5" />
           </Avatar>
           <div>
             <div className="font-medium text-gray-900">{text}</div>
-            <div className="text-sm text-gray-500">{record.code}</div>
+            {record.code && <div className="text-sm text-gray-500">{record.code}</div>}
           </div>
         </div>
       ),
@@ -224,23 +228,13 @@ const DepartmentsPage = () => {
       ),
     },
     {
-      title: "Location",
-      dataIndex: "location",
-      key: "location",
-      render: (location: string) => (
-        <Tag color="blue" className="capitalize">
-          {location.replace('floor', 'Floor ')}
-        </Tag>
-      ),
-    },
-    {
       title: "Members",
       dataIndex: "members",
       key: "members",
       render: (count: number) => (
         <div className="flex items-center gap-1">
           <Users className="h-4 w-4 text-gray-400" />
-          <span>{count}</span>
+          <span>{count || 0}</span>
         </div>
       ),
     },
@@ -251,17 +245,17 @@ const DepartmentsPage = () => {
       render: (count: number) => (
         <div className="flex items-center gap-1">
           <FileText className="h-4 w-4 text-gray-400" />
-          <span>{count}</span>
+          <span>{count || 0}</span>
         </div>
       ),
     },
     {
       title: "Status",
-      dataIndex: "status",
-      key: "status",
-      render: (status: string) => (
-        <Tag color={status === "active" ? "green" : "red"} className="capitalize">
-          {status}
+      dataIndex: "isActive",
+      key: "isActive",
+      render: (isActive: boolean) => (
+        <Tag color={isActive ? "green" : "red"}>
+          {isActive ? "Active" : "Inactive"}
         </Tag>
       ),
     },
@@ -311,7 +305,7 @@ const DepartmentsPage = () => {
               type="text"
               size="small"
               icon={<Trash2 className="h-4 w-4" />}
-              onClick={() => setConfirmDelete(record.id)}
+              onClick={() => handleDeleteDepartment(record.id)}
               className="text-red-600 hover:text-red-700"
             />
           </Tooltip>
@@ -363,7 +357,7 @@ const DepartmentsPage = () => {
             </div>
             <div>
               <div className="text-2xl font-bold text-gray-900">
-                {departments.reduce((sum, dept) => sum + dept.members, 0)}
+                {departments.reduce((sum, dept) => sum + (dept.members || 0), 0)}
               </div>
               <div className="text-sm text-gray-500">Total Members</div>
             </div>
@@ -376,7 +370,7 @@ const DepartmentsPage = () => {
             </div>
             <div>
               <div className="text-2xl font-bold text-gray-900">
-                {departments.reduce((sum, dept) => sum + dept.documents, 0)}
+                {departments.reduce((sum, dept) => sum + (dept.documents || 0), 0)}
               </div>
               <div className="text-sm text-gray-500">Total Documents</div>
             </div>
@@ -396,19 +390,48 @@ const DepartmentsPage = () => {
         {/* Departments Tab Content */}
         {activeTab === "departments" && (
           <div className="mt-6">
-            <Table
-              columns={departmentColumns}
-              dataSource={departments}
-              rowKey="id"
-              pagination={{
-                pageSize: 10,
-                showSizeChanger: true,
-                showQuickJumper: true,
-                showTotal: (total, range) =>
-                  `${range[0]}-${range[1]} of ${total} departments`,
-              }}
-              className="custom-table"
-            />
+            {/* Search Bar */}
+            <div className="mb-4">
+              <Input
+                placeholder="Search departments by name or description..."
+                prefix={<Search className="h-4 w-4 text-gray-400" />}
+                size="large"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                allowClear
+                className="max-w-md"
+              />
+            </div>
+
+            {/* Error Alert */}
+            {error && (
+              <Alert
+                message="Error"
+                description={error}
+                type="error"
+                showIcon
+                closable
+                onClose={() => setError(null)}
+                className="mb-4"
+              />
+            )}
+
+            {/* Table */}
+            <Spin spinning={loading}>
+              <Table
+                columns={departmentColumns}
+                dataSource={departments}
+                rowKey="id"
+                pagination={{
+                  pageSize: 10,
+                  showSizeChanger: true,
+                  showQuickJumper: true,
+                  showTotal: (total, range) =>
+                    `${range[0]}-${range[1]} of ${total} departments`,
+                }}
+                className="custom-table"
+              />
+            </Spin>
           </div>
         )}
 
@@ -474,30 +497,7 @@ const DepartmentsPage = () => {
         existingDocumentIds={emptyDocumentIds}
       />
 
-      {/* Delete Confirmation Modal */}
-      <Modal
-        title="Delete Department"
-        open={!!confirmDelete}
-        onOk={() => confirmDelete && handleDeleteDepartment(confirmDelete)}
-        onCancel={() => setConfirmDelete(null)}
-        okText="Delete"
-        okType="danger"
-        cancelText="Cancel"
-      >
-        <div className="flex items-center gap-3 mb-4">
-          <div className="p-3 bg-red-100 rounded-full">
-            <AlertCircle className="h-6 w-6 text-red-600" />
-          </div>
-          <div>
-            <h3 className="font-medium text-gray-900">
-              Are you sure you want to delete this department?
-            </h3>
-            <p className="text-sm text-gray-500 mt-1">
-              This action cannot be undone. All department data will be permanently removed.
-            </p>
-          </div>
-        </div>
-      </Modal>
+      {/* Delete Confirmation Modal - Now using modal.confirm() instead */}
     </div>
   );
 };
