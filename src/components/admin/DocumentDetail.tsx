@@ -41,7 +41,7 @@ interface DocumentDetailProps {
 }
 
 export default function DocumentDetail({ documentId }: DocumentDetailProps) {
-  const { message } = App.useApp();
+  const { message, modal } = App.useApp();
   const [document, setDocument] = useState<DocumentType | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [activeTab, setActiveTab] = useState<string>('details');
@@ -56,6 +56,7 @@ export default function DocumentDetail({ documentId }: DocumentDetailProps) {
   const [selectedVersionForView, setSelectedVersionForView] = useState<DocumentVersion | null>(null);
   const [numPages, setNumPages] = useState<number | null>(null);
   const [pageNumber, setPageNumber] = useState<number>(1);
+  const [textContent, setTextContent] = useState<string>('');
 
   const fetchDocument = useCallback(async () => {
     setLoading(true);
@@ -162,9 +163,23 @@ export default function DocumentDetail({ documentId }: DocumentDetailProps) {
   };
 
   // Handle view version selection
-  const handleViewVersion = (version: DocumentVersion) => {
+  const handleViewVersion = async (version: DocumentVersion) => {
     setSelectedVersionForView(version);
     setViewModalVisible(true);
+    
+    // If TXT file, fetch content
+    if (version.mimeType === 'text/plain' || version.s3Key?.endsWith('.txt')) {
+      try {
+        const response = await fetch(DocumentsApi.getFileViewUrl(version.s3Key || ''));
+        const text = await response.text();
+        setTextContent(text);
+      } catch (error) {
+        message.error('Failed to load text file');
+        setTextContent('Error loading file content');
+      }
+    } else {
+      setTextContent('');
+    }
   };
 
   // Handle view latest version (default)
@@ -175,6 +190,44 @@ export default function DocumentDetail({ documentId }: DocumentDetailProps) {
     }
     const latestVersion = document.versions[document.versions.length - 1];
     handleViewVersion(latestVersion);
+  };
+
+  // Get file type from version
+  const getFileType = (version: DocumentVersion): 'pdf' | 'doc' | 'txt' | 'unknown' => {
+    const mimeType = version.mimeType?.toLowerCase() || '';
+    const fileName = version.s3Key?.toLowerCase() || '';
+    
+    if (mimeType === 'application/pdf' || fileName.endsWith('.pdf')) {
+      return 'pdf';
+    }
+    if (mimeType.includes('word') || mimeType.includes('msword') || 
+        fileName.endsWith('.doc') || fileName.endsWith('.docx')) {
+      return 'doc';
+    }
+    if (mimeType === 'text/plain' || fileName.endsWith('.txt')) {
+      return 'txt';
+    }
+    return 'unknown';
+  };
+
+  // Handle delete version
+  const handleDeleteVersion = async (version: DocumentVersion) => {
+    modal.confirm({
+      title: 'Delete Version',
+      content: `Are you sure you want to delete Version ${version.versionNumber}? This action cannot be undone.`,
+      okText: 'Delete',
+      okType: 'danger',
+      cancelText: 'Cancel',
+      onOk: async () => {
+        try {
+          await DocumentsApi.deleteDocumentVersion(documentId, version.versionNumber);
+          message.success('Version deleted successfully', 5);
+          fetchDocument(); // Refresh document
+        } catch (error) {
+          message.error('Failed to delete version: ' + (error instanceof Error ? error.message : 'Unknown error'), 6);
+        }
+      },
+    });
   };
 
   // Generate view menu items for versions
@@ -458,8 +511,31 @@ export default function DocumentDetail({ documentId }: DocumentDetailProps) {
                   renderItem={(version: DocumentVersion) => (
                     <List.Item
                       actions={[
-                        <Button key="view" icon={<EyeOutlined />} size="small">View</Button>,
-                        <Button key="download" icon={<DownloadOutlined />} size="small">Download</Button>
+                        <Button 
+                          key="view" 
+                          icon={<EyeOutlined />} 
+                          size="small"
+                          onClick={() => handleViewVersion(version)}
+                        >
+                          View
+                        </Button>,
+                        <Button 
+                          key="download" 
+                          icon={<DownloadOutlined />} 
+                          size="small"
+                          onClick={() => handleDownloadVersion(version)}
+                        >
+                          Download
+                        </Button>,
+                        <Button 
+                          key="delete" 
+                          icon={<DeleteOutlined />} 
+                          size="small"
+                          danger
+                          onClick={() => handleDeleteVersion(version)}
+                        >
+                          Delete
+                        </Button>,
                       ]}
                     >
                       <List.Item.Meta
@@ -628,38 +704,81 @@ export default function DocumentDetail({ documentId }: DocumentDetailProps) {
           </Button>,
         ]}
       >
-        {selectedVersionForView?.s3Key && (
-          <div style={{ height: '80vh', overflow: 'auto' }}>
-            <PDFDocument
-              file={DocumentsApi.getFileViewUrl(selectedVersionForView.s3Key)}
-              onLoadSuccess={({ numPages }) => setNumPages(numPages)}
-              loading={
-                <div className="flex items-center justify-center h-full">
-                  <Spin size="large" tip="Loading PDF..." />
-                </div>
-              }
-              error={
-                <div className="flex items-center justify-center h-full text-red-500">
-                  <div className="text-center">
-                    <div className="text-4xl mb-4">⚠️</div>
-                    <div>Failed to load PDF</div>
-                    <div className="text-sm mt-2">Please try downloading the file</div>
-                  </div>
-                </div>
-              }
-            >
-              {Array.from(new Array(numPages || 0), (el, index) => (
-                <Page
-                  key={`page_${index + 1}`}
-                  pageNumber={index + 1}
-                  width={Math.min(window.innerWidth * 0.8, 900)}
-                  renderTextLayer={true}
-                  renderAnnotationLayer={true}
+        {selectedVersionForView?.s3Key && (() => {
+          const fileType = getFileType(selectedVersionForView);
+          const fileUrl = DocumentsApi.getFileViewUrl(selectedVersionForView.s3Key);
+          
+          if (fileType === 'pdf') {
+            return (
+              <div style={{ height: '80vh', overflow: 'auto' }}>
+                <PDFDocument
+                  file={fileUrl}
+                  onLoadSuccess={({ numPages }) => setNumPages(numPages)}
+                  loading={
+                    <div className="flex items-center justify-center h-full">
+                      <Spin size="large" tip="Loading PDF..." />
+                    </div>
+                  }
+                  error={
+                    <div className="flex items-center justify-center h-full text-red-500">
+                      <div className="text-center">
+                        <div className="text-4xl mb-4">⚠️</div>
+                        <div>Failed to load PDF</div>
+                        <div className="text-sm mt-2">Please try downloading the file</div>
+                      </div>
+                    </div>
+                  }
+                >
+                  {Array.from(new Array(numPages || 0), (el, index) => (
+                    <Page
+                      key={`page_${index + 1}`}
+                      pageNumber={index + 1}
+                      width={Math.min(window.innerWidth * 0.8, 900)}
+                      renderTextLayer={true}
+                      renderAnnotationLayer={true}
+                    />
+                  ))}
+                </PDFDocument>
+              </div>
+            );
+          } else if (fileType === 'txt') {
+            return (
+              <div style={{ height: '80vh', overflow: 'auto', padding: '20px', backgroundColor: '#fff' }}>
+                <pre style={{ whiteSpace: 'pre-wrap', wordWrap: 'break-word', fontFamily: 'monospace' }}>
+                  {textContent || <Spin tip="Loading text file..." />}
+                </pre>
+              </div>
+            );
+          } else if (fileType === 'doc') {
+            return (
+              <div style={{ height: '80vh', overflow: 'auto' }}>
+                <iframe
+                  src={`https://docs.google.com/viewer?url=${encodeURIComponent(fileUrl)}&embedded=true`}
+                  style={{ width: '100%', height: '100%', border: 'none' }}
+                  title="Document Viewer"
                 />
-              ))}
-            </PDFDocument>
-          </div>
-        )}
+              </div>
+            );
+          } else {
+            return (
+              <div className="flex items-center justify-center h-full text-gray-500" style={{ height: '80vh' }}>
+                <div className="text-center">
+                  <div className="text-4xl mb-4">📄</div>
+                  <div>Preview not available for this file type</div>
+                  <div className="text-sm mt-2">Please download the file to view</div>
+                  <Button
+                    type="primary"
+                    icon={<DownloadOutlined />}
+                    className="mt-4"
+                    onClick={() => handleDownloadVersion(selectedVersionForView)}
+                  >
+                    Download File
+                  </Button>
+                </div>
+              </div>
+            );
+          }
+        })()}
       </Modal>
     </div>
   );

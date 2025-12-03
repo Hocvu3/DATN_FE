@@ -396,6 +396,17 @@ export const DocumentsApi = {
             asset: any;
         }>(`/documents/${id}/assets`, data);
     },
+
+    /**
+     * Delete document version
+     */
+    deleteDocumentVersion(id: string, versionNumber: number): Promise<ApiResult<{
+        message: string;
+    }>> {
+        return apiDelete<{
+            message: string;
+        }>(`/documents/${id}/versions/${versionNumber}`);
+    },
 };
 
 /**
