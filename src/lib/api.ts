@@ -116,6 +116,7 @@ async function apiRequest<TResponse>(
       headers,
       body: body ? JSON.stringify(body) : undefined,
       credentials: 'include',
+      cache: 'no-store', // Disable caching to always fetch fresh data
       signal: controller.signal,
       ...options,
     });

@@ -48,6 +48,14 @@ export default function DocumentsList() {
     limit: 10,
   });
 
+  // Reset filters and fetch fresh data on mount
+  useEffect(() => {
+    setFilters({
+      page: 1,
+      limit: 10,
+    });
+  }, []);
+
   const fetchDocuments = useCallback(async () => {
     setLoading(true);
     try {
