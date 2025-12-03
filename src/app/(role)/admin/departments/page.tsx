@@ -158,13 +158,15 @@ const DepartmentsPage = () => {
   const handleAddMembers = (memberIds: string[]) => {
     setShowAddMemberModal(false);
     setSelectedDepartment(null);
-    message.success(`${memberIds.length} members added to department!`);
+    message.success(`${memberIds.length} member(s) added to department!`);
+    fetchDepartments(searchQuery || undefined); // Refresh to update member counts
   };
 
   const handleAddDocuments = (documentIds: string[]) => {
     setShowAddDocumentModal(false);
     setSelectedDepartment(null);
-    message.success(`${documentIds.length} documents added to department!`);
+    message.success(`${documentIds.length} document(s) added to department!`);
+    fetchDepartments(searchQuery || undefined); // Refresh to update document counts
   };
 
   // Tab items for the sub-navigation
@@ -282,6 +284,7 @@ const DepartmentsPage = () => {
               size="small"
               icon={<UserPlus className="h-4 w-4" />}
               onClick={() => {
+                console.log("[Department] Add Members clicked:", { id: record.id, name: record.name, record });
                 setSelectedDepartment(record);
                 setShowAddMemberModal(true);
               }}
@@ -294,6 +297,7 @@ const DepartmentsPage = () => {
               size="small"
               icon={<Plus className="h-4 w-4" />}
               onClick={() => {
+                console.log("[Department] Add Documents clicked:", { id: record.id, name: record.name, record });
                 setSelectedDepartment(record);
                 setShowAddDocumentModal(true);
               }}
@@ -478,10 +482,12 @@ const DepartmentsPage = () => {
       <AddMemberModal
         open={showAddMemberModal}
         onCancel={() => {
+          console.log("[Department] AddMemberModal closing");
           setShowAddMemberModal(false);
           setSelectedDepartment(null);
         }}
         onSubmit={handleAddMembers}
+        departmentId={selectedDepartment?.id}
         departmentName={selectedDepartment?.name}
         existingMemberIds={emptyMemberIds}
       />
@@ -489,10 +495,12 @@ const DepartmentsPage = () => {
       <AddDocumentModal
         open={showAddDocumentModal}
         onCancel={() => {
+          console.log("[Department] AddDocumentModal closing");
           setShowAddDocumentModal(false);
           setSelectedDepartment(null);
         }}
         onSubmit={handleAddDocuments}
+        departmentId={selectedDepartment?.id}
         departmentName={selectedDepartment?.name}
         existingDocumentIds={emptyDocumentIds}
       />

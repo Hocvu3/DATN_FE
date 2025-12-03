@@ -146,4 +146,15 @@ export const UsersApi = {
 
     return apiGet<GetUsersResponse>('/admin/users', { params: queryParams });
   },
+
+  /**
+   * Update user department
+   */
+  async updateUser(userId: string, data: {
+    departmentId?: string;
+    roleId?: string;
+    isActive?: boolean;
+  }): Promise<{ data: any; status: number }> {
+    return apiPut<any>(`/admin/users/${userId}`, data);
+  },
 };

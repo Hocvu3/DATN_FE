@@ -6,14 +6,14 @@ import {
   Input, 
   Checkbox, 
   Button, 
-  message, 
   List, 
   Avatar, 
   Tag, 
   Empty,
   Spin,
   Select,
-  Badge
+  Badge,
+  App
 } from "antd";
 import { SearchOutlined, UserOutlined, MailOutlined } from "@ant-design/icons";
 import { UsersApi } from "@/lib/users-api";
@@ -65,6 +65,7 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({
   onSubmit,
   existingMemberIds = [],
 }) => {
+  const { message } = App.useApp();
   const [loading, setLoading] = useState(false);
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -76,6 +77,18 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({
   
   // Use ref to track previous existingMemberIds to avoid infinite loops
   const prevExistingMemberIds = useRef<string[]>([]);
+
+  // Debug: Log departmentId when modal opens
+  useEffect(() => {
+    if (open) {
+      console.log("[AddMemberModal] Modal opened with:", {
+        departmentId,
+        departmentName,
+        departmentIdType: typeof departmentId,
+        isValidUUID: departmentId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(departmentId)
+      });
+    }
+  }, [open, departmentId, departmentName]);
 
   // Fetch all users when modal opens
   useEffect(() => {
@@ -95,9 +108,10 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({
       if (result.data.success && result.data.data) {
         setAllUsers(result.data.data.users);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to fetch users:", error);
-      message.error("Failed to load users");
+      const errorMessage = error?.response?.data?.message || error?.message || 'Failed to load users';
+      message.error(errorMessage, 6);
     } finally {
       setLoading(false);
     }
@@ -171,19 +185,44 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({
 
   const handleSave = async () => {
     if (selectedUserIds.length === 0) {
-      message.warning("Please select at least one user to add");
+      message.warning("Please select at least one user to add", 5);
       return;
     }
 
+    if (!departmentId) {
+      message.error("Department ID is required", 5);
+      return;
+    }
+
+    console.log("[AddMemberModal] Starting to add members:", {
+      selectedUserIds,
+      departmentId,
+      departmentName
+    });
+
     try {
       setLoading(true);
-      onSubmit(selectedUserIds);
       
-      message.success(`Successfully added ${selectedUserIds.length} member(s) to ${departmentName}`);
+      // Update each user's department
+      const updatePromises = selectedUserIds.map(userId => {
+        console.log("[AddMemberModal] Updating user:", userId, "to department:", departmentId);
+        return UsersApi.updateUser(userId, { departmentId });
+      });
+      
+      const results = await Promise.all(updatePromises);
+      console.log("[AddMemberModal] Update results:", results);
+      
+      message.success(`Successfully added ${selectedUserIds.length} member(s) to ${departmentName}`, 5);
+      
       setSelectedUserIds([]);
       setSearchTerm("");
-    } catch (error) {
-      message.error("Failed to add members");
+      onSubmit(selectedUserIds);
+      onCancel();
+    } catch (error: any) {
+      console.error("[AddMemberModal] Failed to add members:", error);
+      
+      const errorMessage = error?.response?.data?.message || error?.message || 'Failed to add members to department';
+      message.error(errorMessage, 6);
     } finally {
       setLoading(false);
     }

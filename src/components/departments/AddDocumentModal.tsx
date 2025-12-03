@@ -6,15 +6,15 @@ import {
   Input, 
   Checkbox, 
   Button, 
-  message, 
   List, 
   Tag, 
   Empty,
   Select,
   Space,
   Badge,
-  Avatar,
-  Tooltip
+  Tooltip,
+  Spin,
+  App
 } from "antd";
 import { 
   SearchOutlined, 
@@ -24,29 +24,11 @@ import {
   EyeOutlined,
   SafetyCertificateOutlined
 } from "@ant-design/icons";
+import { DocumentsApi } from "@/lib/documents-api";
+import type { Document } from "@/lib/types/document.types";
 
 const { Search } = Input;
 const { Option } = Select;
-
-interface Document {
-  id: string;
-  title: string;
-  description?: string;
-  fileType: string;
-  size: number;
-  createdAt: string;
-  updatedAt: string;
-  tags: string[];
-  status: "draft" | "pending_approval" | "approved" | "rejected" | "published";
-  securityLevel: "public" | "internal" | "confidential" | "secret" | "top_secret";
-  department: string;
-  coverImage?: string;
-  owner: {
-    id: string;
-    name: string;
-    avatar?: string;
-  };
-}
 
 interface AddDocumentModalProps {
   open: boolean;
@@ -56,120 +38,6 @@ interface AddDocumentModalProps {
   departmentId?: string;
   existingDocumentIds?: string[];
 }
-
-// Mock documents data
-const MOCK_DOCUMENTS: Document[] = [
-  {
-    id: "1",
-    title: "Q3 Financial Report 2025",
-    description: "Quarterly financial performance report for Q3 2025",
-    fileType: "pdf",
-    size: 2450000,
-    createdAt: "2025-09-15T10:30:00Z",
-    updatedAt: "2025-09-15T14:45:00Z",
-    tags: ["financial", "quarterly", "confidential"],
-    status: "approved",
-    securityLevel: "confidential",
-    department: "Finance",
-    coverImage: "https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=300&h=200",
-    owner: {
-      id: "101",
-      name: "Jennifer Morgan",
-      avatar: "https://i.pravatar.cc/150?img=5",
-    },
-  },
-  {
-    id: "2",
-    title: "Marketing Campaign Proposal",
-    description: "Fall 2025 marketing campaign strategy and planning",
-    fileType: "pptx",
-    size: 3720000,
-    createdAt: "2025-09-12T09:15:00Z",
-    updatedAt: "2025-09-14T16:20:00Z",
-    tags: ["marketing", "campaign", "planning"],
-    status: "pending_approval",
-    securityLevel: "internal",
-    department: "Marketing",
-    coverImage: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=300&h=200",
-    owner: {
-      id: "102",
-      name: "Michael Chen",
-      avatar: "https://i.pravatar.cc/150?img=3",
-    },
-  },
-  {
-    id: "3",
-    title: "Employee Handbook 2025",
-    description: "Updated employee handbook with new policies",
-    fileType: "docx",
-    size: 1850000,
-    createdAt: "2025-09-10T13:45:00Z",
-    updatedAt: "2025-09-10T13:45:00Z",
-    tags: ["hr", "policy", "internal"],
-    status: "published",
-    securityLevel: "internal",
-    department: "Human Resources",
-    owner: {
-      id: "103",
-      name: "Sarah Johnson",
-      avatar: "https://i.pravatar.cc/150?img=1",
-    },
-  },
-  {
-    id: "4",
-    title: "API Documentation v2.1",
-    description: "Complete API documentation for developers",
-    fileType: "pdf",
-    size: 5200000,
-    createdAt: "2025-09-08T11:20:00Z",
-    updatedAt: "2025-09-12T15:30:00Z",
-    tags: ["technical", "api", "development"],
-    status: "published",
-    securityLevel: "public",
-    department: "IT",
-    owner: {
-      id: "104",
-      name: "Alex Kumar",
-      avatar: "https://i.pravatar.cc/150?img=8",
-    },
-  },
-  {
-    id: "5",
-    title: "Security Protocol Guidelines",
-    description: "Company-wide security protocols and procedures",
-    fileType: "docx",
-    size: 980000,
-    createdAt: "2025-09-05T14:15:00Z",
-    updatedAt: "2025-09-11T10:45:00Z",
-    tags: ["security", "protocol", "guidelines"],
-    status: "approved",
-    securityLevel: "secret",
-    department: "Security",
-    owner: {
-      id: "105",
-      name: "Rachel Williams",
-      avatar: "https://i.pravatar.cc/150?img=6",
-    },
-  },
-  {
-    id: "6",
-    title: "Product Roadmap 2026",
-    description: "Strategic product development roadmap for next year",
-    fileType: "pptx",
-    size: 4100000,
-    createdAt: "2025-09-01T16:00:00Z",
-    updatedAt: "2025-09-13T12:20:00Z",
-    tags: ["product", "roadmap", "strategy"],
-    status: "draft",
-    securityLevel: "confidential",
-    department: "Product",
-    owner: {
-      id: "106",
-      name: "Tom Anderson",
-      avatar: "https://i.pravatar.cc/150?img=4",
-    },
-  },
-];
 
 const getSecurityLevelColor = (level: string): string => {
   switch (level) {
@@ -193,33 +61,20 @@ const getStatusColor = (status: string): string => {
   }
 };
 
-const formatFileSize = (bytes: number): string => {
-  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-  if (bytes === 0) return '0 Bytes';
-  const i = Math.floor(Math.log(bytes) / Math.log(1024));
-  return Math.round(bytes / Math.pow(1024, i) * 100) / 100 + ' ' + sizes[i];
-};
-
-const getFileIcon = (fileType: string) => {
-  const iconColor = fileType === "pdf" ? "#F40F02" : 
-                   fileType === "docx" ? "#2B579A" : 
-                   fileType === "xlsx" ? "#217346" : 
-                   fileType === "pptx" ? "#D04423" : "#5A5A5A";
-  return <FileTextOutlined style={{ color: iconColor, fontSize: "20px" }} />;
-};
-
 const AddDocumentModal: React.FC<AddDocumentModalProps> = ({
   open,
-  departmentId, // eslint-disable-line @typescript-eslint/no-unused-vars
+  departmentId,
   departmentName,
   onCancel,
   onSubmit,
   existingDocumentIds = [],
 }) => {
+  const { message } = App.useApp();
   const [loading, setLoading] = useState(false);
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedDocumentIds, setSelectedDocumentIds] = useState<string[]>([]);
+  const [allDocuments, setAllDocuments] = useState<Document[]>([]);
   const [filteredDocuments, setFilteredDocuments] = useState<Document[]>([]);
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [securityFilter, setSecurityFilter] = useState<string>("all");
@@ -228,12 +83,44 @@ const AddDocumentModal: React.FC<AddDocumentModalProps> = ({
   // Use ref to track previous existingDocumentIds to avoid infinite loops
   const prevExistingDocumentIds = useRef<string[]>([]);
 
-  // Initialize and filter documents
+  // Debug: Log departmentId when modal opens
   useEffect(() => {
-    // Update ref to track previous value
-    prevExistingDocumentIds.current = existingDocumentIds;
+    if (open) {
+      console.log("[AddDocumentModal] Modal opened with:", {
+        departmentId,
+        departmentName,
+        departmentIdType: typeof departmentId,
+        isValidUUID: departmentId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(departmentId)
+      });
+    }
+  }, [open, departmentId, departmentName]);
 
-    let filtered = MOCK_DOCUMENTS.filter(doc => !existingDocumentIds.includes(doc.id));
+  // Fetch documents when modal opens
+  useEffect(() => {
+    if (open) {
+      fetchDocuments();
+    }
+  }, [open]);
+
+  const fetchDocuments = async () => {
+    setLoading(true);
+    try {
+      const result = await DocumentsApi.getAll({});
+      if (result.data.success && result.data.data) {
+        setAllDocuments(result.data.data.documents);
+      }
+    } catch (error: any) {
+      console.error("Failed to fetch documents:", error);
+      const errorMessage = error?.response?.data?.message || error?.message || 'Failed to load documents';
+      message.error(errorMessage, 6);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Filter documents
+  useEffect(() => {
+    let filtered = allDocuments.filter(doc => !existingDocumentIds.includes(doc.id));
 
     // Apply search filter
     if (searchTerm) {
@@ -242,9 +129,9 @@ const AddDocumentModal: React.FC<AddDocumentModalProps> = ({
         doc =>
           doc.title.toLowerCase().includes(term) ||
           (doc.description && doc.description.toLowerCase().includes(term)) ||
-          doc.tags.some(tag => tag.toLowerCase().includes(term)) ||
-          doc.owner.name.toLowerCase().includes(term) ||
-          doc.department.toLowerCase().includes(term)
+          (doc.tags && doc.tags.some((dt: any) => dt.tag?.name?.toLowerCase().includes(term))) ||
+          (doc.creator && `${doc.creator.firstName} ${doc.creator.lastName}`.toLowerCase().includes(term)) ||
+          (doc.department?.name && doc.department.name.toLowerCase().includes(term))
       );
     }
 
@@ -260,11 +147,22 @@ const AddDocumentModal: React.FC<AddDocumentModalProps> = ({
 
     // Apply department filter
     if (departmentFilter !== "all") {
-      filtered = filtered.filter(doc => doc.department.toLowerCase() === departmentFilter.toLowerCase());
+      if (departmentFilter === "none") {
+        filtered = filtered.filter(doc => !doc.department);
+      } else {
+        filtered = filtered.filter(doc => doc.department?.name === departmentFilter);
+      }
     }
 
+    // Sort by department name
+    filtered.sort((a, b) => {
+      const deptA = a.department?.name || "zzz";
+      const deptB = b.department?.name || "zzz";
+      return deptA.localeCompare(deptB);
+    });
+
     setFilteredDocuments(filtered);
-  }, [searchTerm, statusFilter, securityFilter, departmentFilter, existingDocumentIds]);
+  }, [searchTerm, statusFilter, securityFilter, departmentFilter, allDocuments, existingDocumentIds]);
 
   // Reset state when modal opens/closes
   useEffect(() => {
@@ -301,26 +199,53 @@ const AddDocumentModal: React.FC<AddDocumentModalProps> = ({
 
   const handleSave = async () => {
     if (selectedDocumentIds.length === 0) {
-      message.warning("Please select at least one document to add");
+      message.warning("Please select at least one document to add", 5);
       return;
     }
 
+    if (!departmentId) {
+      message.error("Department ID is required", 5);
+      return;
+    }
+
+    console.log("[AddDocumentModal] Starting to add documents:", {
+      selectedDocumentIds,
+      departmentId,
+      departmentName
+    });
+
     try {
       setLoading(true);
-      const selectedDocuments = MOCK_DOCUMENTS.filter(doc => selectedDocumentIds.includes(doc.id));
-      onSubmit(selectedDocumentIds);
       
-      message.success(`Successfully added ${selectedDocuments.length} document(s) to ${departmentName}`);
+      // Update each document's department
+      const updatePromises = selectedDocumentIds.map(docId => {
+        console.log("[AddDocumentModal] Updating document:", docId, "to department:", departmentId);
+        return DocumentsApi.updateDocument(docId, { departmentId });
+      });
+      
+      const results = await Promise.all(updatePromises);
+      console.log("[AddDocumentModal] Update results:", results);
+      
+      message.success(`Successfully added ${selectedDocumentIds.length} document(s) to ${departmentName}`, 5);
+      
       setSelectedDocumentIds([]);
       setSearchTerm("");
-    } catch (error) {
-      message.error("Failed to add documents");
+      onSubmit(selectedDocumentIds);
+      onCancel();
+    } catch (error: any) {
+      console.error("[AddDocumentModal] Failed to add documents:", error);
+      
+      const errorMessage = error?.response?.data?.message || error?.message || 'Failed to add documents to department';
+      message.error(errorMessage, 6);
     } finally {
       setLoading(false);
     }
   };
 
-  const selectedDocuments = MOCK_DOCUMENTS.filter(doc => selectedDocumentIds.includes(doc.id));
+  const selectedDocuments = allDocuments.filter(doc => selectedDocumentIds.includes(doc.id));
+
+  // Get unique departments for filter
+  const uniqueDepartments = Array.from(new Set(allDocuments.map(d => d.department?.name).filter(Boolean))) as string[];
 
   return (
     <Modal
@@ -377,15 +302,13 @@ const AddDocumentModal: React.FC<AddDocumentModalProps> = ({
               placeholder="Filter by department"
               value={departmentFilter}
               onChange={setDepartmentFilter}
-              style={{ width: 150 }}
+              style={{ width: 180 }}
             >
               <Option value="all">All Departments</Option>
-              <Option value="finance">Finance</Option>
-              <Option value="marketing">Marketing</Option>
-              <Option value="human resources">Human Resources</Option>
-              <Option value="it">IT</Option>
-              <Option value="security">Security</Option>
-              <Option value="product">Product</Option>
+              <Option value="no-department">No Department</Option>
+              {uniqueDepartments.sort().map(dept => (
+                <Option key={dept} value={dept}>{dept}</Option>
+              ))}
             </Select>
           </div>
         </div>
@@ -442,7 +365,7 @@ const AddDocumentModal: React.FC<AddDocumentModalProps> = ({
                   <List.Item.Meta
                     avatar={
                       <div className="flex items-center">
-                        {getFileIcon(document.fileType)}
+                        <FileTextOutlined className="text-2xl text-blue-500" />
                       </div>
                     }
                     title={
@@ -464,24 +387,22 @@ const AddDocumentModal: React.FC<AddDocumentModalProps> = ({
                         <div className="flex items-center space-x-4 text-gray-500">
                           <div className="flex items-center">
                             <UserOutlined className="mr-1" />
-                            <Avatar src={document.owner.avatar} size="small" className="mr-1" />
-                            {document.owner.name}
+                            {document.creator?.firstName} {document.creator?.lastName}
                           </div>
                           <div className="flex items-center">
                             <CalendarOutlined className="mr-1" />
-                            {new Date(document.updatedAt).toLocaleDateString()}
+                            {document.updatedAt ? new Date(document.updatedAt).toLocaleDateString() : 'N/A'}
                           </div>
-                          <div>
-                            <Badge color="blue" text={document.department} />
-                          </div>
-                          <div>
-                            {formatFileSize(document.size)}
-                          </div>
+                          {document.department?.name && (
+                            <div>
+                              <Badge color="blue" text={document.department.name} />
+                            </div>
+                          )}
                         </div>
-                        {document.tags.length > 0 && (
+                        {document.tags && document.tags.length > 0 && (
                           <div className="flex flex-wrap gap-1">
-                            {document.tags.slice(0, 3).map(tag => (
-                              <Tag key={tag}>{tag}</Tag>
+                            {document.tags.slice(0, 3).map((dt: any) => (
+                              <Tag key={dt.id}>{dt.tag?.name || 'N/A'}</Tag>
                             ))}
                             {document.tags.length > 3 && (
                               <Tag>+{document.tags.length - 3}</Tag>
@@ -512,8 +433,8 @@ const AddDocumentModal: React.FC<AddDocumentModalProps> = ({
                   onClose={() => handleDocumentSelect(doc.id, false)}
                   className="flex items-center"
                 >
-                  {getFileIcon(doc.fileType)}
-                  <span className="ml-1">{doc.title}</span>
+                  <FileTextOutlined className="mr-1" />
+                  <span>{doc.title}</span>
                 </Tag>
               ))}
             </div>
