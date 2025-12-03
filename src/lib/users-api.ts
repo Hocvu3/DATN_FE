@@ -92,3 +92,58 @@ export async function uploadUserAvatar(file: File): Promise<string> {
 
   return avatarUrl;
 }
+
+export interface GetUsersResponse {
+  success: boolean;
+  message: string;
+  data: {
+    message: string;
+    users: Array<{
+      id: string;
+      email: string;
+      username: string;
+      firstName: string;
+      lastName: string;
+      isActive: boolean;
+      createdAt: string;
+      department?: {
+        id: string;
+        name: string;
+      };
+      role?: {
+        id: string;
+        name: string;
+      };
+    }>;
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+  timestamp: string;
+  path: string;
+  duration: string;
+}
+
+/**
+ * Get all users with filters
+ */
+export const UsersApi = {
+  async getAll(params?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    department?: string;
+    isActive?: boolean;
+  }): Promise<{ data: GetUsersResponse; status: number }> {
+    const queryParams: Record<string, string> = {};
+    
+    if (params?.page) queryParams.page = String(params.page);
+    if (params?.limit) queryParams.limit = String(params.limit);
+    if (params?.search) queryParams.search = params.search;
+    if (params?.department) queryParams.department = params.department;
+    if (params?.isActive !== undefined) queryParams.isActive = String(params.isActive);
+
+    return apiGet<GetUsersResponse>('/admin/users', { params: queryParams });
+  },
+};

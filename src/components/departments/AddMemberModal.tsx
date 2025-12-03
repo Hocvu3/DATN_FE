@@ -15,21 +15,37 @@ import {
   Select,
   Badge
 } from "antd";
-import { SearchOutlined, UserOutlined, MailOutlined, PhoneOutlined } from "@ant-design/icons";
+import { SearchOutlined, UserOutlined, MailOutlined } from "@ant-design/icons";
+import { UsersApi } from "@/lib/users-api";
 
 const { Search } = Input;
 const { Option } = Select;
 
+// Calculate user title based on years of service
+const calculateTitle = (joinDate: string): string => {
+  const now = new Date();
+  const joined = new Date(joinDate);
+  const yearsOfService = (now.getTime() - joined.getTime()) / (1000 * 60 * 60 * 24 * 365);
+  
+  if (yearsOfService >= 5) return "Senior";
+  if (yearsOfService >= 3) return "Mid-level";
+  if (yearsOfService >= 1) return "Junior";
+  return "Fresher";
+};
+
+// Get full name from user object
+const getFullName = (user: User): string => {
+  return `${user.firstName} ${user.lastName}`;
+};
+
 interface User {
   id: string;
-  name: string;
+  firstName: string;
+  lastName: string;
   email: string;
-  role: string;
-  department?: string;
-  avatar?: string;
-  phone?: string;
-  status: "active" | "inactive";
-  joinDate: string;
+  department?: { id: string; name: string; };
+  isActive: boolean;
+  createdAt: string;
 }
 
 interface AddMemberModalProps {
@@ -41,68 +57,10 @@ interface AddMemberModalProps {
   existingMemberIds?: string[];
 }
 
-// Mock users data
-const MOCK_USERS: User[] = [
-  {
-    id: "1",
-    name: "Alice Johnson",
-    email: "alice.johnson@company.com",
-    role: "Senior Developer",
-    department: "IT",
-    avatar: "https://i.pravatar.cc/150?img=1",
-    phone: "+1-234-567-8901",
-    status: "active",
-    joinDate: "2023-01-15",
-  },
-  {
-    id: "2",
-    name: "Bob Smith",
-    email: "bob.smith@company.com",
-    role: "Marketing Manager",
-    department: "Marketing",
-    avatar: "https://i.pravatar.cc/150?img=2",
-    phone: "+1-234-567-8902",
-    status: "active",
-    joinDate: "2022-11-20",
-  },
-  {
-    id: "3",
-    name: "Carol Davis",
-    email: "carol.davis@company.com",
-    role: "HR Specialist",
-    department: "HR",
-    avatar: "https://i.pravatar.cc/150?img=3",
-    phone: "+1-234-567-8903",
-    status: "active",
-    joinDate: "2023-02-10",
-  },
-  {
-    id: "4",
-    name: "David Wilson",
-    email: "david.wilson@company.com",
-    role: "Financial Analyst",
-    department: "Finance",
-    avatar: "https://i.pravatar.cc/150?img=4",
-    phone: "+1-234-567-8904",
-    status: "active",
-    joinDate: "2022-12-05",
-  },
-  {
-    id: "5",
-    name: "Emma Brown",
-    email: "emma.brown@company.com",
-    role: "UX Designer",
-    department: "Design",
-    avatar: "https://i.pravatar.cc/150?img=5",
-    phone: "+1-234-567-8905",
-    status: "active",
-    joinDate: "2023-03-25",
-  },
-];
-
 const AddMemberModal: React.FC<AddMemberModalProps> = ({
   open,
   departmentName,
+  departmentId,
   onCancel,
   onSubmit,
   existingMemberIds = [],
@@ -111,52 +69,81 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
+  const [allUsers, setAllUsers] = useState<User[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
-  const [roleFilter, setRoleFilter] = useState<string>("all");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [departmentFilter, setDepartmentFilter] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState<string>("active");
   
   // Use ref to track previous existingMemberIds to avoid infinite loops
   const prevExistingMemberIds = useRef<string[]>([]);
 
-  // Initialize and filter users
+  // Fetch all users when modal opens
   useEffect(() => {
-    // Update ref to track previous value
-    prevExistingMemberIds.current = existingMemberIds;
+    if (open) {
+      fetchUsers();
+    }
+  }, [open]);
 
-    let filtered = MOCK_USERS.filter(user => !existingMemberIds.includes(user.id));
+  const fetchUsers = async () => {
+    setLoading(true);
+    try {
+      const result = await UsersApi.getAll({
+        limit: 1000, // Get all users
+        isActive: statusFilter === "active" ? true : statusFilter === "inactive" ? false : undefined,
+      });
+      
+      if (result.data.success && result.data.data) {
+        setAllUsers(result.data.data.users);
+      }
+    } catch (error) {
+      console.error("Failed to fetch users:", error);
+      message.error("Failed to load users");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Filter users based on search and filters
+  useEffect(() => {
+    let filtered = allUsers.filter(user => !existingMemberIds.includes(user.id));
 
     // Apply search filter
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
       filtered = filtered.filter(
         user =>
-          user.name.toLowerCase().includes(term) ||
+          getFullName(user).toLowerCase().includes(term) ||
           user.email.toLowerCase().includes(term) ||
-          user.role.toLowerCase().includes(term) ||
-          (user.department && user.department.toLowerCase().includes(term))
+          (user.department?.name && user.department.name.toLowerCase().includes(term))
       );
     }
 
-    // Apply role filter
-    if (roleFilter !== "all") {
-      filtered = filtered.filter(user => user.role.toLowerCase().includes(roleFilter.toLowerCase()));
+    // Apply department filter
+    if (departmentFilter !== "all") {
+      if (departmentFilter === "none") {
+        filtered = filtered.filter(user => !user.department);
+      } else {
+        filtered = filtered.filter(user => user.department?.name === departmentFilter);
+      }
     }
 
-    // Apply status filter
-    if (statusFilter !== "all") {
-      filtered = filtered.filter(user => user.status === statusFilter);
-    }
+    // Sort by department name
+    filtered.sort((a, b) => {
+      const deptA = a.department?.name || "zzz"; // Put users without department at the end
+      const deptB = b.department?.name || "zzz";
+      return deptA.localeCompare(deptB);
+    });
 
     setFilteredUsers(filtered);
-  }, [searchTerm, roleFilter, statusFilter, existingMemberIds]);
+  }, [searchTerm, departmentFilter, statusFilter, allUsers, existingMemberIds]);
 
   // Reset state when modal opens/closes
   useEffect(() => {
     if (open) {
       setSelectedUserIds([]);
       setSearchTerm("");
-      setRoleFilter("all");
-      setStatusFilter("all");
+      setDepartmentFilter("all");
+      setStatusFilter("active");
     }
   }, [open]);
 
@@ -202,7 +189,10 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({
     }
   };
 
-  const selectedUsers = MOCK_USERS.filter(user => selectedUserIds.includes(user.id));
+  const selectedUsers = allUsers.filter(user => selectedUserIds.includes(user.id));
+
+  // Get unique departments for filter
+  const uniqueDepartments = Array.from(new Set(allUsers.map(u => u.department?.name).filter(Boolean))) as string[];
 
   return (
     <Modal
@@ -217,7 +207,7 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({
         {/* Search and Filters */}
         <div className="space-y-3">
           <Search
-            placeholder="Search users by name, email, role, or department..."
+            placeholder="Search users by name, email, or department..."
             allowClear
             enterButton={<SearchOutlined />}
             size="large"
@@ -228,27 +218,27 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({
           
           <div className="flex flex-wrap gap-3">
             <Select
-              placeholder="Filter by role"
-              value={roleFilter}
-              onChange={setRoleFilter}
-              style={{ width: 150 }}
+              placeholder="Filter by department"
+              value={departmentFilter}
+              onChange={setDepartmentFilter}
+              style={{ width: 180 }}
             >
-              <Option value="all">All Roles</Option>
-              <Option value="developer">Developer</Option>
-              <Option value="manager">Manager</Option>
-              <Option value="analyst">Analyst</Option>
-              <Option value="specialist">Specialist</Option>
-              <Option value="designer">Designer</Option>
-              <Option value="engineer">Engineer</Option>
+              <Option value="all">All Departments</Option>
+              <Option value="none">No Department</Option>
+              {uniqueDepartments.map(dept => (
+                <Option key={dept} value={dept}>{dept}</Option>
+              ))}
             </Select>
 
             <Select
               placeholder="Filter by status"
               value={statusFilter}
-              onChange={setStatusFilter}
+              onChange={(val) => {
+                setStatusFilter(val);
+                if (open) fetchUsers();
+              }}
               style={{ width: 130 }}
             >
-              <Option value="all">All Status</Option>
               <Option value="active">Active</Option>
               <Option value="inactive">Inactive</Option>
             </Select>
@@ -312,18 +302,18 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({
                           checked={selectedUserIds.includes(user.id)}
                           onChange={(e) => handleUserSelect(user.id, e.target.checked)}
                         />
-                        <Avatar src={user.avatar} icon={<UserOutlined />} size="large" />
+                        <Avatar icon={<UserOutlined />} size="large" className="bg-blue-500" />
                       </div>
                     }
                     title={
                       <div className="flex items-center justify-between">
-                        <span className="font-medium text-gray-900">{user.name}</span>
+                        <span className="font-medium text-gray-900">{getFullName(user)}</span>
                         <div className="flex items-center space-x-2">
-                          <Tag color={user.status === "active" ? "green" : "red"}>
-                            {user.status.toUpperCase()}
+                          <Tag color={user.isActive ? "green" : "red"}>
+                            {user.isActive ? "ACTIVE" : "INACTIVE"}
                           </Tag>
                           {user.department && (
-                            <Tag color="blue">{user.department}</Tag>
+                            <Tag color="blue">{user.department.name}</Tag>
                           )}
                         </div>
                       </div>
@@ -335,16 +325,10 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({
                           {user.email}
                         </div>
                         <div className="flex items-center justify-between">
-                          <span className="text-sm text-gray-500">{user.role}</span>
-                          {user.phone && (
-                            <div className="flex items-center text-gray-500 text-sm">
-                              <PhoneOutlined className="mr-1" />
-                              {user.phone}
-                            </div>
-                          )}
+                          <span className="text-sm text-gray-500">{calculateTitle(user.createdAt)}</span>
                         </div>
                         <div className="text-xs text-gray-400">
-                          Joined: {new Date(user.joinDate).toLocaleDateString()}
+                          Joined: {new Date(user.createdAt).toLocaleDateString()}
                         </div>
                       </div>
                     }
@@ -370,8 +354,8 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({
                   onClose={() => handleUserSelect(user.id, false)}
                   className="flex items-center"
                 >
-                  <Avatar src={user.avatar} size="small" className="mr-1" />
-                  {user.name}
+                  <Avatar size="small" className="mr-1 bg-green-500" icon={<UserOutlined />} />
+                  {getFullName(user)}
                 </Tag>
               ))}
             </div>
