@@ -4,12 +4,18 @@ import { useEffect, useState, useCallback } from 'react';
 import { Spin, Typography, Descriptions, Tag, Button, Card, Tabs, Divider, Space, Badge, List, Avatar, App, Modal, Upload, Input, Form, Dropdown, Menu } from 'antd';
 import type { MenuProps } from 'antd';
 import { ArrowLeftOutlined, DownloadOutlined, EditOutlined, LockOutlined, EyeOutlined, HistoryOutlined, DeleteOutlined, UploadOutlined, SendOutlined } from '@ant-design/icons';
-import { Document, DocumentStatus, DocumentVersion, SecurityLevel } from '@/lib/types/document.types';
+import { Document as DocumentType, DocumentStatus, DocumentVersion, SecurityLevel } from '@/lib/types/document.types';
 import { DocumentsApi, getDocumentCoverUrl } from '@/lib/documents-api';
 import Image from 'next/image';
 import Link from 'next/link';
 import dayjs from 'dayjs';
 import EditDocumentModal from '@/components/documents/EditDocumentModal';
+import { Document as PDFDocument, Page, pdfjs } from 'react-pdf';
+import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
+import 'react-pdf/dist/esm/Page/TextLayer.css';
+
+// Configure PDF.js worker
+pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
 
 const { Title, Text, Paragraph } = Typography;
 const { TabPane } = Tabs;
@@ -36,7 +42,7 @@ interface DocumentDetailProps {
 
 export default function DocumentDetail({ documentId }: DocumentDetailProps) {
   const { message } = App.useApp();
-  const [document, setDocument] = useState<Document | null>(null);
+  const [document, setDocument] = useState<DocumentType | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [activeTab, setActiveTab] = useState<string>('details');
   const [showEditModal, setShowEditModal] = useState<boolean>(false);
@@ -48,6 +54,8 @@ export default function DocumentDetail({ documentId }: DocumentDetailProps) {
   const [form] = Form.useForm();
   const [viewModalVisible, setViewModalVisible] = useState<boolean>(false);
   const [selectedVersionForView, setSelectedVersionForView] = useState<DocumentVersion | null>(null);
+  const [numPages, setNumPages] = useState<number | null>(null);
+  const [pageNumber, setPageNumber] = useState<number>(1);
 
   const fetchDocument = useCallback(async () => {
     setLoading(true);
@@ -459,7 +467,6 @@ export default function DocumentDetail({ documentId }: DocumentDetailProps) {
                         description={
                           <>
                             <div>Created on {dayjs(version.createdAt).format('YYYY-MM-DD HH:mm')}</div>
-                            <div>{version.comment || 'No comment'}</div>
                             <div className="text-xs text-gray-400">Size: {version.fileSize ? `${Math.round(version.fileSize / 1024)} KB` : 'Unknown'}</div>
                           </>
                         }
@@ -622,11 +629,36 @@ export default function DocumentDetail({ documentId }: DocumentDetailProps) {
         ]}
       >
         {selectedVersionForView?.s3Key && (
-          <iframe
-            src={DocumentsApi.getFileViewUrl(selectedVersionForView.s3Key)}
-            style={{ width: '100%', height: '80vh', border: 'none' }}
-            title="PDF Viewer"
-          />
+          <div style={{ height: '80vh', overflow: 'auto' }}>
+            <PDFDocument
+              file={DocumentsApi.getFileViewUrl(selectedVersionForView.s3Key)}
+              onLoadSuccess={({ numPages }) => setNumPages(numPages)}
+              loading={
+                <div className="flex items-center justify-center h-full">
+                  <Spin size="large" tip="Loading PDF..." />
+                </div>
+              }
+              error={
+                <div className="flex items-center justify-center h-full text-red-500">
+                  <div className="text-center">
+                    <div className="text-4xl mb-4">⚠️</div>
+                    <div>Failed to load PDF</div>
+                    <div className="text-sm mt-2">Please try downloading the file</div>
+                  </div>
+                </div>
+              }
+            >
+              {Array.from(new Array(numPages || 0), (el, index) => (
+                <Page
+                  key={`page_${index + 1}`}
+                  pageNumber={index + 1}
+                  width={Math.min(window.innerWidth * 0.8, 900)}
+                  renderTextLayer={true}
+                  renderAnnotationLayer={true}
+                />
+              ))}
+            </PDFDocument>
+          </div>
         )}
       </Modal>
     </div>
