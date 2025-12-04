@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   Button,
   Card,
@@ -13,111 +13,258 @@ import {
   Form,
   Space,
   message,
+  Row,
+  Col,
+  Statistic,
 } from "antd";
 import {
   PlusOutlined,
   EditOutlined,
   DeleteOutlined,
   SearchOutlined,
-  FilterOutlined,
   MailOutlined,
+  UserOutlined,
+  TeamOutlined,
+  CheckCircleOutlined,
+  CloseCircleOutlined,
 } from "@ant-design/icons";
 import Image from "next/image";
 import { AuthApi } from "@/lib/api";
+import { UsersApi, CreateUserDto, UpdateUserDto, Role, Department } from "@/lib/users-api";
 
-// Mock data for user management
-const users = [
-  {
-    id: 1,
-    name: "John Doe",
-    email: "john.doe@example.com",
-    department: "Marketing",
-    role: "User",
-    status: "Active",
-  },
-  {
-    id: 2,
-    name: "Jane Smith",
-    email: "jane.smith@example.com",
-    department: "Human Resources",
-    role: "Admin",
-    status: "Active",
-  },
-  {
-    id: 3,
-    name: "Robert Johnson",
-    email: "robert.johnson@example.com",
-    department: "Finance",
-    role: "User",
-    status: "Inactive",
-  },
-  {
-    id: 4,
-    name: "Emily Davis",
-    email: "emily.davis@example.com",
-    department: "IT",
-    role: "Manager",
-    status: "Active",
-  },
-  {
-    id: 5,
-    name: "Michael Wilson",
-    email: "michael.wilson@example.com",
-    department: "Sales",
-    role: "User",
-    status: "Active",
-  },
-  {
-    id: 6,
-    name: "Sarah Brown",
-    email: "sarah.brown@example.com",
-    department: "Marketing",
-    role: "Manager",
-    status: "Inactive",
-  },
-  {
-    id: 7,
-    name: "David Miller",
-    email: "david.miller@example.com",
-    department: "IT",
-    role: "Admin",
-    status: "Active",
-  },
-];
-
-const departments = ["Marketing", "Human Resources", "Finance", "IT", "Sales"];
-const roles = ["Admin", "Manager", "User"];
-const statuses = ["Active", "Inactive"];
+interface User {
+  id: string;
+  email: string;
+  username: string;
+  firstName: string;
+  lastName: string;
+  isActive: boolean;
+  createdAt: string;
+  department?: {
+    id: string;
+    name: string;
+  };
+  role?: {
+    id: string;
+    name: string;
+  };
+}
 
 const UsersPage = () => {
-  const [isModalVisible, setIsModalVisible] = React.useState(false);
-  const [isInviteModalVisible, setIsInviteModalVisible] = React.useState(false);
-  const [editingUser, setEditingUser] = React.useState<any>(null);
-  const [loading, setLoading] = React.useState(false);
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [isInviteModalVisible, setIsInviteModalVisible] = useState(false);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [searchText, setSearchText] = useState("");
+  const [roles, setRoles] = useState<Role[]>([]);
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [pagination, setPagination] = useState({
+    current: 1,
+    pageSize: 10,
+    total: 0,
+  });
+  
   const [form] = Form.useForm();
   const [inviteForm] = Form.useForm();
+  const [modal, contextHolder] = Modal.useModal();
 
-  const showModal = (user: any = null) => {
-    setEditingUser(user);
-    if (user) {
-      form.setFieldsValue(user);
-    } else {
-      form.resetFields();
+  // Fetch users
+  const fetchUsers = async (page = 1, pageSize = 10, search = "") => {
+    setLoading(true);
+    try {
+      const result = await UsersApi.getAll({
+        page,
+        limit: pageSize,
+        search: search || undefined,
+      });
+
+      if (result.data?.data?.users) {
+        setUsers(result.data.data.users);
+        setPagination({
+          current: result.data.data.page,
+          pageSize: result.data.data.limit,
+          total: result.data.data.total,
+        });
+      }
+    } catch (error: any) {
+      message.error(error.response?.data?.message || "Failed to fetch users", 6);
+    } finally {
+      setLoading(false);
     }
-    setIsModalVisible(true);
   };
 
-  const handleOk = () => {
-    form.validateFields().then((values) => {
-      // Here we would handle saving the user data
+  // Fetch roles and departments
+  const fetchRolesAndDepartments = async () => {
+    try {
+      const [rolesResult, departmentsResult] = await Promise.all([
+        UsersApi.getRoles(),
+        UsersApi.getDepartments(),
+      ]);
+
+      console.log('Roles result:', rolesResult);
+      console.log('Departments result:', departmentsResult);
+
+      // Handle nested data structure: response.data.data or response.data
+      const rolesData = (rolesResult.data as any)?.data?.roles || rolesResult.data?.roles;
+      const departmentsData = (departmentsResult.data as any)?.data?.departments || departmentsResult.data?.departments;
+
+      if (rolesData) {
+        setRoles(rolesData);
+        console.log('Roles set:', rolesData);
+      }
+      if (departmentsData) {
+        setDepartments(departmentsData);
+        console.log('Departments set:', departmentsData);
+      }
+    } catch (error: any) {
+      console.error("Failed to fetch roles/departments:", error);
+      message.error("Failed to load roles and departments", 6);
+    }
+  };
+
+  useEffect(() => {
+    fetchUsers();
+    fetchRolesAndDepartments();
+  }, []);
+
+  // Search with debounce
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchUsers(1, pagination.pageSize, searchText);
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchText]);
+
+  const showModal = async (user: User | null = null) => {
+    // Always fetch latest roles and departments when opening modal
+    await fetchRolesAndDepartments();
+    
+    setEditingUser(user);
+    
+    // Use setTimeout to ensure state is updated before opening modal
+    setTimeout(() => {
+      if (user) {
+        form.setFieldsValue({
+          firstName: user.firstName,
+          lastName: user.lastName,
+          email: user.email,
+          username: user.username,
+          departmentId: user.department?.id,
+          roleId: user.role?.id,
+          isActive: user.isActive,
+        });
+      } else {
+        form.resetFields();
+      }
+      
+      console.log('Opening modal with roles:', roles.length, 'departments:', departments.length);
+      setIsModalVisible(true);
+    }, 100);
+  };
+
+  const handleOk = async () => {
+    try {
+      const values = await form.validateFields();
+      setLoading(true);
+
+      if (editingUser) {
+        // Update user
+        const updateData: UpdateUserDto = {
+          departmentId: values.departmentId,
+          roleId: values.roleId,
+          isActive: values.isActive,
+        };
+        
+        const result = await UsersApi.update(editingUser.id, updateData);
+        
+        if (result.data?.message) {
+          message.success(result.data.message, 5);
+          await fetchUsers(pagination.current, pagination.pageSize, searchText);
+        }
+      } else {
+        // Create user
+        const createData: CreateUserDto = {
+          email: values.email,
+          username: values.username,
+          password: values.password,
+          firstName: values.firstName,
+          lastName: values.lastName,
+          roleId: values.roleId,
+          departmentId: values.departmentId,
+        };
+
+        const result = await UsersApi.create(createData);
+        
+        if (result.data?.message) {
+          message.success(result.data.message, 5);
+          await fetchUsers(pagination.current, pagination.pageSize, searchText);
+        }
+      }
+
       form.resetFields();
       setIsModalVisible(false);
-    });
+      setEditingUser(null);
+    } catch (error: any) {
+      if (error.errorFields) {
+        // Form validation error
+        return;
+      }
+      message.error(error.response?.data?.message || "Failed to save user", 6);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleCancel = () => {
     form.resetFields();
     setIsModalVisible(false);
+    setEditingUser(null);
+  };
+
+  const handleDelete = (user: User) => {
+    console.log('Delete button clicked for user:', user);
+    modal.confirm({
+      title: "Confirm Delete",
+      content: `Are you sure you want to delete user "${user.firstName} ${user.lastName}"? This action cannot be undone.`,
+      okText: "Delete",
+      okType: "danger",
+      cancelText: "Cancel",
+      onOk: async () => {
+        try {
+          console.log('Deleting user:', user.id);
+          const result = await UsersApi.delete(user.id);
+          console.log('Delete result:', result);
+          
+          if (result.status === 204 || (result.data as any)?.success || result.data?.message) {
+            message.success(result.data?.message || "User deleted successfully", 5);
+            await fetchUsers(pagination.current, pagination.pageSize, searchText);
+          }
+        } catch (error: any) {
+          console.error('Delete error:', error);
+          message.error(error.response?.data?.message || "Failed to delete user", 6);
+        }
+      },
+    });
+  };
+
+  const handleToggleStatus = async (user: User) => {
+    try {
+      setLoading(true);
+      const result = user.isActive
+        ? await UsersApi.deactivate(user.id)
+        : await UsersApi.activate(user.id);
+
+      if (result.data?.message) {
+        message.success(result.data.message, 5);
+        await fetchUsers(pagination.current, pagination.pageSize, searchText);
+      }
+    } catch (error: any) {
+      message.error(error.response?.data?.message || "Failed to update user status", 6);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const showInviteModal = () => {
@@ -130,7 +277,6 @@ const UsersPage = () => {
       const values = await inviteForm.validateFields();
       setLoading(true);
       
-      // Call invite API
       await AuthApi.inviteUser({
         email: values.email,
         firstName: values.firstName,
@@ -139,15 +285,11 @@ const UsersPage = () => {
         message: values.message,
       });
 
-      message.success("Invitation sent successfully!");
+      message.success("Invitation sent successfully!", 5);
       inviteForm.resetFields();
       setIsInviteModalVisible(false);
     } catch (error: any) {
-      if (error.response?.data?.message) {
-        message.error(error.response.data.message);
-      } else {
-        message.error("Failed to send invitation. Please try again.");
-      }
+      message.error(error.response?.data?.message || "Failed to send invitation. Please try again.", 6);
     } finally {
       setLoading(false);
     }
@@ -158,15 +300,31 @@ const UsersPage = () => {
     setIsInviteModalVisible(false);
   };
 
+  const handleTableChange = (newPagination: any) => {
+    fetchUsers(newPagination.current, newPagination.pageSize, searchText);
+  };
+
+  // Stats calculations
+  const totalUsers = pagination.total;
+  const activeUsers = users.filter(u => u.isActive).length;
+  const inactiveUsers = users.filter(u => !u.isActive).length;
+
   const columns = [
     {
       title: "Name",
-      dataIndex: "name",
       key: "name",
-      sorter: (a: any, b: any) => a.name.localeCompare(b.name),
-      render: (text: string) => (
-        <a className="text-blue-600 hover:underline">{text}</a>
+      sorter: (a: User, b: User) => 
+        `${a.firstName} ${a.lastName}`.localeCompare(`${b.firstName} ${b.lastName}`),
+      render: (_: any, record: User) => (
+        <span className="font-medium">
+          {record.firstName} {record.lastName}
+        </span>
       ),
+    },
+    {
+      title: "Username",
+      dataIndex: "username",
+      key: "username",
     },
     {
       title: "Email",
@@ -175,39 +333,33 @@ const UsersPage = () => {
     },
     {
       title: "Department",
-      dataIndex: "department",
       key: "department",
-      filters: departments.map((dept) => ({ text: dept, value: dept })),
-      onFilter: (value: any, record: any) => record.department === value,
+      render: (_: any, record: User) => record.department?.name || "-",
     },
     {
       title: "Role",
-      dataIndex: "role",
       key: "role",
-      filters: roles.map((role) => ({ text: role, value: role })),
-      onFilter: (value: any, record: any) => record.role === value,
-      render: (role: string) => {
+      render: (_: any, record: User) => {
+        const roleName = record.role?.name || "USER";
         let color = "blue";
-        if (role === "Admin") color = "red";
-        if (role === "Manager") color = "green";
-        return <Tag color={color}>{role}</Tag>;
+        if (roleName === "ADMIN") color = "red";
+        if (roleName === "MANAGER") color = "green";
+        return <Tag color={color}>{roleName}</Tag>;
       },
     },
     {
       title: "Status",
-      dataIndex: "status",
       key: "status",
-      filters: statuses.map((status) => ({ text: status, value: status })),
-      onFilter: (value: any, record: any) => record.status === value,
-      render: (status: string) => {
-        const color = status === "Active" ? "green" : "volcano";
-        return <Tag color={color}>{status}</Tag>;
+      render: (_: any, record: User) => {
+        const color = record.isActive ? "green" : "volcano";
+        const text = record.isActive ? "Active" : "Inactive";
+        return <Tag color={color}>{text}</Tag>;
       },
     },
     {
       title: "Actions",
       key: "actions",
-      render: (_: any, record: any) => (
+      render: (_: any, record: User) => (
         <Space size="middle">
           <Tooltip title="Edit">
             <Button
@@ -217,23 +369,20 @@ const UsersPage = () => {
               className="text-blue-600 hover:text-blue-800"
             />
           </Tooltip>
+          <Tooltip title={record.isActive ? "Deactivate" : "Activate"}>
+            <Button
+              type="text"
+              icon={record.isActive ? <CloseCircleOutlined /> : <CheckCircleOutlined />}
+              onClick={() => handleToggleStatus(record)}
+              className={record.isActive ? "text-orange-600 hover:text-orange-800" : "text-green-600 hover:text-green-800"}
+            />
+          </Tooltip>
           <Tooltip title="Delete">
             <Button
               type="text"
               danger
               icon={<DeleteOutlined />}
-              onClick={() =>
-                Modal.confirm({
-                  title: "Are you sure you want to delete this user?",
-                  content: `This will permanently delete ${record.name} from the system.`,
-                  okText: "Yes, Delete",
-                  okType: "danger",
-                  cancelText: "No",
-                  onOk() {
-                    // Here we would handle the deletion
-                  },
-                })
-              }
+              onClick={() => handleDelete(record)}
             />
           </Tooltip>
         </Space>
@@ -243,6 +392,7 @@ const UsersPage = () => {
 
   return (
     <>
+      {contextHolder}
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-2xl font-semibold text-gray-800">
@@ -261,20 +411,50 @@ const UsersPage = () => {
         </div>
       </div>
 
+      {/* Stats Cards */}
+      <Row gutter={16} className="mb-6">
+        <Col xs={24} sm={8}>
+          <Card>
+            <Statistic
+              title="Total Users"
+              value={totalUsers}
+              prefix={<UserOutlined />}
+              valueStyle={{ color: "#1890ff" }}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={8}>
+          <Card>
+            <Statistic
+              title="Active Users"
+              value={activeUsers}
+              prefix={<CheckCircleOutlined />}
+              valueStyle={{ color: "#52c41a" }}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={8}>
+          <Card>
+            <Statistic
+              title="Inactive Users"
+              value={inactiveUsers}
+              prefix={<CloseCircleOutlined />}
+              valueStyle={{ color: "#ff4d4f" }}
+            />
+          </Card>
+        </Col>
+      </Row>
+
       <Card className="shadow-md">
         <div className="flex justify-between mb-4 flex-col md:flex-row gap-4">
           <div className="flex gap-2 flex-1 md:max-w-md">
             <Input
               placeholder="Search users..."
               prefix={<SearchOutlined className="text-gray-400" />}
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
               className="flex-1"
             />
-            <Button
-              icon={<FilterOutlined />}
-              className="bg-white border-gray-200"
-            >
-              Filter
-            </Button>
           </div>
           <Space>
             <Button
@@ -299,91 +479,77 @@ const UsersPage = () => {
           columns={columns}
           dataSource={users}
           rowKey="id"
-          pagination={{
-            showSizeChanger: true,
-            showTotal: (total, range) =>
-              `${range[0]}-${range[1]} of ${total} items`,
-          }}
+          loading={loading}
+          pagination={pagination}
+          onChange={handleTableChange}
           className="mt-4"
         />
       </Card>
 
+      {/* Add/Edit User Modal */}
       <Modal
         title={editingUser ? "Edit User" : "Add New User"}
         open={isModalVisible}
         onOk={handleOk}
         onCancel={handleCancel}
         okText={editingUser ? "Update" : "Add"}
+        confirmLoading={loading}
         okButtonProps={{ className: "bg-blue-600" }}
+        width={600}
       >
         <Form form={form} layout="vertical" name="user_form" className="mt-4">
-          <Form.Item
-            name="name"
-            label="Name"
-            rules={[{ required: true, message: "Please enter user name" }]}
-          >
-            <Input placeholder="Enter full name" />
-          </Form.Item>
-
-          <Form.Item
-            name="email"
-            label="Email"
-            rules={[
-              { required: true, message: "Please enter email" },
-              { type: "email", message: "Please enter a valid email" },
-            ]}
-          >
-            <Input placeholder="Enter email address" />
-          </Form.Item>
-
-          <Form.Item
-            name="department"
-            label="Department"
-            rules={[{ required: true, message: "Please select department" }]}
-          >
-            <Select placeholder="Select department">
-              {departments.map((dept) => (
-                <Select.Option key={dept} value={dept}>
-                  {dept}
-                </Select.Option>
-              ))}
-            </Select>
-          </Form.Item>
-
-          <Form.Item
-            name="role"
-            label="Role"
-            rules={[{ required: true, message: "Please select role" }]}
-          >
-            <Select placeholder="Select role">
-              {roles.map((role) => (
-                <Select.Option key={role} value={role}>
-                  {role}
-                </Select.Option>
-              ))}
-            </Select>
-          </Form.Item>
-
-          <Form.Item
-            name="status"
-            label="Status"
-            rules={[{ required: true, message: "Please select status" }]}
-          >
-            <Select placeholder="Select status">
-              {statuses.map((status) => (
-                <Select.Option key={status} value={status}>
-                  {status}
-                </Select.Option>
-              ))}
-            </Select>
-          </Form.Item>
-
           {!editingUser && (
             <>
+              <div className="grid grid-cols-2 gap-4">
+                <Form.Item
+                  name="firstName"
+                  label="First Name"
+                  rules={[{ required: true, message: "Please enter first name" }]}
+                >
+                  <Input placeholder="John" />
+                </Form.Item>
+
+                <Form.Item
+                  name="lastName"
+                  label="Last Name"
+                  rules={[{ required: true, message: "Please enter last name" }]}
+                >
+                  <Input placeholder="Doe" />
+                </Form.Item>
+              </div>
+
+              <Form.Item
+                name="username"
+                label="Username"
+                rules={[
+                  { required: true, message: "Please enter username" },
+                  {
+                    pattern: /^[a-zA-Z0-9_]+$/,
+                    message: "Username can only contain letters, numbers and underscores",
+                  },
+                ]}
+              >
+                <Input placeholder="johndoe" />
+              </Form.Item>
+
+              <Form.Item
+                name="email"
+                label="Email"
+                rules={[
+                  { required: true, message: "Please enter email" },
+                  { type: "email", message: "Please enter a valid email" },
+                ]}
+              >
+                <Input placeholder="john.doe@example.com" />
+              </Form.Item>
+
               <Form.Item
                 name="password"
                 label="Password"
-                rules={[{ required: true, message: "Please enter password" }]}
+                rules={[
+                  { required: true, message: "Please enter password" },
+                  { min: 6, message: "Password must be at least 6 characters" },
+                ]}
               >
                 <Input.Password placeholder="Enter password" />
               </Form.Item>
@@ -409,6 +575,47 @@ const UsersPage = () => {
                 <Input.Password placeholder="Confirm password" />
               </Form.Item>
             </>
+          )}
+
+          <Form.Item
+            name="departmentId"
+            label="Department"
+            rules={[{ required: false }]}
+          >
+            <Select placeholder="Select department" allowClear>
+              {departments.map((dept) => (
+                <Select.Option key={dept.id} value={dept.id}>
+                  {dept.name}
+                </Select.Option>
+              ))}
+            </Select>
+          </Form.Item>
+
+          <Form.Item
+            name="roleId"
+            label="Role"
+            rules={[{ required: true, message: "Please select role" }]}
+          >
+            <Select placeholder="Select role">
+              {roles.map((role) => (
+                <Select.Option key={role.id} value={role.id}>
+                  {role.name}
+                </Select.Option>
+              ))}
+            </Select>
+          </Form.Item>
+
+          {editingUser && (
+            <Form.Item
+              name="isActive"
+              label="Status"
+              rules={[{ required: true, message: "Please select status" }]}
+            >
+              <Select placeholder="Select status">
+                <Select.Option value={true}>Active</Select.Option>
+                <Select.Option value={false}>Inactive</Select.Option>
+              </Select>
+            </Form.Item>
           )}
         </Form>
       </Modal>

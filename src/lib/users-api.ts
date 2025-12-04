@@ -1,4 +1,4 @@
-import { apiGet, apiPut, apiPost, apiPatch } from './api';
+import { apiGet, apiPut, apiPost, apiPatch, apiDelete, ApiResult } from './api';
 
 export interface UserProfile {
   id: string;
@@ -24,6 +24,18 @@ export interface UserProfile {
     s3Url: string;
     contentType?: string;
   };
+}
+
+export interface Role {
+  id: string;
+  name: string;
+  description: string;
+}
+
+export interface Department {
+  id: string;
+  name: string;
+  description: string;
 }
 
 export interface UpdateProfileRequest {
@@ -125,6 +137,24 @@ export interface GetUsersResponse {
   duration: string;
 }
 
+export interface CreateUserDto {
+  email: string;
+  username: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+  roleId: string;
+  departmentId?: string;
+}
+
+export interface UpdateUserDto {
+  departmentId?: string;
+  roleId?: string;
+  isActive?: boolean;
+  firstName?: string;
+  lastName?: string;
+}
+
 /**
  * Get all users with filters
  */
@@ -135,7 +165,7 @@ export const UsersApi = {
     search?: string;
     department?: string;
     isActive?: boolean;
-  }): Promise<{ data: GetUsersResponse; status: number }> {
+  }): Promise<ApiResult<GetUsersResponse>> {
     const queryParams: Record<string, string> = {};
     
     if (params?.page) queryParams.page = String(params.page);
@@ -148,13 +178,58 @@ export const UsersApi = {
   },
 
   /**
-   * Update user department
+   * Get user by ID
    */
-  async updateUser(userId: string, data: {
-    departmentId?: string;
-    roleId?: string;
-    isActive?: boolean;
-  }): Promise<{ data: any; status: number }> {
-    return apiPut<any>(`/admin/users/${userId}`, data);
+  async getById(userId: string): Promise<ApiResult<{ message: string; user: UserProfile }>> {
+    return apiGet<{ message: string; user: UserProfile }>(`/admin/users/${userId}`);
+  },
+
+  /**
+   * Create new user
+   */
+  async create(data: CreateUserDto): Promise<ApiResult<{ message: string; user: any }>> {
+    return apiPost<{ message: string; user: any }>('/admin/users/create', data);
+  },
+
+  /**
+   * Update user
+   */
+  async update(userId: string, data: UpdateUserDto): Promise<ApiResult<{ message: string; user: UserProfile }>> {
+    return apiPut<{ message: string; user: UserProfile }>(`/admin/users/${userId}`, data);
+  },
+
+  /**
+   * Delete user
+   */
+  async delete(userId: string): Promise<ApiResult<{ message: string }>> {
+    return apiDelete<{ message: string }>(`/admin/users/${userId}`);
+  },
+
+  /**
+   * Deactivate user
+   */
+  async deactivate(userId: string): Promise<ApiResult<{ message: string; user: UserProfile }>> {
+    return apiPut<{ message: string; user: UserProfile }>(`/admin/users/${userId}/deactivate`, {});
+  },
+
+  /**
+   * Activate user
+   */
+  async activate(userId: string): Promise<ApiResult<{ message: string; user: UserProfile }>> {
+    return apiPut<{ message: string; user: UserProfile }>(`/admin/users/${userId}/activate`, {});
+  },
+
+  /**
+   * Get all roles
+   */
+  async getRoles(): Promise<ApiResult<{ roles: Role[] }>> {
+    return apiGet<{ roles: Role[] }>('/admin/users/roles');
+  },
+
+  /**
+   * Get all departments
+   */
+  async getDepartments(): Promise<ApiResult<{ departments: Department[] }>> {
+    return apiGet<{ departments: Department[] }>('/admin/users/departments');
   },
 };
