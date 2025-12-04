@@ -8,12 +8,14 @@ import {
   Typography,
   App,
   Result,
+  notification,
 } from "antd";
 import {
   UserOutlined,
   LockOutlined,
   ArrowLeftOutlined,
   CheckCircleFilled,
+  CheckCircleOutlined,
   FileTextFilled,
   SafetyOutlined,
   TeamOutlined,
@@ -80,7 +82,12 @@ function RegisterContent() {
 
       if (result.success) {
         const successMessage = result.data?.message || result.data?.data?.message || "Registration completed successfully!";
-        message.success(successMessage, 5);
+        notification.success({
+          message: 'Success',
+          description: successMessage,
+          placement: 'topRight',
+          duration: 5,
+        });
         setRegistrationComplete(true);
         
         // Redirect to login after 2 seconds
@@ -128,6 +135,7 @@ function RegisterContent() {
   if (registrationComplete) {
     return (
       <Result
+        status="success"
         icon={<CheckCircleFilled className="text-green-500" style={{ fontSize: "72px" }} />}
         title="Registration Complete!"
         subTitle="Your account has been successfully created. Redirecting to login..."

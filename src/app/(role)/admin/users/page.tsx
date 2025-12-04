@@ -60,6 +60,11 @@ const UsersPage = () => {
   const [searchText, setSearchText] = useState("");
   const [roles, setRoles] = useState<Role[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
+  const [filterRole, setFilterRole] = useState<string | undefined>(undefined);
+  const [filterDepartment, setFilterDepartment] = useState<string | undefined>(undefined);
+  const [filterStatus, setFilterStatus] = useState<boolean | undefined>(undefined);
+  const [sortField, setSortField] = useState<string | undefined>(undefined);
+  const [sortOrder, setSortOrder] = useState<'ASC' | 'DESC' | undefined>(undefined);
   const [pagination, setPagination] = useState({
     current: 1,
     pageSize: 10,
@@ -71,14 +76,24 @@ const UsersPage = () => {
   const [modal, contextHolder] = Modal.useModal();
 
   // Fetch users
-  const fetchUsers = async (page = 1, pageSize = 10, search = "") => {
+  const fetchUsers = async (page = 1, pageSize = 10, username = "") => {
     setLoading(true);
     try {
-      const result = await UsersApi.getAll({
+      const params: any = {
         page,
         limit: pageSize,
-        search: search || undefined,
-      });
+      };
+      
+      if (username) params.username = username;
+      if (filterRole) params.roleId = filterRole;
+      if (filterDepartment) params.departmentId = filterDepartment;
+      if (filterStatus !== undefined) params.isActive = filterStatus;
+      if (sortField) {
+        params.sortBy = sortField;
+        params.sortOrder = sortOrder || 'ASC';
+      }
+
+      const result = await UsersApi.getAll(params);
 
       if (result.data?.data?.users) {
         setUsers(result.data.data.users);
@@ -268,9 +283,13 @@ const UsersPage = () => {
     }
   };
 
-  const showInviteModal = () => {
+  const showInviteModal = async () => {
     inviteForm.resetFields();
     setIsInviteModalVisible(true);
+    // Load roles and departments if not already loaded
+    if (roles.length === 0 || departments.length === 0) {
+      await fetchRolesAndDepartments();
+    }
   };
 
   const handleInviteOk = async () => {
@@ -283,6 +302,8 @@ const UsersPage = () => {
         firstName: values.firstName,
         lastName: values.lastName,
         username: values.username,
+        roleId: values.roleId,
+        departmentId: values.departmentId,
         message: values.message,
       });
 
@@ -301,7 +322,21 @@ const UsersPage = () => {
     setIsInviteModalVisible(false);
   };
 
-  const handleTableChange = (newPagination: any) => {
+  const handleTableChange = (newPagination: any, filters: any, sorter: any) => {
+    // Handle sorting
+    if (sorter.field) {
+      const sortFieldMap: any = {
+        'username': 'username',
+        'email': 'email',
+        'name': 'firstName',
+      };
+      setSortField(sortFieldMap[sorter.field] || sorter.field);
+      setSortOrder(sorter.order === 'ascend' ? 'ASC' : sorter.order === 'descend' ? 'DESC' : undefined);
+    } else {
+      setSortField(undefined);
+      setSortOrder(undefined);
+    }
+    
     fetchUsers(newPagination.current, newPagination.pageSize, searchText);
   };
 
@@ -314,8 +349,7 @@ const UsersPage = () => {
     {
       title: "Name",
       key: "name",
-      sorter: (a: User, b: User) => 
-        `${a.firstName} ${a.lastName}`.localeCompare(`${b.firstName} ${b.lastName}`),
+      sorter: true,
       render: (_: any, record: User) => (
         <span className="font-medium">
           {record.firstName} {record.lastName}
@@ -326,20 +360,24 @@ const UsersPage = () => {
       title: "Username",
       dataIndex: "username",
       key: "username",
+      sorter: true,
     },
     {
       title: "Email",
       dataIndex: "email",
       key: "email",
+      sorter: true,
     },
     {
       title: "Department",
       key: "department",
+      filters: departments.map(d => ({ text: d.name, value: d.id })),
       render: (_: any, record: User) => record.department?.name || "-",
     },
     {
       title: "Role",
       key: "role",
+      filters: roles.map(r => ({ text: r.name, value: r.id })),
       render: (_: any, record: User) => {
         const roleName = record.role?.name || "USER";
         let color = "blue";
@@ -447,33 +485,107 @@ const UsersPage = () => {
       </Row>
 
       <Card className="shadow-md">
-        <div className="flex justify-between mb-4 flex-col md:flex-row gap-4">
-          <div className="flex gap-2 flex-1 md:max-w-md">
-            <Input
-              placeholder="Search users..."
-              prefix={<SearchOutlined className="text-gray-400" />}
-              value={searchText}
-              onChange={(e) => setSearchText(e.target.value)}
-              className="flex-1"
-            />
+        <div className="mb-4 space-y-4">
+          {/* Search and Action Buttons */}
+          <div className="flex justify-between flex-col md:flex-row gap-4">
+            <div className="flex gap-2 flex-1 md:max-w-md">
+              <Input
+                placeholder="Search by username..."
+                prefix={<SearchOutlined className="text-gray-400" />}
+                value={searchText}
+                onChange={(e) => setSearchText(e.target.value)}
+                onPressEnter={() => fetchUsers(1, pagination.pageSize, searchText)}
+                className="flex-1"
+              />
+              <Button 
+                type="primary" 
+                icon={<SearchOutlined />}
+                onClick={() => fetchUsers(1, pagination.pageSize, searchText)}
+              >
+                Search
+              </Button>
+            </div>
+            <Space>
+              <Button
+                icon={<MailOutlined />}
+                onClick={showInviteModal}
+                className="border-orange-500 text-orange-500 hover:!bg-orange-50"
+              >
+                Invite User
+              </Button>
+              <Button
+                type="primary"
+                icon={<PlusOutlined />}
+                onClick={() => showModal()}
+                className="bg-blue-600"
+              >
+                Add User
+              </Button>
+            </Space>
           </div>
-          <Space>
-            <Button
-              icon={<MailOutlined />}
-              onClick={showInviteModal}
-              className="border-orange-500 text-orange-500 hover:!bg-orange-50"
+
+          {/* Filters */}
+          <div className="flex gap-3 flex-wrap items-center">
+            <span className="text-gray-600 font-medium">Filters:</span>
+            <Select
+              placeholder="Role"
+              allowClear
+              style={{ width: 150 }}
+              value={filterRole}
+              onChange={(value) => {
+                setFilterRole(value);
+                fetchUsers(1, pagination.pageSize, searchText);
+              }}
             >
-              Invite User
-            </Button>
-            <Button
-              type="primary"
-              icon={<PlusOutlined />}
-              onClick={() => showModal()}
-              className="bg-blue-600"
+              {roles.map((role) => (
+                <Select.Option key={role.id} value={role.id}>
+                  {role.name}
+                </Select.Option>
+              ))}
+            </Select>
+            <Select
+              placeholder="Department"
+              allowClear
+              style={{ width: 180 }}
+              value={filterDepartment}
+              onChange={(value) => {
+                setFilterDepartment(value);
+                fetchUsers(1, pagination.pageSize, searchText);
+              }}
             >
-              Add User
-            </Button>
-          </Space>
+              {departments.map((dept) => (
+                <Select.Option key={dept.id} value={dept.id}>
+                  {dept.name}
+                </Select.Option>
+              ))}
+            </Select>
+            <Select
+              placeholder="Status"
+              allowClear
+              style={{ width: 130 }}
+              value={filterStatus}
+              onChange={(value) => {
+                setFilterStatus(value);
+                fetchUsers(1, pagination.pageSize, searchText);
+              }}
+            >
+              <Select.Option value={true}>Active</Select.Option>
+              <Select.Option value={false}>Inactive</Select.Option>
+            </Select>
+            {(filterRole || filterDepartment || filterStatus !== undefined) && (
+              <Button
+                type="link"
+                onClick={() => {
+                  setFilterRole(undefined);
+                  setFilterDepartment(undefined);
+                  setFilterStatus(undefined);
+                  fetchUsers(1, pagination.pageSize, searchText);
+                }}
+              >
+                Clear Filters
+              </Button>
+            )}
+          </div>
         </div>
 
         <Table
@@ -698,6 +810,40 @@ const UsersPage = () => {
           >
             <Input placeholder="johndoe" />
           </Form.Item>
+
+          <div className="grid grid-cols-2 gap-4">
+            <Form.Item
+              name="roleId"
+              label="Role"
+              rules={[
+                { required: true, message: "Please select a role" },
+              ]}
+            >
+              <Select placeholder="Select role" loading={!roles.length}>
+                {roles.map((role) => (
+                  <Select.Option key={role.id} value={role.id}>
+                    {role.name}
+                  </Select.Option>
+                ))}
+              </Select>
+            </Form.Item>
+
+            <Form.Item
+              name="departmentId"
+              label="Department"
+              rules={[
+                { required: true, message: "Please select a department" },
+              ]}
+            >
+              <Select placeholder="Select department" loading={!departments.length}>
+                {departments.map((dept) => (
+                  <Select.Option key={dept.id} value={dept.id}>
+                    {dept.name}
+                  </Select.Option>
+                ))}
+              </Select>
+            </Form.Item>
+          </div>
 
           <Form.Item
             name="message"
