@@ -12,7 +12,7 @@ import {
   Modal,
   Form,
   Space,
-  message,
+  App,
   Row,
   Col,
   Statistic,
@@ -51,6 +51,7 @@ interface User {
 }
 
 const UsersPage = () => {
+  const { message } = App.useApp();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false);

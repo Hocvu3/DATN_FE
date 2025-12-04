@@ -344,6 +344,25 @@ export const AuthApi = {
     }>("/auth/invite", payload);
   },
 
+  async completeRegistration(payload: {
+    email: string;
+    token: string;
+    password: string;
+    firstName: string;
+    lastName: string;
+  }) {
+    return apiPost<{
+      message: string;
+      user: any;
+    }>("/auth/complete-registration", {
+      email: payload.email,
+      invitationToken: payload.token,
+      password: payload.password,
+      firstName: payload.firstName,
+      lastName: payload.lastName,
+    }, { requiresAuth: false });
+  },
+
   async forgotPassword(email: string) {
     return apiPost<{
       message: string;
