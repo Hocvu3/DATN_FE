@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, Suspense } from "react";
-import { Button, Form, Input, Typography, Alert, Result } from "antd";
+import { Button, Form, Input, Typography, Result, App } from "antd";
 import {
   LockOutlined,
   ArrowLeftOutlined,
@@ -13,6 +13,7 @@ import {
 } from "@ant-design/icons";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { AuthApi } from "@/lib/api";
 
 const { Title, Paragraph } = Typography;
 
@@ -36,6 +37,7 @@ export default function ResetPasswordPage() {
 }
 
 function ResetPasswordContent() {
+  const { message } = App.useApp();
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [resetComplete, setResetComplete] = useState(false);
@@ -44,61 +46,69 @@ function ResetPasswordContent() {
 
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
+  const email = searchParams.get("email");
 
-  // Check if token is valid
+  // Check if token and email are present
   useEffect(() => {
-    const verifyToken = async () => {
-      if (!token) {
-        setIsValidToken(false);
-        setError(
-          "Missing password reset token. Please request a new password reset link."
-        );
-        return;
-      }
-
-      try {
-        // In production, verify the token with API
-        // const response = await AuthApi.verifyResetToken(token);
-        // setIsValidToken(response.isValid);
-        // if (!response.isValid) {
-        //   setError('This password reset link is invalid or has expired. Please request a new one.');
-        // }
-
-        // For development, just mock a valid token
-        await new Promise((resolve) => setTimeout(resolve, 500));
-        setIsValidToken(true);
-      } catch {
-        setIsValidToken(false);
-        setError(
-          "Failed to verify reset token. Please request a new password reset link."
-        );
-      }
-    };
-
-    verifyToken();
-  }, [token]);
+    if (!token || !email) {
+      setIsValidToken(false);
+      setError(
+        "Missing password reset token or email. Please request a new password reset link."
+      );
+    } else {
+      setIsValidToken(true);
+    }
+  }, [token, email]);
 
   const handleSubmit = async (values: {
     password: string;
     confirmPassword: string;
   }) => {
+    if (!token || !email) {
+      setError("Missing token or email. Please request a new reset link.");
+      message.error("Missing token or email. Please request a new reset link.", 6);
+      return;
+    }
+
     setLoading(true);
     setError("");
 
     try {
-      // In production, call API
-      // await AuthApi.resetPassword({
-      //   token,
-      //   password: values.password
-      // });
-
-      // For development - simulate using the password
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      const result = await AuthApi.resetPassword({
+        email,
+        token,
+        newPassword: values.password,
+      });
+      
+      console.log('Reset password result:', result);
+      
+      // Get message from backend response
+      const successMessage = result.data?.message || result.data?.data?.message || "Password reset successfully! You can now login with your new password.";
+      
+      message.success(successMessage, 5);
       setResetComplete(true);
-    } catch {
-      setError(
-        "Failed to reset password. Please try again or request a new reset link."
-      );
+    } catch (error: any) {
+      console.error('Reset password error:', error);
+      let errorMessage = "Failed to reset password. Please try again or request a new reset link.";
+      
+      // Handle validation errors
+      if (error.response?.data?.message) {
+        if (Array.isArray(error.response.data.message)) {
+          errorMessage = error.response.data.message.join(', ');
+        } else {
+          errorMessage = error.response.data.message;
+        }
+      } else if (error.response?.data?.errors) {
+        const errors = error.response.data.errors;
+        if (errors.property) {
+          errorMessage = errors.message || errors.property[0];
+        }
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      setError(errorMessage);
+      message.error(errorMessage, 6);
     } finally {
       setLoading(false);
     }
@@ -152,10 +162,6 @@ function ResetPasswordContent() {
         <Paragraph className="text-gray-600 mb-6">
           Enter your new password below to complete the password reset process.
         </Paragraph>
-
-        {error && (
-          <Alert message={error} type="error" showIcon className="mb-6" />
-        )}
 
         <Form form={form} layout="vertical" onFinish={handleSubmit}>
           <Form.Item

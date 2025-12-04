@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Button, Form, Input, Typography, Alert, Space } from "antd";
+import { Button, Form, Input, Typography, Space, App } from "antd";
 import {
   MailOutlined,
   ArrowLeftOutlined,
@@ -11,6 +11,7 @@ import {
   AppstoreOutlined,
 } from "@ant-design/icons";
 import Link from "next/link";
+import { AuthApi } from "@/lib/api";
 
 const { Title, Paragraph, Text } = Typography;
 
@@ -26,24 +27,47 @@ function Feature({ icon, title }: { icon: React.ReactNode; title: string }) {
 }
 
 export default function ForgotPasswordPage() {
+  const { message } = App.useApp();
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
   const [error, setError] = useState("");
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (values: { email: string }) => {
     setLoading(true);
     setError("");
 
     try {
-      // In production, call API
-      // await AuthApi.forgotPassword(values.email);
-
-      // For development
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      const result = await AuthApi.forgotPassword(values.email);
+      console.log('Forgot password result:', result);
+      
+      // Get message from backend response
+      const successMessage = result.data?.message || result.data?.data?.message || "Password reset instructions sent to your email!";
+      
       setEmailSent(true);
-    } catch {
-      setError("Failed to send reset email. Please try again.");
+      message.success(successMessage, 5);
+    } catch (error: any) {
+      console.error('Forgot password error:', error);
+      let errorMessage = "Failed to send reset email. Please try again.";
+      
+      // Handle validation errors
+      if (error.response?.data?.message) {
+        if (Array.isArray(error.response.data.message)) {
+          errorMessage = error.response.data.message.join(', ');
+        } else {
+          errorMessage = error.response.data.message;
+        }
+      } else if (error.response?.data?.errors) {
+        const errors = error.response.data.errors;
+        if (errors.property) {
+          errorMessage = errors.message || errors.property[0];
+        }
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      setError(errorMessage);
+      message.error(errorMessage, 6);
     } finally {
       setLoading(false);
     }
@@ -147,10 +171,6 @@ export default function ForgotPasswordPage() {
                 Enter your email address below and we&apos;ll send you instructions
                 to reset your password.
               </Paragraph>
-
-              {error && (
-                <Alert message={error} type="error" showIcon className="mb-6" />
-              )}
 
               <Form form={form} layout="vertical" onFinish={handleSubmit}>
                 <Form.Item

@@ -343,6 +343,22 @@ export const AuthApi = {
       invitationToken: string;
     }>("/auth/invite", payload);
   },
+
+  async forgotPassword(email: string) {
+    return apiPost<{
+      message: string;
+    }>("/auth/forgot-password", { email }, { requiresAuth: false });
+  },
+
+  async resetPassword(payload: {
+    email: string;
+    token: string;
+    newPassword: string;
+  }) {
+    return apiPost<{
+      message: string;
+    }>("/auth/reset-password", payload, { requiresAuth: false });
+  },
 };
 
 export const DocumentsApi = {
