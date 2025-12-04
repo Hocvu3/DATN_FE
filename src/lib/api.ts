@@ -183,6 +183,14 @@ async function apiRequest<TResponse>(
     }
 
     // Check if the response has any content
+    // Handle 204 No Content specifically
+    if (res.status === 204) {
+      return {
+        data: { success: true, message: 'Operation completed successfully' } as TResponse,
+        status: res.status
+      };
+    }
+
     const contentType = res.headers.get('content-type');
     if (contentType && contentType.includes('application/json')) {
       return {
