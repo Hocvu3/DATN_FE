@@ -76,7 +76,11 @@ const UsersPage = () => {
   const [modal, contextHolder] = Modal.useModal();
 
   // Fetch users
-  const fetchUsers = async (page = 1, pageSize = 10, username = "") => {
+  const fetchUsers = async (page = 1, pageSize = 10, username = "", overrideFilters?: {
+    roleId?: string;
+    departmentId?: string;
+    isActive?: boolean;
+  }) => {
     setLoading(true);
     try {
       const params: any = {
@@ -85,9 +89,15 @@ const UsersPage = () => {
       };
       
       if (username) params.username = username;
-      if (filterRole) params.roleId = filterRole;
-      if (filterDepartment) params.departmentId = filterDepartment;
-      if (filterStatus !== undefined) params.isActive = filterStatus;
+      
+      // Use override filters if provided, otherwise use state
+      const activeRoleFilter = overrideFilters?.roleId !== undefined ? overrideFilters.roleId : filterRole;
+      const activeDeptFilter = overrideFilters?.departmentId !== undefined ? overrideFilters.departmentId : filterDepartment;
+      const activeStatusFilter = overrideFilters?.isActive !== undefined ? overrideFilters.isActive : filterStatus;
+      
+      if (activeRoleFilter) params.roleId = activeRoleFilter;
+      if (activeDeptFilter) params.departmentId = activeDeptFilter;
+      if (activeStatusFilter !== undefined) params.isActive = activeStatusFilter;
       if (sortField) {
         params.sortBy = sortField;
         params.sortOrder = sortOrder || 'ASC';
@@ -152,6 +162,13 @@ const UsersPage = () => {
 
     return () => clearTimeout(timer);
   }, [searchText]);
+
+  // Auto-fetch when filters change
+  useEffect(() => {
+    if (roles.length > 0 && departments.length > 0) {
+      fetchUsers(1, pagination.pageSize, searchText);
+    }
+  }, [filterRole, filterDepartment, filterStatus, sortField, sortOrder]);
 
   const showModal = async (user: User | null = null) => {
     // Always fetch latest roles and departments when opening modal
@@ -534,7 +551,6 @@ const UsersPage = () => {
               value={filterRole}
               onChange={(value) => {
                 setFilterRole(value);
-                fetchUsers(1, pagination.pageSize, searchText);
               }}
             >
               {roles.map((role) => (
@@ -550,7 +566,6 @@ const UsersPage = () => {
               value={filterDepartment}
               onChange={(value) => {
                 setFilterDepartment(value);
-                fetchUsers(1, pagination.pageSize, searchText);
               }}
             >
               {departments.map((dept) => (
@@ -566,7 +581,6 @@ const UsersPage = () => {
               value={filterStatus}
               onChange={(value) => {
                 setFilterStatus(value);
-                fetchUsers(1, pagination.pageSize, searchText);
               }}
             >
               <Select.Option value={true}>Active</Select.Option>
@@ -579,7 +593,9 @@ const UsersPage = () => {
                   setFilterRole(undefined);
                   setFilterDepartment(undefined);
                   setFilterStatus(undefined);
-                  fetchUsers(1, pagination.pageSize, searchText);
+                  // Clear sort too
+                  setSortField(undefined);
+                  setSortOrder(undefined);
                 }}
               >
                 Clear Filters

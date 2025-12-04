@@ -110,8 +110,23 @@ async function apiRequest<TResponse>(
     }
   }
 
+  // Build URL with query params
+  let url = `${getBaseUrl()}${path}`;
+  if (options?.params) {
+    const queryParams = new URLSearchParams();
+    Object.entries(options.params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        queryParams.append(key, String(value));
+      }
+    });
+    const queryString = queryParams.toString();
+    if (queryString) {
+      url += `?${queryString}`;
+    }
+  }
+
   try {
-    const res = await fetch(`${getBaseUrl()}${path}`, {
+    const res = await fetch(url, {
       method,
       headers,
       body: body ? JSON.stringify(body) : undefined,

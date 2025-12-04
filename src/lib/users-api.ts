@@ -163,16 +163,24 @@ export const UsersApi = {
     page?: number;
     limit?: number;
     search?: string;
-    department?: string;
+    username?: string;
+    roleId?: string;
+    departmentId?: string;
     isActive?: boolean;
+    sortBy?: string;
+    sortOrder?: 'ASC' | 'DESC';
   }): Promise<ApiResult<GetUsersResponse>> {
     const queryParams: Record<string, string> = {};
     
     if (params?.page) queryParams.page = String(params.page);
     if (params?.limit) queryParams.limit = String(params.limit);
     if (params?.search) queryParams.search = params.search;
-    if (params?.department) queryParams.department = params.department;
+    if (params?.username) queryParams.username = params.username;
+    if (params?.roleId) queryParams.roleId = params.roleId;
+    if (params?.departmentId) queryParams.departmentId = params.departmentId;
     if (params?.isActive !== undefined) queryParams.isActive = String(params.isActive);
+    if (params?.sortBy) queryParams.sortBy = params.sortBy;
+    if (params?.sortOrder) queryParams.sortOrder = params.sortOrder;
 
     return apiGet<GetUsersResponse>('/admin/users', { params: queryParams });
   },
