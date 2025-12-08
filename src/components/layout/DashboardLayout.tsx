@@ -31,6 +31,7 @@ import {
   SafetyOutlined,
   FolderOutlined,
   DeploymentUnitOutlined,
+  FileImageOutlined,
 } from "@ant-design/icons";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -196,6 +197,12 @@ export default function DashboardLayout({
           icon: <SecurityScanOutlined />,
           label: <Link href="/admin/signatures">Digital Signatures</Link>,
           path: "/admin/signatures",
+        },
+        {
+          key: "signature-stamps",
+          icon: <FileImageOutlined />,
+          label: <Link href="/admin/signature-stamps">Signature Stamps</Link>,
+          path: "/admin/signature-stamps",
         },
         {
           key: "roles-permissions",
@@ -542,7 +549,8 @@ export default function DashboardLayout({
                   {pathname?.includes("/storage") && "Storage"}
                   {pathname?.includes("/tags") && "Tags"}
                   {pathname?.includes("/departments") && "Departments"}
-                  {pathname?.includes("/signatures") && "Digital Signatures"}
+                  {pathname?.includes("/signature-stamps") && "Signature Stamps"}
+                  {pathname?.includes("/signatures") && !pathname?.includes("/signature-stamps") && "Digital Signatures"}
                   {pathname?.includes("/department") && !pathname?.includes("/departments") && "My Department"}
                   {pathname?.includes("/activities") && "My Activities"}
                   {pathname?.includes("/profile") && "My Profile"}
