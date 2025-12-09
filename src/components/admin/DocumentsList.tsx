@@ -7,6 +7,8 @@ import { DocumentsApi, getDocumentCoverUrl } from '@/lib/documents-api';
 import { Document, DocumentStatus, DocumentsQueryParams, SecurityLevel } from '@/lib/types/document.types';
 import EditDocumentModal from '@/components/documents/EditDocumentModal';
 import CreateDocumentModal from '@/components/documents/CreateDocumentModal';
+import { useDocumentApproval } from "@/hooks/useDocumentApproval";
+import { SignatureSelectionModal } from "@/components/documents/SignatureSelectionModal";
 import Link from 'next/link';
 import Image from 'next/image';
 import dayjs from 'dayjs';
@@ -46,6 +48,23 @@ export default function DocumentsList() {
   const [filters, setFilters] = useState<DocumentsQueryParams>({
     page: 1,
     limit: 10,
+  });
+
+  // Initialize document approval hook
+  const { 
+    showApprovalFlow,
+    signatureModalVisible,
+    signatures,
+    loadingSignatures,
+    approving,
+    selectedSignatureId,
+    handleSelectSignature,
+    handleApproveWithSignature,
+    handleCancelSignatureSelection,
+  } = useDocumentApproval({
+    onSuccess: () => {
+      fetchDocuments(); // Refresh documents list after approval
+    },
   });
 
   // Reset filters and fetch fresh data on mount
@@ -148,6 +167,13 @@ export default function DocumentsList() {
   };
   
   const handleStatusChange = async (docId: string, newStatus: DocumentStatus) => {
+    // If status is being changed to APPROVED, show signature selection modal
+    if (newStatus === DocumentStatus.APPROVED) {
+      showApprovalFlow(docId);
+      return;
+    }
+
+    // For other status changes, update directly
     try {
       // Call API to update status
       await DocumentsApi.updateDocumentStatus(docId, newStatus);
@@ -413,6 +439,18 @@ export default function DocumentsList() {
         open={showCreateModal}
         onCancel={() => setShowCreateModal(false)}
         onSave={handleCreateSave}
+      />
+
+      {/* Signature Approval Modal */}
+      <SignatureSelectionModal
+        visible={signatureModalVisible}
+        signatures={signatures}
+        loading={loadingSignatures}
+        approving={approving}
+        selectedSignatureId={selectedSignatureId}
+        onSelect={handleSelectSignature}
+        onApprove={handleApproveWithSignature}
+        onCancel={handleCancelSignatureSelection}
       />
     </div>
   );

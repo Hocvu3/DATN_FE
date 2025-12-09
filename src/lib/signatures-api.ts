@@ -44,12 +44,53 @@ export interface SignaturesResponse {
   limit: number;
 }
 
+export interface ApplySignatureDto {
+  documentId: string;
+  signatureStampId: string;
+  reason?: string;
+}
+
+export interface DigitalSignature {
+  id: string;
+  signatureData: string;
+  certificateInfo: any;
+  signedAt: string;
+  ipAddress?: string;
+  userAgent?: string;
+  requestId: string;
+  signerId: string;
+  signatureStampId?: string;
+  documentHash?: string;
+  signatureHash?: string;
+  signatureStatus?: string;
+  verifiedAt?: string;
+  signer?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+  };
+  signatureStamp?: Signature;
+}
+
+export interface SignatureVerificationResult {
+  isValid: boolean;
+  status: string;
+  message: string;
+  details: {
+    currentHash?: string;
+    originalHash?: string;
+    hashMatch?: boolean;
+    signatureValid?: boolean;
+  };
+}
+
 export const SignaturesApi = {
   /**
    * Get all signature stamps (admin only)
    */
   async getAll(params?: GetSignaturesParams) {
-    return apiGet<SignaturesResponse>('/signature-stamps', { params });
+    return apiGet<SignaturesResponse>('/signature-stamps', { params: params as any });
   },
 
   /**
@@ -99,5 +140,26 @@ export const SignaturesApi = {
       fileName,
       contentType,
     });
+  },
+
+  /**
+   * Apply signature stamp to document
+   */
+  async applySignature(data: ApplySignatureDto) {
+    return apiPost<DigitalSignature>('/signature-stamps/apply', data);
+  },
+
+  /**
+   * Get all signatures for a document
+   */
+  async getDocumentSignatures(documentId: string) {
+    return apiGet<DigitalSignature[]>(`/signature-stamps/documents/${documentId}/signatures`);
+  },
+
+  /**
+   * Verify digital signature integrity
+   */
+  async verifySignature(signatureId: string) {
+    return apiPost<SignatureVerificationResult>(`/signature-stamps/verify/${signatureId}`, {});
   },
 };
