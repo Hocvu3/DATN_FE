@@ -7,12 +7,14 @@ import { ArrowLeftOutlined, DownloadOutlined, EditOutlined, LockOutlined, EyeOut
 import { Document as DocumentType, DocumentStatus, DocumentVersion, SecurityLevel } from '@/lib/types/document.types';
 import { DocumentsApi, getDocumentCoverUrl } from '@/lib/documents-api';
 import { VersionApi } from '@/lib/version-api';
+import { SignaturesApi } from '@/lib/signatures-api';
 import Image from 'next/image';
 import Link from 'next/link';
 import dayjs from 'dayjs';
 import EditDocumentModal from '@/components/documents/EditDocumentModal';
 import { VersionTimeline } from '@/components/documents/VersionTimeline';
 import { VersionComparison } from '@/components/documents/VersionComparison';
+import { SignatureSelectionModal, SignatureStamp } from '@/components/documents/SignatureSelectionModal';
 import { Document as PDFDocument, Page, pdfjs } from 'react-pdf';
 import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
 import 'react-pdf/dist/esm/Page/TextLayer.css';
@@ -62,6 +64,14 @@ export default function DocumentDetail({ documentId }: DocumentDetailProps) {
   const [textContent, setTextContent] = useState<string>('');
   const [compareModalVisible, setCompareModalVisible] = useState<boolean>(false);
   const [compareVersions, setCompareVersions] = useState<[DocumentVersion | null, DocumentVersion | null]>([null, null]);
+  
+  // Signature approval states
+  const [signatureModalVisible, setSignatureModalVisible] = useState<boolean>(false);
+  const [signatures, setSignatures] = useState<SignatureStamp[]>([]);
+  const [loadingSignatures, setLoadingSignatures] = useState<boolean>(false);
+  const [approving, setApproving] = useState<boolean>(false);
+  const [selectedSignatureId, setSelectedSignatureId] = useState<string>();
+  const [versionToApprove, setVersionToApprove] = useState<DocumentVersion | null>(null);
 
   const fetchDocument = useCallback(async () => {
     setLoading(true);
@@ -230,6 +240,83 @@ export default function DocumentDetail({ documentId }: DocumentDetailProps) {
           fetchDocument(); // Refresh document
         } catch (error) {
           message.error('Failed to delete version: ' + (error instanceof Error ? error.message : 'Unknown error'), 6);
+        }
+      },
+    });
+  };
+
+  // Handle approve version - show signature selection modal
+  const handleApproveVersion = async (version: DocumentVersion) => {
+    setVersionToApprove(version);
+    setSelectedSignatureId(undefined);
+    setSignatureModalVisible(true);
+    
+    // Load signatures
+    try {
+      setLoadingSignatures(true);
+      const result = await SignaturesApi.getActive();
+      const responseData = result.data as any;
+      const signaturesData = responseData?.data || responseData || [];
+      setSignatures(Array.isArray(signaturesData) ? signaturesData : []);
+    } catch (error) {
+      message.error("Failed to load signature stamps");
+      setSignatures([]);
+    } finally {
+      setLoadingSignatures(false);
+    }
+  };
+
+  // Handle approve with signature
+  const handleApproveWithSignature = async () => {
+    if (!selectedSignatureId || !versionToApprove) {
+      message.error('Please select a signature');
+      return;
+    }
+
+    try {
+      setApproving(true);
+      
+      // Apply signature
+      await SignaturesApi.applySignature({
+        documentId: documentId,
+        signatureStampId: selectedSignatureId,
+        reason: "Document approved",
+      });
+
+      // Update version status to APPROVED
+      await VersionApi.updateVersionStatus(
+        documentId, 
+        versionToApprove.id, 
+        DocumentStatus.APPROVED
+      );
+
+      message.success(`Version ${versionToApprove.versionNumber} approved successfully with signature`);
+      setSignatureModalVisible(false);
+      setVersionToApprove(null);
+      setSelectedSignatureId(undefined);
+      fetchDocument(); // Refresh document
+    } catch (error) {
+      message.error('Failed to approve version: ' + (error instanceof Error ? error.message : 'Unknown error'));
+    } finally {
+      setApproving(false);
+    }
+  };
+
+  // Handle reject version
+  const handleRejectVersion = async (version: DocumentVersion) => {
+    modal.confirm({
+      title: 'Reject Version',
+      content: `Are you sure you want to reject Version ${version.versionNumber}?`,
+      okText: 'Reject',
+      okType: 'danger',
+      cancelText: 'Cancel',
+      onOk: async () => {
+        try {
+          await VersionApi.updateVersionStatus(documentId, version.id, DocumentStatus.REJECTED);
+          message.success(`Version ${version.versionNumber} rejected`);
+          fetchDocument(); // Refresh document
+        } catch (error) {
+          message.error('Failed to reject version: ' + (error instanceof Error ? error.message : 'Unknown error'));
         }
       },
     });
@@ -521,6 +608,8 @@ export default function DocumentDetail({ documentId }: DocumentDetailProps) {
                   onViewVersion={handleViewVersion}
                   onDownloadVersion={handleDownloadVersion}
                   onDeleteVersion={handleDeleteVersion}
+                  onApproveVersion={handleApproveVersion}
+                  onRejectVersion={handleRejectVersion}
                   onCompareVersions={(v1, v2) => {
                     setCompareVersions([v1, v2]);
                     setCompareModalVisible(true);
@@ -780,6 +869,22 @@ export default function DocumentDetail({ documentId }: DocumentDetailProps) {
           />
         )}
       </Modal>
+
+      {/* Signature Approval Modal */}
+      <SignatureSelectionModal
+        visible={signatureModalVisible}
+        signatures={signatures}
+        loading={loadingSignatures}
+        approving={approving}
+        selectedSignatureId={selectedSignatureId}
+        onSelect={setSelectedSignatureId}
+        onApprove={handleApproveWithSignature}
+        onCancel={() => {
+          setSignatureModalVisible(false);
+          setVersionToApprove(null);
+          setSelectedSignatureId(undefined);
+        }}
+      />
     </div>
   );
 }

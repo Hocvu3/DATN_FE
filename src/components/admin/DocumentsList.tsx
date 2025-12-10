@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { Table, Tag, Button, Input, Select, Badge, Typography, Dropdown, Menu, Modal, message } from 'antd';
+import { Table, Tag, Button, Input, Select, Badge, Typography, Dropdown, Menu, Modal, message, App } from 'antd';
 import { SearchOutlined, EyeOutlined, EditOutlined, DeleteOutlined, DownloadOutlined, ShareAltOutlined, MoreOutlined, DownOutlined, PlusOutlined } from '@ant-design/icons';
 import { DocumentsApi, getDocumentCoverUrl } from '@/lib/documents-api';
 import { Document, DocumentStatus, DocumentsQueryParams, SecurityLevel } from '@/lib/types/document.types';
@@ -33,12 +33,12 @@ const securityColors = {
 };
 
 export default function DocumentsList() {
+  const { modal } = App.useApp();
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [editingDocument, setEditingDocument] = useState<Document | null>(null);
   const [showEditModal, setShowEditModal] = useState<boolean>(false);
   const [showCreateModal, setShowCreateModal] = useState<boolean>(false);
-  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [pagination, setPagination] = useState({
     current: 1,
     pageSize: 10,
@@ -152,18 +152,22 @@ export default function DocumentsList() {
   };
 
   const handleDelete = async (id: string) => {
-    try {
-      // Call the delete document API
-      await DocumentsApi.deleteDocument(id);
-      
-      // Update the local state
-      setDocuments(prev => prev.filter(doc => doc.id !== id));
-      message.success("Document deleted successfully!");
-    } catch (error) {
-      message.error("Failed to delete document");
-    } finally {
-      setConfirmDelete(null);
-    }
+    modal.confirm({
+      title: 'Delete Document',
+      content: 'Are you sure you want to delete this document? This will delete all versions and cannot be undone.',
+      okText: 'Delete',
+      okType: 'danger',
+      cancelText: 'Cancel',
+      onOk: async () => {
+        try {
+          await DocumentsApi.deleteDocument(id);
+          setDocuments(prev => prev.filter(doc => doc.id !== id));
+          message.success("Document and all its versions deleted successfully!");
+        } catch (error) {
+          message.error("Failed to delete document");
+        }
+      },
+    });
   };
   
   const handleStatusChange = async (docId: string, newStatus: DocumentStatus) => {
@@ -242,35 +246,21 @@ export default function DocumentsList() {
       ),
     },
     {
-      title: 'Status',
-      key: 'status',
+      title: 'Versions',
+      key: 'versions',
       render: (_: any, record: Document) => {
-        // Get status from latest version
+        const versionCount = record.versions?.length || 0;
         const latestVersion = record.versions?.find(v => v.isLatest) || record.versions?.[0];
-        const status = latestVersion?.status || DocumentStatus.DRAFT;
         
         return (
-          <Dropdown
-            overlay={
-              <Menu onClick={({ key }) => handleStatusChange(record.id, key as DocumentStatus)}>
-                {Object.values(DocumentStatus).map((value) => (
-                  <Menu.Item key={value}>
-                    <div className="flex items-center gap-2">
-                      <Badge status={statusColors[value] as any} />
-                      <span className="whitespace-nowrap">{value.replace(/_/g, ' ').toUpperCase()}</span>
-                    </div>
-                  </Menu.Item>
-                ))}
-              </Menu>
-            }
-            trigger={['click']}
-          >
-            <div className="cursor-pointer flex items-center gap-2 hover:bg-gray-50 px-2 py-1 rounded">
-              <Badge status={statusColors[status] as any} />
-              <span className="whitespace-nowrap">{status.replace(/_/g, ' ').toUpperCase()}</span>
-              <DownOutlined className="text-xs text-gray-400" />
-            </div>
-          </Dropdown>
+          <div>
+            <div className="font-medium">{versionCount} version{versionCount !== 1 ? 's' : ''}</div>
+            {latestVersion && (
+              <div className="text-xs text-gray-500">
+                Latest: v{latestVersion.versionNumber} ({dayjs(latestVersion.createdAt).format('MMM DD')})
+              </div>
+            )}
+          </div>
         );
       },
     },
@@ -339,7 +329,7 @@ export default function DocumentsList() {
                 key="delete" 
                 icon={<DeleteOutlined />} 
                 danger
-                onClick={() => setConfirmDelete(record.id)}
+                onClick={() => handleDelete(record.id)}
               >
                 Delete
               </Menu.Item>
@@ -445,19 +435,6 @@ export default function DocumentsList() {
           }}
         />
       )}
-
-      {/* Delete Confirmation Modal */}
-      <Modal
-        title="Confirm Delete"
-        open={!!confirmDelete}
-        onOk={() => handleDelete(confirmDelete!)}
-        onCancel={() => setConfirmDelete(null)}
-        okText="Delete"
-        cancelText="Cancel"
-        okButtonProps={{ danger: true }}
-      >
-        <p>Are you sure you want to delete this document? This action cannot be undone.</p>
-      </Modal>
 
       {/* Create Document Modal */}
       <CreateDocumentModal

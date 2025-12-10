@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Timeline, Badge, Button, Space, Tag, Tooltip, Dropdown, Menu, message, Modal } from 'antd';
+import { Timeline, Badge, Button, Space, Tag, Tooltip, Dropdown, Menu, message } from 'antd';
 import {
   ClockCircleOutlined,
   DownloadOutlined,
@@ -15,8 +15,10 @@ import {
   DeleteOutlined,
   EditOutlined,
   SwapOutlined,
+  SafetyCertificateOutlined,
 } from '@ant-design/icons';
 import { DocumentVersion, DocumentStatus } from '@/lib/types/document.types';
+import { useDocumentValidation } from '@/hooks/useDocumentValidation';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 
@@ -30,6 +32,8 @@ interface VersionTimelineProps {
   onEditVersion?: (version: DocumentVersion) => void;
   onDeleteVersion?: (version: DocumentVersion) => void;
   onCompareVersions?: (v1: DocumentVersion, v2: DocumentVersion) => void;
+  onApproveVersion?: (version: DocumentVersion) => void;
+  onRejectVersion?: (version: DocumentVersion) => void;
 }
 
 const statusConfig = {
@@ -73,9 +77,17 @@ export const VersionTimeline: React.FC<VersionTimelineProps> = ({
   onEditVersion,
   onDeleteVersion,
   onCompareVersions,
+  onApproveVersion,
+  onRejectVersion,
 }) => {
   const [selectedForCompare, setSelectedForCompare] = useState<DocumentVersion | null>(null);
   const [compareMode, setCompareMode] = useState(false);
+
+  // Use validation hook
+  const { validateVersion, validateVersionWithModal, validating, ValidationModal } = useDocumentValidation({
+    showModalOnInvalid: true,
+    allowProceedOnInvalid: true, // Allow user to proceed even if validation fails
+  });
 
   const sortedVersions = [...versions].sort((a, b) => b.versionNumber - a.versionNumber);
 
@@ -103,13 +115,25 @@ export const VersionTimeline: React.FC<VersionTimelineProps> = ({
     }
   };
 
+  const handleViewWithValidation = async (version: DocumentVersion) => {
+    if (onViewVersion) {
+      await validateVersion(documentId, version.id, () => onViewVersion(version));
+    }
+  };
+
+  const handleDownloadWithValidation = async (version: DocumentVersion) => {
+    if (onDownloadVersion) {
+      await validateVersion(documentId, version.id, () => onDownloadVersion(version));
+    }
+  };
+
   const getVersionMenu = (version: DocumentVersion) => (
     <Menu>
       {onViewVersion && (
         <Menu.Item 
           key="view" 
           icon={<EyeOutlined />}
-          onClick={() => onViewVersion(version)}
+          onClick={() => handleViewWithValidation(version)}
         >
           View Document
         </Menu.Item>
@@ -118,11 +142,19 @@ export const VersionTimeline: React.FC<VersionTimelineProps> = ({
         <Menu.Item 
           key="download" 
           icon={<DownloadOutlined />}
-          onClick={() => onDownloadVersion(version)}
+          onClick={() => handleDownloadWithValidation(version)}
         >
           Download
         </Menu.Item>
       )}
+      <Menu.Item 
+        key="validate" 
+        icon={<SafetyCertificateOutlined />}
+        onClick={() => validateVersionWithModal(documentId, version.id)}
+      >
+        Validate
+      </Menu.Item>
+      <Menu.Divider />
       {onEditVersion && version.status === DocumentStatus.DRAFT && (
         <Menu.Item 
           key="edit" 
@@ -143,22 +175,34 @@ export const VersionTimeline: React.FC<VersionTimelineProps> = ({
             : 'Compare with...'}
         </Menu.Item>
       )}
-      {onDeleteVersion && 
-       version.status === DocumentStatus.DRAFT && 
-       versions.length > 1 && (
+      <Menu.Divider />
+      {onApproveVersion && version.status !== DocumentStatus.APPROVED && (
+        <Menu.Item 
+          key="approve" 
+          icon={<CheckCircleOutlined />}
+          onClick={() => onApproveVersion(version)}
+          style={{ color: '#52c41a' }}
+        >
+          Approve
+        </Menu.Item>
+      )}
+      {onRejectVersion && version.status !== DocumentStatus.REJECTED && (
+        <Menu.Item 
+          key="reject" 
+          icon={<CloseCircleOutlined />}
+          onClick={() => onRejectVersion(version)}
+          style={{ color: '#ff4d4f' }}
+        >
+          Reject
+        </Menu.Item>
+      )}
+      {(onApproveVersion || onRejectVersion) && onDeleteVersion && <Menu.Divider />}
+      {onDeleteVersion && versions.length > 1 && (
         <Menu.Item 
           key="delete" 
           icon={<DeleteOutlined />}
           danger
-          onClick={() => {
-            Modal.confirm({
-              title: 'Delete Version?',
-              content: `Are you sure you want to delete version ${version.versionNumber}? This action cannot be undone.`,
-              okText: 'Delete',
-              okType: 'danger',
-              onOk: () => onDeleteVersion(version),
-            });
-          }}
+          onClick={() => onDeleteVersion(version)}
         >
           Delete Version
         </Menu.Item>
@@ -257,12 +301,21 @@ export const VersionTimeline: React.FC<VersionTimelineProps> = ({
           </div>
 
           {/* Quick Actions */}
-          <div className="mt-3 flex gap-2">
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Button 
+              size="small" 
+              icon={<SafetyCertificateOutlined />}
+              onClick={() => validateVersionWithModal(documentId, version.id)}
+              loading={validating}
+            >
+              Validate
+            </Button>
             {onViewVersion && (
               <Button 
                 size="small" 
                 icon={<EyeOutlined />}
-                onClick={() => onViewVersion(version)}
+                onClick={() => handleViewWithValidation(version)}
+                loading={validating}
               >
                 View
               </Button>
@@ -271,9 +324,42 @@ export const VersionTimeline: React.FC<VersionTimelineProps> = ({
               <Button 
                 size="small" 
                 icon={<DownloadOutlined />}
-                onClick={() => onDownloadVersion(version)}
+                onClick={() => handleDownloadWithValidation(version)}
+                loading={validating}
               >
                 Download
+              </Button>
+            )}
+            {onApproveVersion && version.status !== DocumentStatus.APPROVED && (
+              <Button 
+                size="small" 
+                type="primary"
+                icon={<CheckCircleOutlined />}
+                onClick={() => onApproveVersion(version)}
+                className="bg-green-500 hover:bg-green-600 border-green-500"
+              >
+                Approve
+              </Button>
+            )}
+            {onRejectVersion && version.status !== DocumentStatus.REJECTED && (
+              <Button 
+                size="small" 
+                danger
+                icon={<CloseCircleOutlined />}
+                onClick={() => onRejectVersion(version)}
+              >
+                Reject
+              </Button>
+            )}
+            {onDeleteVersion && versions.length > 1 && (
+              <Button 
+                size="small" 
+                danger
+                type="primary"
+                icon={<DeleteOutlined />}
+                onClick={() => onDeleteVersion(version)}
+              >
+                Delete
               </Button>
             )}
             {compareMode && (
@@ -326,6 +412,8 @@ export const VersionTimeline: React.FC<VersionTimelineProps> = ({
       )}
 
       <Timeline items={timelineItems} />
+      
+      <ValidationModal />
     </div>
   );
 };
