@@ -127,7 +127,7 @@ const EditDocumentModal: React.FC<EditDocumentModalProps> = ({
         description: document.description,
         departmentId: document.departmentId || document.department, // Use departmentId if available, fallback to department
         tags: document.tags, // These should be tag IDs
-        status: document.status,
+        status: document.versions?.find(v => v.isLatest)?.status || DocumentStatus.DRAFT,
         securityLevel: document.securityLevel,
       });
     } else {

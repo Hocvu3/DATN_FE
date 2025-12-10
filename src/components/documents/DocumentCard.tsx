@@ -205,10 +205,10 @@ const DocumentCard: React.FC<DocumentCardProps> = ({
           {/* Status badge */}
           <div className="absolute top-3 left-3">
             <Badge
-              status={getStatusColor(document.status) as any}
+              status={getStatusColor(document.versions?.find(v => v.isLatest)?.status || DocumentStatus.DRAFT) as any}
               text={
                 <span className="text-white font-medium text-xs bg-black/60 px-2 py-1 rounded-full">
-                  {getStatusLabel(document.status)}
+                  {getStatusLabel(document.versions?.find(v => v.isLatest)?.status || DocumentStatus.DRAFT)}
                 </span>
               }
             />

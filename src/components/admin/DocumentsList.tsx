@@ -167,28 +167,47 @@ export default function DocumentsList() {
   };
   
   const handleStatusChange = async (docId: string, newStatus: DocumentStatus) => {
+    const document = documents.find(doc => doc.id === docId);
+    if (!document) return;
+
+    const latestVersion = document.versions?.find(v => v.isLatest) || document.versions?.[0];
+    if (!latestVersion) {
+      message.error('No version found for this document');
+      return;
+    }
+
     // If status is being changed to APPROVED, show signature selection modal
     if (newStatus === DocumentStatus.APPROVED) {
       showApprovalFlow(docId);
       return;
     }
 
-    // For other status changes, update directly
+    // For other status changes, update version status
     try {
-      // Call API to update status
-      await DocumentsApi.updateDocumentStatus(docId, newStatus);
+      // Import VersionApi at the top of the file
+      const { VersionApi } = await import('@/lib/version-api');
+      await VersionApi.updateVersionStatus(docId, latestVersion.id, newStatus);
       
       // Update local state
       setDocuments(prev =>
-        prev.map(doc =>
-          doc.id === docId
-            ? { ...doc, status: newStatus, updatedAt: new Date().toISOString() }
-            : doc
-        )
+        prev.map(doc => {
+          if (doc.id === docId) {
+            return {
+              ...doc,
+              versions: doc.versions?.map(v => 
+                v.id === latestVersion.id 
+                  ? { ...v, status: newStatus, updatedAt: new Date().toISOString() }
+                  : v
+              ),
+              updatedAt: new Date().toISOString()
+            };
+          }
+          return doc;
+        })
       );
-      message.success("Status updated successfully!");
+      message.success('Version status updated successfully!');
     } catch (error) {
-      message.error("Failed to update status");
+      message.error('Failed to update version status');
     }
   };
 
@@ -224,31 +243,36 @@ export default function DocumentsList() {
     },
     {
       title: 'Status',
-      dataIndex: 'status',
       key: 'status',
-      render: (status: DocumentStatus, record: Document) => (
-        <Dropdown
-          overlay={
-            <Menu onClick={({ key }) => handleStatusChange(record.id, key as DocumentStatus)}>
-              {Object.values(DocumentStatus).map((value) => (
-                <Menu.Item key={value}>
-                  <div className="flex items-center gap-2">
-                    <Badge status={statusColors[value] as any} />
-                    <span className="whitespace-nowrap">{value.replace(/_/g, ' ').toUpperCase()}</span>
-                  </div>
-                </Menu.Item>
-              ))}
-            </Menu>
-          }
-          trigger={['click']}
-        >
-          <div className="cursor-pointer flex items-center gap-2 hover:bg-gray-50 px-2 py-1 rounded">
-            <Badge status={statusColors[status] as any} />
-            <span className="whitespace-nowrap">{status.replace(/_/g, ' ').toUpperCase()}</span>
-            <DownOutlined className="text-xs text-gray-400" />
-          </div>
-        </Dropdown>
-      ),
+      render: (_: any, record: Document) => {
+        // Get status from latest version
+        const latestVersion = record.versions?.find(v => v.isLatest) || record.versions?.[0];
+        const status = latestVersion?.status || DocumentStatus.DRAFT;
+        
+        return (
+          <Dropdown
+            overlay={
+              <Menu onClick={({ key }) => handleStatusChange(record.id, key as DocumentStatus)}>
+                {Object.values(DocumentStatus).map((value) => (
+                  <Menu.Item key={value}>
+                    <div className="flex items-center gap-2">
+                      <Badge status={statusColors[value] as any} />
+                      <span className="whitespace-nowrap">{value.replace(/_/g, ' ').toUpperCase()}</span>
+                    </div>
+                  </Menu.Item>
+                ))}
+              </Menu>
+            }
+            trigger={['click']}
+          >
+            <div className="cursor-pointer flex items-center gap-2 hover:bg-gray-50 px-2 py-1 rounded">
+              <Badge status={statusColors[status] as any} />
+              <span className="whitespace-nowrap">{status.replace(/_/g, ' ').toUpperCase()}</span>
+              <DownOutlined className="text-xs text-gray-400" />
+            </div>
+          </Dropdown>
+        );
+      },
     },
     {
       title: 'Security',
@@ -405,7 +429,8 @@ export default function DocumentsList() {
             createdAt: editingDocument.createdAt,
             updatedAt: editingDocument.updatedAt,
             tags: editingDocument.tags.map(tag => tag.tag.id),
-            status: editingDocument.status.toLowerCase() as any,
+            // Get status from latest version instead of document.status
+            status: (editingDocument.versions?.find(v => v.isLatest)?.status || DocumentStatus.DRAFT).toLowerCase() as any,
             securityLevel: editingDocument.securityLevel.toLowerCase() as any,
             department: editingDocument.departmentId || '',
             owner: {

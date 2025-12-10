@@ -3,13 +3,16 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Spin, Typography, Descriptions, Tag, Button, Card, Tabs, Divider, Space, Badge, List, Avatar, App, Modal, Upload, Input, Form, Dropdown, Menu } from 'antd';
 import type { MenuProps } from 'antd';
-import { ArrowLeftOutlined, DownloadOutlined, EditOutlined, LockOutlined, EyeOutlined, HistoryOutlined, DeleteOutlined, UploadOutlined, SendOutlined } from '@ant-design/icons';
+import { ArrowLeftOutlined, DownloadOutlined, EditOutlined, LockOutlined, EyeOutlined, HistoryOutlined, DeleteOutlined, UploadOutlined, SendOutlined, SwapOutlined } from '@ant-design/icons';
 import { Document as DocumentType, DocumentStatus, DocumentVersion, SecurityLevel } from '@/lib/types/document.types';
 import { DocumentsApi, getDocumentCoverUrl } from '@/lib/documents-api';
+import { VersionApi } from '@/lib/version-api';
 import Image from 'next/image';
 import Link from 'next/link';
 import dayjs from 'dayjs';
 import EditDocumentModal from '@/components/documents/EditDocumentModal';
+import { VersionTimeline } from '@/components/documents/VersionTimeline';
+import { VersionComparison } from '@/components/documents/VersionComparison';
 import { Document as PDFDocument, Page, pdfjs } from 'react-pdf';
 import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
 import 'react-pdf/dist/esm/Page/TextLayer.css';
@@ -57,6 +60,8 @@ export default function DocumentDetail({ documentId }: DocumentDetailProps) {
   const [numPages, setNumPages] = useState<number | null>(null);
   const [pageNumber, setPageNumber] = useState<number>(1);
   const [textContent, setTextContent] = useState<string>('');
+  const [compareModalVisible, setCompareModalVisible] = useState<boolean>(false);
+  const [compareVersions, setCompareVersions] = useState<[DocumentVersion | null, DocumentVersion | null]>([null, null]);
 
   const fetchDocument = useCallback(async () => {
     setLoading(true);
@@ -377,7 +382,10 @@ export default function DocumentDetail({ documentId }: DocumentDetailProps) {
           </Link>
           <Title level={2}>{document.title}</Title>
           <div className="flex gap-2 mt-2">
-            <Badge status={statusColors[document.status] as any} text={document.status} />
+            <Badge 
+              status={statusColors[(document.versions?.find(v => v.isLatest)?.status || DocumentStatus.DRAFT)] as any} 
+              text={document.versions?.find(v => v.isLatest)?.status || DocumentStatus.DRAFT} 
+            />
             <Tag color={securityColors[document.securityLevel]}>{document.securityLevel}</Tag>
             <Text type="secondary">#{document.documentNumber}</Text>
           </div>
@@ -440,7 +448,10 @@ export default function DocumentDetail({ documentId }: DocumentDetailProps) {
                     <Tag color={securityColors[document.securityLevel]}>{document.securityLevel}</Tag>
                   </Descriptions.Item>
                   <Descriptions.Item label="Status" span={2}>
-                    <Badge status={statusColors[document.status] as any} text={document.status} />
+                    <Badge 
+                      status={statusColors[(document.versions?.find(v => v.isLatest)?.status || DocumentStatus.DRAFT)] as any} 
+                      text={document.versions?.find(v => v.isLatest)?.status || DocumentStatus.DRAFT} 
+                    />
                   </Descriptions.Item>
                   <Descriptions.Item label="Created By" span={1}>
                     {document?.creator?.firstName} {document?.creator?.lastName}
@@ -504,51 +515,16 @@ export default function DocumentDetail({ documentId }: DocumentDetailProps) {
                   </Card>
                 </div>
                 
-                <List
-                  itemLayout="horizontal"
-                  dataSource={document.versions || []}
-                  locale={{ emptyText: 'No versions yet' }}
-                  renderItem={(version: DocumentVersion) => (
-                    <List.Item
-                      actions={[
-                        <Button 
-                          key="view" 
-                          icon={<EyeOutlined />} 
-                          size="small"
-                          onClick={() => handleViewVersion(version)}
-                        >
-                          View
-                        </Button>,
-                        <Button 
-                          key="download" 
-                          icon={<DownloadOutlined />} 
-                          size="small"
-                          onClick={() => handleDownloadVersion(version)}
-                        >
-                          Download
-                        </Button>,
-                        <Button 
-                          key="delete" 
-                          icon={<DeleteOutlined />} 
-                          size="small"
-                          danger
-                          onClick={() => handleDeleteVersion(version)}
-                        >
-                          Delete
-                        </Button>,
-                      ]}
-                    >
-                      <List.Item.Meta
-                        title={<>Version {version.versionNumber} {version.versionNumber === (document.versions?.length || 1) && <Tag color="green">Latest</Tag>}</>}
-                        description={
-                          <>
-                            <div>Created on {dayjs(version.createdAt).format('YYYY-MM-DD HH:mm')}</div>
-                            <div className="text-xs text-gray-400">Size: {version.fileSize ? `${Math.round(version.fileSize / 1024)} KB` : 'Unknown'}</div>
-                          </>
-                        }
-                      />
-                    </List.Item>
-                  )}
+                <VersionTimeline
+                  versions={document.versions || []}
+                  documentId={document.id}
+                  onViewVersion={handleViewVersion}
+                  onDownloadVersion={handleDownloadVersion}
+                  onDeleteVersion={handleDeleteVersion}
+                  onCompareVersions={(v1, v2) => {
+                    setCompareVersions([v1, v2]);
+                    setCompareModalVisible(true);
+                  }}
                 />
               </TabPane>
 
@@ -655,7 +631,7 @@ export default function DocumentDetail({ documentId }: DocumentDetailProps) {
             createdAt: document.createdAt,
             updatedAt: document.updatedAt,
             tags: document.tags?.map(tag => tag.tag.id) || [],
-            status: document.status,
+            status: (document.versions?.find(v => v.isLatest)?.status || DocumentStatus.DRAFT),
             securityLevel: document.securityLevel,
             department: document.department?.id || '',
             departmentId: document.departmentId || '',
@@ -779,6 +755,30 @@ export default function DocumentDetail({ documentId }: DocumentDetailProps) {
             );
           }
         })()}
+      </Modal>
+
+      {/* Version Comparison Modal */}
+      <Modal
+        title={
+          <div className="flex items-center gap-2">
+            <SwapOutlined />
+            <span>Compare Versions</span>
+          </div>
+        }
+        open={compareModalVisible}
+        onCancel={() => {
+          setCompareModalVisible(false);
+          setCompareVersions([null, null]);
+        }}
+        footer={null}
+        width={1200}
+      >
+        {compareVersions[0] && compareVersions[1] && (
+          <VersionComparison
+            version1={compareVersions[0]}
+            version2={compareVersions[1]}
+          />
+        )}
       </Modal>
     </div>
   );

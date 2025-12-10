@@ -371,8 +371,8 @@ const AddDocumentModal: React.FC<AddDocumentModalProps> = ({
                     title={
                       <div className="flex items-center space-x-2">
                         <span className="font-medium">{document.title}</span>
-                        <Tag color={getStatusColor(document.status)}>
-                          {document.status.replace('_', ' ')}
+                        <Tag color={getStatusColor(document.versions?.find(v => v.isLatest)?.status || DocumentStatus.DRAFT)}>
+                          {(document.versions?.find(v => v.isLatest)?.status || DocumentStatus.DRAFT).replace('_', ' ')}
                         </Tag>
                         <Tag color={getSecurityLevelColor(document.securityLevel)} icon={<SafetyCertificateOutlined />}>
                           {document.securityLevel}

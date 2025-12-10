@@ -5,6 +5,8 @@ import { message } from "antd";
 import { SignatureSelectionModal, SignatureStamp } from "@/components/documents/SignatureSelectionModal";
 import { SignaturesApi } from "@/lib/signatures-api";
 import { DocumentsApi } from "@/lib/documents-api";
+import { VersionApi } from "@/lib/version-api";
+import { DocumentStatus } from "@/lib/types/document.types";
 
 interface UseDocumentApprovalOptions {
   onSuccess?: () => void;
@@ -73,8 +75,18 @@ export const useDocumentApproval = (options?: UseDocumentApprovalOptions) => {
         reason: "Document approved",
       });
 
-      // Update document status to APPROVED (uppercase)
-      await DocumentsApi.updateDocumentStatus(currentDocumentId, "APPROVED");
+      // Get latest version and update its status to APPROVED
+      const docResponse = await DocumentsApi.getById(currentDocumentId);
+      const document = docResponse.data?.data?.document || docResponse.data;
+      const latestVersion = document?.versions?.find((v: any) => v.isLatest);
+      
+      if (latestVersion) {
+        await VersionApi.updateVersionStatus(
+          currentDocumentId, 
+          latestVersion.id, 
+          DocumentStatus.APPROVED
+        );
+      }
 
       message.success("Document approved successfully with signature");
       setSignatureModalVisible(false);

@@ -90,7 +90,10 @@ export interface DocumentVersion {
     mimeType: string;
     isEncrypted: boolean;
     encryptionKey: string | null;
+    status: DocumentStatus; // Moved from Document to DocumentVersion
+    thumbnailUrl: string | null;
     createdAt: string;
+    updatedAt: string;
     documentId: string;
     creatorId: string;
     isLatest: boolean;
@@ -136,17 +139,14 @@ export interface Comment {
 export interface Signature {
     id: string;
     signatureData: string;
-    certificateInfo: {
-        issuer: string;
-        validTo: string;
-        validFrom: string;
-        serialNumber: string;
-    };
     signedAt: string;
-    ipAddress: string | null;
-    userAgent: string | null;
-    requestId: string;
+    documentHash: string | null;
+    signatureHash: string | null;
+    signatureStatus: string;
+    verifiedAt: string | null;
+    documentVersionId: string; // Changed from requestId
     signerId: string;
+    signatureStampId: string | null;
 }
 
 export interface SignatureRequest {
@@ -159,7 +159,6 @@ export interface SignatureRequest {
     reason: string | null;
     documentId: string;
     requesterId: string;
-    signatures: Signature[];
 }
 
 export interface AuditLog {
@@ -189,7 +188,7 @@ export interface Document {
     title: string;
     description: string | null;
     documentNumber: string;
-    status: DocumentStatus;
+    // status moved to DocumentVersion
     securityLevel: SecurityLevel;
     isConfidential: boolean;
     createdAt: string;
@@ -200,11 +199,11 @@ export interface Document {
     creator: User;
     approver: User | null;
     department: Department | null;
-    versions: DocumentVersion[];
+    versions: DocumentVersion[]; // Contains status on each version
     assets: Asset[];
     tags: DocumentTag[];
     comments: Comment[];
-    signatureRequests: SignatureRequest[];
+    // signatureRequests removed - no longer exists
     auditLogs: AuditLog[];
     cover?: Asset | null;
     permissionGroups?: PermissionGroup[];

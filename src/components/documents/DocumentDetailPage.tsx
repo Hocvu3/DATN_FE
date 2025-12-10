@@ -392,12 +392,13 @@ const DocumentDetailPage: React.FC<DocumentDetailPageProps> = ({
   };
 
   // Check permissions based on role
+  const documentStatus = document.versions?.find(v => v.isLatest)?.status || DocumentStatus.DRAFT;
   const canEdit = userRole === "admin" || 
-                  (userRole === "department" && ["draft", "pending_approval"].includes(document.status)) ||
-                  (userRole === "employee" && document.status === "draft");
+                  (userRole === "department" && ["draft", "pending_approval"].includes(documentStatus)) ||
+                  (userRole === "employee" && documentStatus === "draft");
   
   const canDelete = userRole === "admin" || 
-                    (userRole === "department" && document.status === "draft");
+                    (userRole === "department" && documentStatus === "draft");
 
   return (
     <div className="p-6 max-w-6xl mx-auto">
@@ -443,10 +444,10 @@ const DocumentDetailPage: React.FC<DocumentDetailPageProps> = ({
               {/* Status Badge */}
               <div className="absolute top-4 left-4">
                 <Badge
-                  status={getStatusColor(document.status) as any}
+                  status={getStatusColor(documentStatus) as any}
                   text={
                     <span className="text-white font-medium text-sm bg-black/60 px-3 py-1 rounded-full">
-                      {getStatusLabel(document.status)}
+                      {getStatusLabel(documentStatus)}
                     </span>
                   }
                 />
@@ -642,8 +643,8 @@ const DocumentDetailPage: React.FC<DocumentDetailPageProps> = ({
           
           <Descriptions.Item label="Status">
             <Badge 
-              status={getStatusColor(document.status) as any} 
-              text={getStatusLabel(document.status)} 
+              status={getStatusColor(documentStatus) as any} 
+              text={getStatusLabel(documentStatus)} 
             />
           </Descriptions.Item>
           

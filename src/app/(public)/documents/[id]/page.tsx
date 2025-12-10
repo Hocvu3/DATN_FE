@@ -285,7 +285,7 @@ export default function DocumentDetailPage() {
               </Space>
               <Divider type="vertical" className="!h-4" />
               <Space>
-                <Tag color="green">{document.status}</Tag>
+                <Tag color="green">{document.versions?.find(v => v.isLatest)?.status || 'DRAFT'}</Tag>
               </Space>
               <Divider type="vertical" className="!h-4" />
               <Space>
@@ -399,7 +399,7 @@ export default function DocumentDetailPage() {
                       <div className="mb-4">
                         <Text strong>Status:</Text>
                         <br />
-                        <Tag color="green">{document.status}</Tag>
+                        <Tag color="green">{document.versions?.find(v => v.isLatest)?.status || 'DRAFT'}</Tag>
                       </div>
                     </Col>
                     <Col xs={24} sm={12}>

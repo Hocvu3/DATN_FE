@@ -299,11 +299,10 @@ export const DocumentsApi = {
     },
 
     /**
-     * Update document status only
+     * Note: Document status has been moved to DocumentVersion level.
+     * Use VersionApi.updateVersionStatus() instead to update version status.
+     * @deprecated Use VersionApi.updateVersionStatus(documentId, versionId, status)
      */
-    updateDocumentStatus(id: string, status: string): Promise<ApiResult<ApiDocumentDetailResponse>> {
-        return apiPut<ApiDocumentDetailResponse>(`/documents/${id}`, { status });
-    },
 
     /**
      * Create document comment
