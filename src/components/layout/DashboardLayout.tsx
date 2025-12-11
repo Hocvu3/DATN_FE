@@ -32,6 +32,7 @@ import {
   FolderOutlined,
   DeploymentUnitOutlined,
   FileImageOutlined,
+  SafetyCertificateOutlined
 } from "@ant-design/icons";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -200,14 +201,14 @@ export default function DashboardLayout({
         },
         {
           key: "signature-stamps",
-          icon: <FileImageOutlined />,
-          label: <Link href="/admin/signature-stamps">Signature Stamps</Link>,
+          icon: <SafetyCertificateOutlined />,
+          label: <Link href="/admin/signature-stamps">Stamps</Link>,
           path: "/admin/signature-stamps",
         },
         {
           key: "roles-permissions",
           icon: <SafetyOutlined />,
-          label: <Link href="/admin/roles-permissions">Roles & Permissions</Link>,
+          label: <Link href="/admin/roles-permissions">Roles</Link>,
           path: "/admin/roles-permissions",
         },
         {

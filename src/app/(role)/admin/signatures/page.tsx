@@ -436,7 +436,7 @@ const SignaturesPage = () => {
           <div className="flex justify-between items-center">
             <div>
               <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                Digital Signatures
+                Digital Sign
               </h1>
               <Text type="secondary">
                 Manage digital signatures and sign documents securely
