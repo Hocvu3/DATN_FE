@@ -32,7 +32,9 @@ import {
   FolderOutlined,
   DeploymentUnitOutlined,
   FileImageOutlined,
-  SafetyCertificateOutlined
+  SafetyCertificateOutlined,
+  FireOutlined,
+  AuditOutlined
 } from "@ant-design/icons";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -156,6 +158,17 @@ export default function DashboardLayout({
         path: `/${userRole}/dashboard`,
       },
       {
+        key: "ocr",
+        icon: <FireOutlined />,
+        label: (
+          <Link href={`/${userRole}/ocr`} className="ocr-menu-item">
+            AI OCR
+            <span className="hot-badge">HOT</span>
+          </Link>
+        ),
+        path: `/${userRole}/ocr`,
+      },
+      {
         key: "documents",
         icon: <FileTextOutlined />,
         label: <Link href={`/${userRole}/documents`}>Documents</Link>,
@@ -204,6 +217,12 @@ export default function DashboardLayout({
           icon: <SafetyCertificateOutlined />,
           label: <Link href="/admin/signature-stamps">Stamps</Link>,
           path: "/admin/signature-stamps",
+        },
+        {
+          key: "audit-log",
+          icon: <AuditOutlined />,
+          label: <Link href="/admin/audit-log">Audit Log</Link>,
+          path: "/admin/audit-log",
         },
         profileItem,
       ];
