@@ -205,24 +205,6 @@ export default function DashboardLayout({
           label: <Link href="/admin/signature-stamps">Stamps</Link>,
           path: "/admin/signature-stamps",
         },
-        {
-          key: "roles-permissions",
-          icon: <SafetyOutlined />,
-          label: <Link href="/admin/roles-permissions">Roles</Link>,
-          path: "/admin/roles-permissions",
-        },
-        {
-          key: "workflows",
-          icon: <DeploymentUnitOutlined />,
-          label: <Link href="/admin/workflows">Workflows</Link>,
-          path: "/admin/workflows",
-        },
-        {
-          key: "storage",
-          icon: <FolderOutlined />,
-          label: <Link href="/admin/storage">Storage</Link>,
-          path: "/admin/storage",
-        },
         profileItem,
       ];
     }
