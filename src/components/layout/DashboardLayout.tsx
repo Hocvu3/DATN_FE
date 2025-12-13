@@ -209,7 +209,7 @@ export default function DashboardLayout({
         {
           key: "signatures",
           icon: <SecurityScanOutlined />,
-          label: <Link href="/admin/signatures">Digital Signatures</Link>,
+          label: <Link href="/admin/signatures">Digital Sign</Link>,
           path: "/admin/signatures",
         },
         {
