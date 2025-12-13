@@ -245,25 +245,48 @@ export default function DocumentDetail({ documentId }: DocumentDetailProps) {
     });
   };
 
-  // Handle approve version - show signature selection modal
+  // Handle approve version - show confirmation modal first
   const handleApproveVersion = async (version: DocumentVersion) => {
-    setVersionToApprove(version);
-    setSelectedSignatureId(undefined);
-    setSignatureModalVisible(true);
-    
-    // Load signatures
-    try {
-      setLoadingSignatures(true);
-      const result = await SignaturesApi.getActive();
-      const responseData = result.data as any;
-      const signaturesData = responseData?.data || responseData || [];
-      setSignatures(Array.isArray(signaturesData) ? signaturesData : []);
-    } catch (error) {
-      message.error("Failed to load signature stamps");
-      setSignatures([]);
-    } finally {
-      setLoadingSignatures(false);
-    }
+    modal.confirm({
+      title: 'Apply Stamp and Digital Sign?',
+      content: 'Do you want to apply stamp and digital signature now?',
+      okText: 'Proceed',
+      cancelText: 'Skip',
+      onOk: async () => {
+        // User chose to proceed with stamp
+        setVersionToApprove(version);
+        setSelectedSignatureId(undefined);
+        setSignatureModalVisible(true);
+        
+        // Load signatures
+        try {
+          setLoadingSignatures(true);
+          const result = await SignaturesApi.getActive();
+          const responseData = result.data as any;
+          const signaturesData = responseData?.data || responseData || [];
+          setSignatures(Array.isArray(signaturesData) ? signaturesData : []);
+        } catch (error) {
+          message.error("Failed to load signature stamps");
+          setSignatures([]);
+        } finally {
+          setLoadingSignatures(false);
+        }
+      },
+      onCancel: async () => {
+        // User chose to skip - just update status to APPROVED
+        try {
+          await VersionApi.updateVersionStatus(
+            documentId, 
+            version.id, 
+            DocumentStatus.APPROVED
+          );
+          message.success(`Version ${version.versionNumber} approved successfully`);
+          fetchDocument(); // Refresh document
+        } catch (error) {
+          message.error('Failed to approve version: ' + (error instanceof Error ? error.message : 'Unknown error'));
+        }
+      },
+    });
   };
 
   // Handle approve with signature
@@ -276,11 +299,12 @@ export default function DocumentDetail({ documentId }: DocumentDetailProps) {
     try {
       setApproving(true);
       
-      // Apply signature
+      // Apply signature with type=2 (with hash)
       await SignaturesApi.applySignature({
         documentId: documentId,
         signatureStampId: selectedSignatureId,
         reason: "Document approved",
+        type: 2, // Type 2 for document version approval (with hash)
       });
 
       // Update version status to APPROVED

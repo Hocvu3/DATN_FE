@@ -38,7 +38,7 @@ export interface GetSignaturesParams {
 }
 
 export interface SignaturesResponse {
-  signatures: Signature[];
+  stamps: Signature[];
   total: number;
   page: number;
   limit: number;
@@ -48,6 +48,7 @@ export interface ApplySignatureDto {
   documentId: string;
   signatureStampId: string;
   reason?: string;
+  type?: number; // 1 = stamp only, 2 = stamp with hash
 }
 
 export interface DigitalSignature {

@@ -213,10 +213,10 @@ export default function DashboardLayout({
           path: "/admin/signatures",
         },
         {
-          key: "signature-stamps",
+          key: "stamps",
           icon: <SafetyCertificateOutlined />,
-          label: <Link href="/admin/signature-stamps">Stamps</Link>,
-          path: "/admin/signature-stamps",
+          label: <Link href="/admin/stamps">Stamps</Link>,
+          path: "/admin/stamps",
         },
         {
           key: "audit-log",
@@ -551,8 +551,8 @@ export default function DashboardLayout({
                   {pathname?.includes("/storage") && "Storage"}
                   {pathname?.includes("/tags") && "Tags"}
                   {pathname?.includes("/departments") && "Departments"}
-                  {pathname?.includes("/signature-stamps") && "Signature Stamps"}
-                  {pathname?.includes("/signatures") && !pathname?.includes("/signature-stamps") && "Digital Signatures"}
+                  {pathname?.includes("/stamps") && "Stamps"}
+                  {pathname?.includes("/signatures") && "Digital Sign"}
                   {pathname?.includes("/department") && !pathname?.includes("/departments") && "My Department"}
                   {pathname?.includes("/activities") && "My Activities"}
                   {pathname?.includes("/profile") && "My Profile"}
