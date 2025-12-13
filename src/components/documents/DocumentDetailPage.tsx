@@ -37,6 +37,13 @@ import { uploadDocumentCover, DocumentsApi } from "@/lib/documents-api";
 
 const { Title, Text } = Typography;
 
+interface DocumentVersion {
+  id: string;
+  versionNumber: number;
+  status: string;
+  isLatest: boolean;
+}
+
 interface Document {
   id: string;
   title: string;
@@ -46,7 +53,8 @@ interface Document {
   createdAt: string;
   updatedAt: string;
   tags: string[];
-  status: "draft" | "pending_approval" | "approved" | "rejected" | "published";
+  status?: "draft" | "pending_approval" | "approved" | "rejected" | "published";
+  versions?: DocumentVersion[];
   securityLevel: "public" | "internal" | "confidential" | "secret" | "top_secret";
   department: string;
   cover?: {
@@ -392,7 +400,7 @@ const DocumentDetailPage: React.FC<DocumentDetailPageProps> = ({
   };
 
   // Check permissions based on role
-  const documentStatus = document.versions?.find(v => v.isLatest)?.status || DocumentStatus.DRAFT;
+  const documentStatus = document.versions?.find(v => v.isLatest)?.status || 'draft';
   const canEdit = userRole === "admin" || 
                   (userRole === "department" && ["draft", "pending_approval"].includes(documentStatus)) ||
                   (userRole === "employee" && documentStatus === "draft");

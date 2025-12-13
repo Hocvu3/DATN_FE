@@ -64,7 +64,7 @@ export const useDocumentValidation = (options?: UseDocumentValidationOptions) =>
       const response = await VersionApi.validateVersion(docId, verId);
       
       // Extract the actual validation data from response
-      const result = response.data?.data || response.data || response;
+      const result = (response as any).data?.data || (response as any).data || response;
       
       setValidationResult(result);
 
@@ -116,7 +116,7 @@ export const useDocumentValidation = (options?: UseDocumentValidationOptions) =>
     try {
       const response = await VersionApi.validateVersion(docId, verId);
       // Extract the actual validation data from response
-      const result = response.data?.data || response.data || response;
+      const result = (response as any).data?.data || (response as any).data || response;
       
       setValidationResult(result);
       setValidationModalVisible(true); // Always show modal

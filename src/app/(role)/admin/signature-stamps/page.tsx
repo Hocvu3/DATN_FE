@@ -91,7 +91,7 @@ const SignatureStampsPage = () => {
       const result = await SignaturesApi.getAll(params);
 
       // Handle both nested and flat response structures
-      const data = result.data?.data || result.data;
+      const data = (result as any).data?.data || (result as any).data;
       if (data && data.signatures) {
         setSignatures(data.signatures);
         setPagination({
@@ -226,8 +226,8 @@ const SignatureStampsPage = () => {
           isActive: values.isActive,
         };
         const result = await SignaturesApi.update(editingSignature.id, updateData);
-        const responseData = result.data?.data || result.data;
-        if (result.success !== false) {
+        const responseData = (result as any).data?.data || (result as any).data;
+        if ((result as any).success !== false) {
           message.success((result as any).data?.message || "Signature updated successfully");
         }
       } else {
@@ -245,7 +245,7 @@ const SignatureStampsPage = () => {
         );
         
         // Handle nested response structure
-        const presignedData = presignedResponse.data?.data || presignedResponse.data;
+        const presignedData = (presignedResponse as any).data?.data || (presignedResponse as any).data;
         const { presignedUrl, key, publicUrl } = presignedData;
 
         console.log("Presigned URL data:", { presignedUrl, key, publicUrl });
@@ -273,7 +273,7 @@ const SignatureStampsPage = () => {
           s3Key: key,
         };
         const result = await SignaturesApi.create(createData);
-        if (result.success !== false) {
+        if ((result as any).success !== false) {
           message.success((result as any).data?.message || "Signature created successfully");
         }
       }

@@ -44,8 +44,8 @@ export const SignatureVerificationPanel: React.FC<
     try {
       setLoading(true);
       const result = await SignaturesApi.getDocumentSignatures(documentId);
-      const data = result.data?.data || result.data || [];
-      setSignatures(data);
+      const data = (result as any).data?.data || (result as any).data || [];
+      setSignatures(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error("Failed to load signatures:", error);
       message.error("Failed to load signatures");
@@ -58,7 +58,7 @@ export const SignatureVerificationPanel: React.FC<
     try {
       setVerifying(signatureId);
       const result = await SignaturesApi.verifySignature(signatureId);
-      const verification = result.data?.data || result.data;
+      const verification = (result as any).data?.data || (result as any).data || result;
 
       if (verification.isValid) {
         message.success(verification.message);

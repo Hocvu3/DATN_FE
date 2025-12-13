@@ -169,13 +169,14 @@ export const VersionComparison: React.FC<VersionComparisonProps> = ({
           {version.comment && (
             <Descriptions.Item label="Comment">
               <div className="italic text-gray-700 p-2 bg-gray-50 rounded">
-                "{version.comment}"
+                &ldquo;{version.comment}&rdquo;
               </div>
             </Descriptions.Item>
           )}
 
           {version.thumbnailUrl && (
             <Descriptions.Item label="Thumbnail">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img 
                 src={version.thumbnailUrl} 
                 alt={`Version ${version.versionNumber} thumbnail`}

@@ -12,6 +12,13 @@ import Image from "next/image";
 const { Option } = Select;
 const { TextArea } = Input;
 
+interface DocumentVersion {
+  id: string;
+  versionNumber: number;
+  status: string;
+  isLatest: boolean;
+}
+
 interface DocumentForEdit {
   id: string;
   title: string;
@@ -22,6 +29,7 @@ interface DocumentForEdit {
   updatedAt: string;
   tags: string[];
   status: DocumentStatus;
+  versions?: DocumentVersion[];
   securityLevel: SecurityLevel;
   department: string;
   departmentId?: string;

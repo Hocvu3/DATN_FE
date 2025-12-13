@@ -46,6 +46,13 @@ const { Title, Text } = Typography;
 const { Option } = Select;
 
 // Interfaces
+interface DocumentVersion {
+  id: string;
+  versionNumber: number;
+  status: string;
+  isLatest: boolean;
+}
+
 interface Document {
   id: string;
   title: string;
@@ -55,10 +62,16 @@ interface Document {
   createdAt: string;
   updatedAt: string;
   tags: string[];
-  status: "draft" | "pending_approval" | "approved" | "rejected" | "published";
+  status?: "draft" | "pending_approval" | "approved" | "rejected" | "published";
+  versions?: DocumentVersion[];
   securityLevel: "public" | "internal" | "confidential" | "secret" | "top_secret";
   department: string;
   coverImage?: string;
+  cover?: {
+    id: string;
+    s3Url: string;
+    filename: string;
+  } | null;
   owner: {
     id: string;
     name: string;
@@ -267,7 +280,7 @@ const convertDocumentForEdit = (doc: Document | null): any => {
 
   return {
     ...doc,
-    status: statusMap[doc.status] || DocumentStatus.DRAFT,
+    status: statusMap[doc.status || 'draft'] || DocumentStatus.DRAFT,
     securityLevel: securityMap[doc.securityLevel] || SecurityLevel.INTERNAL
   };
 };
@@ -337,7 +350,7 @@ export default function EmployeeDocumentsPage() {
 
           if (filters.status && filters.status.length > 0) {
             filteredDocs = filteredDocs.filter((doc) =>
-              filters.status.includes(doc.status)
+              filters.status.includes(doc.status || 'draft')
             );
           }
 

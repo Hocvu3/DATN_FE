@@ -1,19 +1,6 @@
-"use client";
-
-import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { redirect } from 'next/navigation';
 
 export default function HomePage() {
-  const router = useRouter();
-
-  useEffect(() => {
-    // Redirect to the public homepage
-    router.push("/home");
-  }, [router]);
-
-  return (
-    <div className="flex items-center justify-center min-h-screen">
-      <div className="animate-pulse">Redirecting...</div>
-    </div>
-  );
+  // Server-side redirect - instant, no loading screen
+  redirect('/home');
 }

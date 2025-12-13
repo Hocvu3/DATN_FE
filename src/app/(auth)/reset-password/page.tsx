@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, Suspense } from "react";
-import { Button, Form, Input, Typography, Result, App } from "antd";
+import { Button, Form, Input, Typography, Result, App, Alert } from "antd";
 import {
   LockOutlined,
   ArrowLeftOutlined,
@@ -83,7 +83,7 @@ function ResetPasswordContent() {
       console.log('Reset password result:', result);
       
       // Get message from backend response
-      const successMessage = result.data?.message || result.data?.data?.message || "Password reset successfully! You can now login with your new password.";
+      const successMessage = (result as any)?.data?.message || (result as any)?.message || "Password reset successfully! You can now login with your new password.";
       
       message.success(successMessage, 5);
       setResetComplete(true);

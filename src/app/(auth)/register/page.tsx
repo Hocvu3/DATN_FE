@@ -80,8 +80,9 @@ function RegisterContent() {
         lastName: values.lastName,
       });
 
-      if (result.success) {
-        const successMessage = result.data?.message || result.data?.data?.message || "Registration completed successfully!";
+      // Check if registration was successful (status 200-299)
+      if (result.status >= 200 && result.status < 300) {
+        const successMessage = (result as any)?.data?.message || "Registration completed successfully!";
         notification.success({
           message: 'Success',
           description: successMessage,
@@ -95,7 +96,7 @@ function RegisterContent() {
           router.push("/login");
         }, 2000);
       } else {
-        const errorMessage = result.data?.message || "Registration failed. Please try again.";
+        const errorMessage = (result as any)?.data?.message || "Registration failed. Please try again.";
         message.error(errorMessage, 6);
       }
     } catch (error: any) {

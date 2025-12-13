@@ -206,7 +206,7 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({
       // Update each user's department
       const updatePromises = selectedUserIds.map(userId => {
         console.log("[AddMemberModal] Updating user:", userId, "to department:", departmentId);
-        return UsersApi.updateUser(userId, { departmentId });
+        return UsersApi.update(userId, { departmentId });
       });
       
       const results = await Promise.all(updatePromises);

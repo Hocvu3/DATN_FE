@@ -142,7 +142,7 @@ const SignaturesPage = () => {
     try {
       const response = await apiPut(`/signatures/requests/${requestId}/revoke`);
       
-      messageApi.success(response.data?.message || "Signature revoked successfully!", 3);
+      messageApi.success((response as any).data?.message || "Signature revoked successfully!", 3);
       
       fetchSignatureRequests();
     } catch (error: any) {

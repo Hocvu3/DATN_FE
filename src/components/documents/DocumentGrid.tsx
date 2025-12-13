@@ -5,6 +5,13 @@ import { Row, Col, Button, Tooltip } from "antd";
 import { TableOutlined, AppstoreOutlined } from "@ant-design/icons";
 import DocumentCard from "./DocumentCard";
 
+interface DocumentVersion {
+  id: string;
+  versionNumber: number;
+  status: string;
+  isLatest: boolean;
+}
+
 interface Document {
   id: string;
   title: string;
@@ -14,7 +21,8 @@ interface Document {
   createdAt: string;
   updatedAt: string;
   tags: string[];
-  status: "draft" | "pending_approval" | "approved" | "rejected" | "published";
+  status?: "draft" | "pending_approval" | "approved" | "rejected" | "published";
+  versions?: DocumentVersion[];
   securityLevel: "public" | "internal" | "confidential" | "secret" | "top_secret";
   department: string;
   cover?: {

@@ -22,6 +22,13 @@ import Link from "next/link";
 import { format } from "date-fns";
 import { uploadDocumentCover } from "@/lib/documents-api";
 
+interface DocumentVersion {
+  id: string;
+  versionNumber: number;
+  status: string;
+  isLatest: boolean;
+}
+
 interface Document {
   id: string;
   title: string;
@@ -31,7 +38,8 @@ interface Document {
   createdAt: string;
   updatedAt: string;
   tags: string[];
-  status: "draft" | "pending_approval" | "approved" | "rejected" | "published";
+  status?: "draft" | "pending_approval" | "approved" | "rejected" | "published";
+  versions?: DocumentVersion[];
   securityLevel: "public" | "internal" | "confidential" | "secret" | "top_secret";
   department: string;
   cover?: {
@@ -205,10 +213,10 @@ const DocumentCard: React.FC<DocumentCardProps> = ({
           {/* Status badge */}
           <div className="absolute top-3 left-3">
             <Badge
-              status={getStatusColor(document.versions?.find(v => v.isLatest)?.status || DocumentStatus.DRAFT) as any}
+              status={getStatusColor(document.versions?.find(v => v.isLatest)?.status || 'DRAFT') as any}
               text={
                 <span className="text-white font-medium text-xs bg-black/60 px-2 py-1 rounded-full">
-                  {getStatusLabel(document.versions?.find(v => v.isLatest)?.status || DocumentStatus.DRAFT)}
+                  {getStatusLabel(document.versions?.find(v => v.isLatest)?.status || 'DRAFT')}
                 </span>
               }
             />

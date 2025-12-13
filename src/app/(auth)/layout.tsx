@@ -10,7 +10,7 @@ interface AuthLayoutProps {
 
 export default function AuthLayout({ children }: AuthLayoutProps) {
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="auth-layout min-h-screen flex flex-col">
       <PublicHeader />
       <div className="flex-grow flex items-center justify-center bg-gray-50 py-12">
         {children}

@@ -26,6 +26,7 @@ import {
 } from "@ant-design/icons";
 import { DocumentsApi } from "@/lib/documents-api";
 import type { Document } from "@/lib/types/document.types";
+import { DocumentStatus } from "@/lib/types/document.types";
 
 const { Search } = Input;
 const { Option } = Select;
@@ -137,7 +138,11 @@ const AddDocumentModal: React.FC<AddDocumentModalProps> = ({
 
     // Apply status filter
     if (statusFilter !== "all") {
-      filtered = filtered.filter(doc => doc.status === statusFilter);
+      filtered = filtered.filter(doc => {
+        const latestVersion = doc.versions?.[0];
+        const status = latestVersion?.status || 'DRAFT';
+        return status === statusFilter;
+      });
     }
 
     // Apply security level filter

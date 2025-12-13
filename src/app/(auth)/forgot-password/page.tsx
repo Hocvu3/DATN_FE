@@ -42,7 +42,7 @@ export default function ForgotPasswordPage() {
       console.log('Forgot password result:', result);
       
       // Get message from backend response
-      const successMessage = result.data?.message || result.data?.data?.message || "Password reset instructions sent to your email!";
+      const successMessage = (result as any)?.message || (result as any)?.data?.message || "Password reset instructions sent to your email!";
       
       setEmailSent(true);
       message.success(successMessage, 5);

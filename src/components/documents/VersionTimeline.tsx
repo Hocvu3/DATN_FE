@@ -285,7 +285,7 @@ export const VersionTimeline: React.FC<VersionTimelineProps> = ({
           {/* Comment */}
           {version.comment && (
             <div className="mb-3 p-2 bg-gray-50 rounded text-sm text-gray-700 italic">
-              "{version.comment}"
+              &ldquo;{version.comment}&rdquo;
             </div>
           )}
 
