@@ -60,6 +60,7 @@ interface SignatureRequest {
 }
 
 const SignaturesPage = () => {
+  const [messageApi, contextHolder] = message.useMessage();
   const [loading, setLoading] = useState(false);
   const [signRequests, setSignRequests] = useState<SignatureRequest[]>([]);
   const [filteredRequests, setFilteredRequests] = useState<SignatureRequest[]>([]);
@@ -111,13 +112,7 @@ const SignaturesPage = () => {
       setSignRequests(requestsData);
       setFilteredRequests(requestsData);
     } catch (error) {
-      message.error({
-        content: "Failed to load signature requests",
-        duration: 3,
-        style: {
-          marginTop: '20vh',
-        },
-      });
+      messageApi.error("Failed to load signature requests", 3);
       setSignRequests([]);
       setFilteredRequests([]);
     } finally {
@@ -133,25 +128,13 @@ const SignaturesPage = () => {
         signatureData: values.signatureData,
       });
       
-      message.success({
-        content: "Document signed successfully!",
-        duration: 3,
-        style: {
-          marginTop: '20vh',
-        },
-      });
+      messageApi.success("Document signed successfully!", 3);
       
       setSignModalVisible(false);
       form.resetFields();
       fetchSignatureRequests();
     } catch (error: any) {
-      message.error({
-        content: error?.response?.data?.message || "Failed to sign document",
-        duration: 3,
-        style: {
-          marginTop: '20vh',
-        },
-      });
+      messageApi.error(error?.response?.data?.message || "Failed to sign document", 3);
     }
   };
 
@@ -159,23 +142,11 @@ const SignaturesPage = () => {
     try {
       const response = await apiPut(`/signatures/requests/${requestId}/revoke`);
       
-      message.success({
-        content: response.data?.message || "Signature revoked successfully!",
-        duration: 3,
-        style: {
-          marginTop: '20vh',
-        },
-      });
+      messageApi.success(response.data?.message || "Signature revoked successfully!", 3);
       
       fetchSignatureRequests();
     } catch (error: any) {
-      message.error({
-        content: error?.response?.data?.message || "Failed to revoke signature",
-        duration: 3,
-        style: {
-          marginTop: '20vh',
-        },
-      });
+      messageApi.error(error?.response?.data?.message || "Failed to revoke signature", 3);
     }
   };
 
@@ -305,6 +276,7 @@ const SignaturesPage = () => {
 
   return (
     <div style={{ padding: "24px" }}>
+      {contextHolder}
       <div style={{ marginBottom: "24px" }}>
         <Title level={2}>
           <SignatureOutlined /> Digital Sign

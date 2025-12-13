@@ -90,42 +90,42 @@ export const SignaturesApi = {
    * Get all signature stamps (admin only)
    */
   async getAll(params?: GetSignaturesParams) {
-    return apiGet<SignaturesResponse>('/signature-stamps', { params: params as any });
+    return apiGet<SignaturesResponse>('/stamps', { params: params as any });
   },
 
   /**
    * Get active signature stamps (authenticated users)
    */
   async getActive() {
-    return apiGet<Signature[]>('/signature-stamps/active');
+    return apiGet<Signature[]>('/stamps/active');
   },
 
   /**
    * Get signature stamp by ID
    */
   async getById(id: string) {
-    return apiGet<Signature>(`/signature-stamps/${id}`);
+    return apiGet<Signature>(`/stamps/${id}`);
   },
 
   /**
    * Create new signature stamp
    */
   async create(data: CreateSignatureDto) {
-    return apiPost<Signature>('/signature-stamps', data);
+    return apiPost<Signature>('/stamps', data);
   },
 
   /**
    * Update signature stamp
    */
   async update(id: string, data: UpdateSignatureDto) {
-    return apiPut<Signature>(`/signature-stamps/${id}`, data);
+    return apiPut<Signature>(`/stamps/${id}`, data);
   },
 
   /**
    * Delete signature stamp
    */
   async delete(id: string) {
-    return apiDelete(`/signature-stamps/${id}`);
+    return apiDelete(`/stamps/${id}`);
   },
 
   /**
@@ -136,7 +136,7 @@ export const SignaturesApi = {
       presignedUrl: string;
       key: string;
       publicUrl: string;
-    }>('/signature-stamps/presigned-url', {
+    }>('/stamps/presigned-url', {
       fileName,
       contentType,
     });
@@ -146,20 +146,20 @@ export const SignaturesApi = {
    * Apply signature stamp to document
    */
   async applySignature(data: ApplySignatureDto) {
-    return apiPost<DigitalSignature>('/signature-stamps/apply', data);
+    return apiPost<DigitalSignature>('/stamps/apply', data);
   },
 
   /**
    * Get all signatures for a document
    */
   async getDocumentSignatures(documentId: string) {
-    return apiGet<DigitalSignature[]>(`/signature-stamps/documents/${documentId}/signatures`);
+    return apiGet<DigitalSignature[]>(`/stamps/documents/${documentId}/signatures`);
   },
 
   /**
    * Verify digital signature integrity
    */
   async verifySignature(signatureId: string) {
-    return apiPost<SignatureVerificationResult>(`/signature-stamps/verify/${signatureId}`, {});
+    return apiPost<SignatureVerificationResult>(`/stamps/verify/${signatureId}`, {});
   },
 };
