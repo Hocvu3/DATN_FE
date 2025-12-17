@@ -176,7 +176,7 @@ export default function DashboardLayout({
     // Additional items for admin only
     if (userRole === "admin") {
       return [
-        ...baseItems,
+        ...baseItems.slice(0, 1), // Dashboard only
         {
           key: "ai-ocr",
           icon: <FireOutlined />,
@@ -188,6 +188,7 @@ export default function DashboardLayout({
           ),
           path: "/admin/ai-ocr",
         },
+        ...baseItems.slice(1), // Documents
         {
           key: "departments",
           icon: <AppstoreOutlined />,

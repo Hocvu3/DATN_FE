@@ -72,8 +72,8 @@ export async function getDocumentsForOcr(params?: {
 
 /**
  * Analyze document with AI OCR
- * Increased timeout to 60s for multi-page PDF processing (Textract async + Bedrock)
+ * Increased timeout to 5 minutes for multi-page PDF processing (Textract async + Bedrock)
  */
 export async function analyzeDocument(documentId: string): Promise<ApiResult<AnalyzeDocumentResponse>> {
-  return apiPost<AnalyzeDocumentResponse>('/ocr/analyze', { documentId }, { timeout: 60000 });
+  return apiPost<AnalyzeDocumentResponse>('/ocr/analyze', { documentId }, { timeout: 300000 });
 }
