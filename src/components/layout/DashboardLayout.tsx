@@ -158,17 +158,6 @@ export default function DashboardLayout({
         path: `/${userRole}/dashboard`,
       },
       {
-        key: "ocr",
-        icon: <FireOutlined />,
-        label: (
-          <Link href={`/${userRole}/ocr`} className="ocr-menu-item">
-            AI OCR
-            <span className="hot-badge">HOT</span>
-          </Link>
-        ),
-        path: `/${userRole}/ocr`,
-      },
-      {
         key: "documents",
         icon: <FileTextOutlined />,
         label: <Link href={`/${userRole}/documents`}>Documents</Link>,
@@ -188,6 +177,17 @@ export default function DashboardLayout({
     if (userRole === "admin") {
       return [
         ...baseItems,
+        {
+          key: "ai-ocr",
+          icon: <FireOutlined />,
+          label: (
+            <Link href="/admin/ai-ocr" className="ocr-menu-item">
+              AI OCR
+              <span className="hot-badge">HOT</span>
+            </Link>
+          ),
+          path: "/admin/ai-ocr",
+        },
         {
           key: "departments",
           icon: <AppstoreOutlined />,
