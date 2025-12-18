@@ -5,8 +5,7 @@ import ClientDebug from "@/components/debug/ClientDebug";
 import Link from "next/link";
 import {
   SafetyOutlined,
-  TeamOutlined,
-  AppstoreOutlined,
+  RobotOutlined,
 } from "@ant-design/icons";
 import Image from "next/image";
 
@@ -26,32 +25,46 @@ export default function LoginPage() {
       <section className="relative hidden md:flex flex-col justify-center text-white bg-gradient-to-br from-slate-800 to-slate-900">
         <div className="absolute inset-0 opacity-20 bg-pattern"></div>
         <div className="relative z-10 px-12 lg:px-16 py-20 h-full flex flex-col justify-center">
-          <div className="max-w-md mx-auto">
-            <div className="mb-8 flex items-center gap-4">
-              <div className="h-16 w-16 rounded-2xl grid place-items-center text-white text-3xl shadow-xl overflow-hidden">
-                <Image
-                  src="/favicon-new.svg"
-                  alt="DocuFlow Icon"
-                  width={64}
-                  height={64}
-                  className="w-full h-full"
-                />
+          <div className="max-w-md mx-auto space-y-12">
+            {/* Logo & Title */}
+            <div className="space-y-6">
+              <div className="flex items-center gap-4">
+                <div className="h-16 w-16 rounded-2xl grid place-items-center text-white text-3xl shadow-xl overflow-hidden">
+                  <Image
+                    src="/favicon-new.svg"
+                    alt="DocuFlow Icon"
+                    width={64}
+                    height={64}
+                    className="w-full h-full"
+                  />
+                </div>
+                <h1 className="text-5xl font-bold tracking-tight">DocuFlow</h1>
               </div>
-              <h1 className="text-5xl font-bold tracking-tight">DocuFlow</h1>
+
+              <div>
+                <h2 className="text-2xl font-medium mb-3">
+                  Document Management System
+                </h2>
+                <p className="text-lg text-gray-300 leading-relaxed">
+                  Streamline your document workflow with intelligent automation
+                </p>
+              </div>
             </div>
 
-            <h2 className="text-2xl font-medium mb-6">
-              Document Management System
-            </h2>
-            <p className="text-lg text-gray-200 leading-relaxed">
-              Streamline your document workflow with our intelligent management
-              platform
-            </p>
-
-            <div className="mt-14 space-y-6">
-              <Feature icon={<SafetyOutlined />} title="Secure & Encrypted" />
-              <Feature icon={<TeamOutlined />} title="Team Collaboration" />
-              <Feature icon={<AppstoreOutlined />} title="Smart Organization" />
+            {/* Key Features */}
+            <div className="space-y-8">
+              <div className="space-y-4">
+                <Feature 
+                  icon={<SafetyOutlined />} 
+                  title="Secured & Encrypted" 
+                  description="Enterprise-grade security with end-to-end encryption to protect your sensitive documents"
+                />
+                <Feature 
+                  icon={<RobotOutlined />} 
+                  title="AI Assistant" 
+                  description="Smart OCR and document analysis powered by artificial intelligence"
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -101,13 +114,26 @@ export default function LoginPage() {
   );
 }
 
-function Feature({ icon, title }: { icon: React.ReactNode; title: string }) {
+function Feature({ 
+  icon, 
+  title, 
+  description 
+}: { 
+  icon: React.ReactNode; 
+  title: string;
+  description?: string;
+}) {
   return (
-    <div className="flex items-center gap-4">
-      <div className="h-12 w-12 rounded-xl bg-white/15 grid place-items-center text-xl shadow-lg">
+    <div className="flex gap-4">
+      <div className="h-14 w-14 shrink-0 rounded-xl bg-white/15 grid place-items-center text-2xl shadow-lg backdrop-blur-sm">
         {icon}
       </div>
-      <div className="text-lg font-medium">{title}</div>
+      <div className="flex-1">
+        <div className="text-xl font-semibold mb-1">{title}</div>
+        {description && (
+          <p className="text-sm text-gray-300 leading-relaxed">{description}</p>
+        )}
+      </div>
     </div>
   );
 }
