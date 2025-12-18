@@ -147,7 +147,7 @@ export const VersionApi = {
     },
 
     /**
-     * Validate version integrity
+     * Validate version integrity (authenticated)
      */
     validateVersion(documentId: string, versionId: string): Promise<ApiResult<{
         isValid: boolean;
@@ -205,5 +205,66 @@ export const VersionApi = {
             issues: string[];
             message: string;
         }>(`/documents/${documentId}/versions/${versionId}/validate`);
+    },
+
+    /**
+     * Validate version integrity (public - no auth required)
+     */
+    validateVersionPublic(documentId: string, versionId: string): Promise<ApiResult<{
+        isValid: boolean;
+        version: {
+            id: string;
+            versionNumber: number;
+            status: string;
+            fileSize: number;
+            s3Key: string | null;
+            s3Url: string | null;
+            mimeType: string;
+            createdAt: string;
+        };
+        validation: {
+            fileExists: boolean;
+            checksumMatch: boolean;
+            actualChecksum: string | null;
+            signatureCount: number;
+            hasSignatures: boolean;
+            signatureVerifications?: Array<{
+                signatureId: string;
+                signerName: string;
+                isValid: boolean;
+                status: string;
+            }>;
+        };
+        issues: string[];
+        message: string;
+    }>> {
+        return apiGet<{
+            isValid: boolean;
+            version: {
+                id: string;
+                versionNumber: number;
+                status: string;
+                fileSize: number;
+                s3Key: string | null;
+                s3Url: string | null;
+                mimeType: string;
+                createdAt: string;
+            };
+            validation: {
+                fileExists: boolean;
+                checksumMatch: boolean;
+                actualChecksum: string | null;
+                signatureCount: number;
+                hasSignatures: boolean;
+                signatureVerifications?: Array<{
+                    signatureId: string;
+                    signerName: string;
+                    isValid: boolean;
+                    status: string;
+                }>;
+            };
+            issues: string[];
+            message: string;
+        }>(`/documents/${documentId}/versions/${versionId}/validate-public`);
     },
 };

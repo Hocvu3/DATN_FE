@@ -736,7 +736,7 @@ export default function AiOcrPage() {
                 padding: 16,
                 background: "#fff"
               }}>
-                <Row justify="center" gutter={16}>
+                <Row justify="end" gutter={16}>
                   <Col>
                     <Button
                       type="primary"

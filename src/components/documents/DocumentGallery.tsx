@@ -53,6 +53,12 @@ interface Document {
     sizeBytes: string;
     isCover: boolean;
   }>;
+  versions?: Array<{
+    id: string;
+    versionNumber: number;
+    status: string;
+    isLatest: boolean;
+  }>;
 }
 
 interface DocumentGalleryProps {
@@ -177,26 +183,33 @@ export default function DocumentGallery({ documents, onDownload, isPublicView = 
             }
           >
             <div className="px-1 pt-2">
-              <div className="mb-3">
+              <div className="mb-3 flex items-center gap-2">
                 <Link
                   href={`${basePath}/${doc.id}`}
-                  className="text-lg font-medium text-gray-900 hover:text-orange-500 line-clamp-2"
+                  className="text-lg font-medium text-gray-900 hover:text-orange-500 line-clamp-2 flex-1"
                 >
                   {doc.title}
                 </Link>
+                {isPublicView && (
+                  <Tag color="blue" className="m-0 shrink-0">
+                    Public
+                  </Tag>
+                )}
               </div>
 
               <p className="text-gray-500 text-sm mb-4 line-clamp-2">
                 {doc.description}
               </p>
 
-              <div className="flex flex-wrap gap-1 mb-4">
-                {doc.tags.map((tag) => (
-                  <Tag key={tag.id} color="orange" className="m-0">
-                    {tag.name}
-                  </Tag>
-                ))}
-              </div>
+              {doc.tags && doc.tags.length > 0 && (
+                <div className="flex flex-wrap gap-1 mb-4">
+                  {doc.tags.map((tag) => (
+                    <Tag key={tag.id} color="orange" className="m-0">
+                      {tag.name}
+                    </Tag>
+                  ))}
+                </div>
+              )}
 
               <div className="grid grid-cols-2 gap-2 text-sm text-gray-500 mb-4">
                 <div className="flex items-center gap-1">
@@ -208,16 +221,23 @@ export default function DocumentGallery({ documents, onDownload, isPublicView = 
                   <span>{fileSize > 0 ? formatFileSize(fileSize) : 'N/A'}</span>
                 </div>
                 <div className="flex items-center gap-1">
-                  <span className="font-medium">Updated:</span>
-                  <span>{format(new Date(doc.updatedAt), "MMM d, yyyy")}</span>
+                  <span className="font-medium">Department:</span>
+                  <span>{doc.department?.name || 'N/A'}</span>
                 </div>
-                <div className="flex items-center gap-1">
-                  <span className="font-medium">Status:</span>
-                  <span>{doc.status}</span>
+                <div className="flex flex-col">
+                  <span className="font-medium">{doc.versions?.length || 0} version{(doc.versions?.length || 0) !== 1 ? 's' : ''}</span>
+                  {doc.versions && doc.versions.length > 0 && (() => {
+                    const latestVersion = doc.versions.find(v => v.isLatest) || doc.versions[0];
+                    return (
+                      <span className="text-xs text-gray-400">
+                        Latest: v{latestVersion.versionNumber}
+                      </span>
+                    );
+                  })()}
                 </div>
               </div>
 
-              <div className="flex justify-between border-t pt-3">
+              <div className="flex justify-end border-t pt-3">
                 <Tooltip title="View Document">
                   <Link href={`${basePath}/${doc.id}`}>
                     <Button
@@ -228,15 +248,6 @@ export default function DocumentGallery({ documents, onDownload, isPublicView = 
                       View
                     </Button>
                   </Link>
-                </Tooltip>
-                <Tooltip title="Download Document">
-                  <Button 
-                    icon={<DownloadOutlined />}
-                    onClick={() => onDownload && onDownload(doc)}
-                    disabled={!onDownload || !doc.assets?.some(asset => !asset.isCover)}
-                  >
-                    Download
-                  </Button>
                 </Tooltip>
               </div>
             </div>
