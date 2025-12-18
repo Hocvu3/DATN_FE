@@ -11,9 +11,11 @@ interface PublicLayoutProps {
 
 export default function PublicLayout({ children }: PublicLayoutProps) {
   return (
-    <Layout className="public-layout min-h-screen">
+    <Layout className="public-layout" style={{ minHeight: "100vh", background: "#f5f5f5" }}>
       <PublicHeader />
-      <Layout.Content>{children}</Layout.Content>
+      <Layout.Content style={{ background: "#f5f5f5" }}>
+        {children}
+      </Layout.Content>
       <PublicFooter />
     </Layout>
   );

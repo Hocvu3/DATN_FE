@@ -252,44 +252,50 @@ export default function PublicDocumentsPage() {
   */
 
   return (
-    <div className="max-w-7xl mx-auto">
+    <div style={{ padding: 24, background: "#f5f5f5", minHeight: "100vh" }}>
       {/* Page header */}
-      <div className="mb-8">
-        <Title level={2} className="!text-gray-800">
-          Document Library
+      <div style={{ marginBottom: 24 }}>
+        <Title level={3} style={{ margin: 0, fontWeight: 500 }}>
+          Documents
         </Title>
-        <Paragraph className="text-gray-600">
-          Browse our collection of public documents and resources. No login
-          required to view or download.
+        <Paragraph style={{ color: "rgba(0,0,0,0.6)", fontSize: 14, marginTop: 8 }}>
+          Browse our collection of public documents and resources
         </Paragraph>
       </div>
 
       {/* Search and filters */}
-      <Card className="mb-6">
-        <div className="flex flex-col md:flex-row gap-4 items-end">
-          <div className="flex-1">
-            <Text strong className="block mb-2">
+      <Card 
+        bordered={false}
+        style={{ 
+          marginBottom: 16,
+          boxShadow: "0 1px 3px rgba(0,0,0,0.12)",
+          borderRadius: 4
+        }}
+      >
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 16, alignItems: "flex-end" }}>
+          <div style={{ flex: 1, minWidth: 200 }}>
+            <Text strong style={{ display: "block", marginBottom: 8 }}>
               Search
             </Text>
             <Input
-              placeholder="Search documents by title, description or tags..."
-              prefix={<SearchOutlined className="text-gray-400" />}
+              placeholder="Search documents..."
+              prefix={<SearchOutlined style={{ color: "#999" }} />}
               value={filters.keyword}
               onChange={(e) => handleSearch(e.target.value)}
               allowClear
-              className="w-full"
+              style={{ width: "100%" }}
             />
           </div>
 
-          <div className="w-full md:w-48">
-            <Text strong className="block mb-2">
+          <div style={{ width: 180 }}>
+            <Text strong style={{ display: "block", marginBottom: 8 }}>
               File Type
             </Text>
             <Select
               placeholder="All Types"
               value={filters.fileType || undefined}
               onChange={handleFileTypeChange}
-              className="w-full"
+              style={{ width: "100%" }}
               allowClear
             >
               {FILE_TYPES.map((type) => (
@@ -300,14 +306,14 @@ export default function PublicDocumentsPage() {
             </Select>
           </div>
 
-          <div className="w-full md:w-48">
-            <Text strong className="block mb-2">
+          <div style={{ width: 180 }}>
+            <Text strong style={{ display: "block", marginBottom: 8 }}>
               Sort By
             </Text>
             <Select
               value={filters.sortBy}
               onChange={handleSortChange}
-              className="w-full"
+              style={{ width: "100%" }}
             >
               {SORT_OPTIONS.map((option) => (
                 <Option key={option.value} value={option.value}>
@@ -317,7 +323,7 @@ export default function PublicDocumentsPage() {
             </Select>
           </div>
 
-          <div className="w-full md:w-auto flex justify-end">
+          <div>
             <Radio.Group
               value={viewMode}
               onChange={(e) => setViewMode(e.target.value)}
@@ -335,7 +341,13 @@ export default function PublicDocumentsPage() {
       </Card>
 
       {/* Document Gallery */}
-      <div className="bg-white rounded-lg shadow p-6">
+      <Card
+        bordered={false}
+        style={{
+          boxShadow: "0 1px 3px rgba(0,0,0,0.12)",
+          borderRadius: 4
+        }}
+      >
         <Spin spinning={loading}>
           {documents.length > 0 ? (
             <DocumentGallery 
@@ -345,14 +357,14 @@ export default function PublicDocumentsPage() {
             />
           ) : (
             <Empty
-              description="No documents found matching your criteria"
+              description="No documents found"
               image={Empty.PRESENTED_IMAGE_SIMPLE}
             />
           )}
 
           {/* Pagination */}
           {total > 0 && (
-            <div className="mt-8 flex justify-end">
+            <div style={{ marginTop: 24, display: "flex", justifyContent: "flex-end" }}>
               <Pagination
                 current={filters.page}
                 pageSize={filters.pageSize}
@@ -366,7 +378,7 @@ export default function PublicDocumentsPage() {
             </div>
           )}
         </Spin>
-      </div>
+      </Card>
     </div>
   );
 }

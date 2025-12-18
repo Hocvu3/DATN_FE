@@ -1,17 +1,27 @@
 "use client";
 
-import { Typography, Row, Col, Card, Avatar, Button } from "antd";
-import {
-  TeamOutlined,
-  SafetyOutlined,
-  RocketOutlined,
-  HeartOutlined,
-} from "@ant-design/icons";
-import Image from "next/image";
-
-const { Title, Paragraph } = Typography;
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { Spin } from "antd";
 
 export default function AboutPage() {
+  const router = useRouter();
+
+  useEffect(() => {
+    router.replace("/documents");
+  }, [router]);
+
+  return (
+    <div style={{ 
+      display: "flex", 
+      justifyContent: "center", 
+      alignItems: "center", 
+      minHeight: "100vh" 
+    }}>
+      <Spin size="large" />
+    </div>
+  );
+}
   // Team members data
   const team = [
     {

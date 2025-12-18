@@ -384,26 +384,27 @@ const DepartmentPermissionsPage = () => {
   ];
 
   return (
-    <>
-      <div className="flex justify-between items-center mb-6">
+    <div style={{ padding: 24, background: "#f5f5f5", minHeight: "100vh" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
         <div>
-          <h1 className="text-2xl font-semibold text-gray-800">
+          <h1 style={{ fontSize: 20, fontWeight: 500, color: "#262626", marginBottom: 8 }}>
             Department Permissions
           </h1>
-          <p className="text-gray-600">Manage roles and access controls for your department</p>
+          <p style={{ color: "#8c8c8c" }}>Manage roles and access controls for your department</p>
         </div>
-        <div className="flex items-center">
+        <div style={{ display: "flex", alignItems: "center" }}>
           <Image
             src="/signatures-illustration.svg"
             alt="Permissions Management"
             width={100}
             height={100}
-            className="hidden md:block"
+            style={{ display: "none" }}
+            className="md:block"
           />
         </div>
       </div>
 
-      <Card className="shadow-md">
+      <Card bordered={false} style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.12)", borderRadius: 4 }}>
         <Tabs
           activeKey={activeTab}
           onChange={setActiveTab}
@@ -462,7 +463,7 @@ const DepartmentPermissionsPage = () => {
           ))}
         </Form>
       </Modal>
-    </>
+    </div>
   );
 };
 

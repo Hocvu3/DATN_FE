@@ -276,9 +276,9 @@ export default function MyActivitiesPage() {
         </Space>
       ),
       children: (
-        <div className="space-y-4">
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           {/* Filters */}
-          <Card size="small">
+          <Card size="small" bordered={false} style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.12)", borderRadius: 4 }}>
             <Row gutter={[16, 16]} align="middle">
               <Col xs={24} sm={8}>
                 <Select
@@ -312,7 +312,7 @@ export default function MyActivitiesPage() {
           </Card>
 
           {/* Activities List */}
-          <Card>
+          <Card bordered={false} style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.12)", borderRadius: 4 }}>
             {filteredActivities.length > 0 ? (
               <Timeline
                 items={filteredActivities.map(activity => ({
@@ -469,18 +469,18 @@ export default function MyActivitiesPage() {
   ];
 
   return (
-    <div className="space-y-6">
+    <div style={{ padding: 24, background: "#f5f5f5", minHeight: "100vh" }}>
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
         <div>
-          <Title level={2} className="!mb-2">
+          <Title level={3} style={{ marginBottom: 8, fontWeight: 500 }}>
             My Activities
           </Title>
           <Text type="secondary">
             Track your document activities, events, and notifications
           </Text>
         </div>
-        <div className="hidden md:block">
+        <div style={{ display: "none" }} className="md:block">
           <Image
             src="/profile-illustration.svg"
             alt="My Activities"
@@ -491,7 +491,7 @@ export default function MyActivitiesPage() {
       </div>
 
       {/* Activity Statistics */}
-      <Card title="Activity Overview">
+      <Card title="Activity Overview" bordered={false} style={{ marginBottom: 16, boxShadow: "0 1px 3px rgba(0,0,0,0.12)", borderRadius: 4 }}>
         <Row gutter={[24, 16]}>
           <Col xs={12} sm={6}>
             <Statistic
@@ -529,7 +529,7 @@ export default function MyActivitiesPage() {
       </Card>
 
       {/* Main Content Tabs */}
-      <Card>
+      <Card bordered={false} style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.12)", borderRadius: 4 }}>
         <Tabs
           activeKey={activeTab}
           onChange={setActiveTab}

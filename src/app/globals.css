@@ -30,32 +30,40 @@ header.ant-layout-header {
 }
 
 /* Admin module - Material Design theme */
-.admin-layout {
+.admin-layout,
+.public-layout {
     background: #f5f5f5 !important;
 }
 
-.admin-layout .ant-card {
+.admin-layout .ant-card,
+.public-layout .ant-card {
     border-radius: 4px;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
 }
 
-.admin-layout .ant-card-head {
+.admin-layout .ant-card-head,
+.public-layout .ant-card-head {
     border-bottom: 1px solid #e0e0e0;
     font-weight: 500;
 }
 
-.admin-layout .ant-table {
+.admin-layout .ant-table,
+.public-layout .ant-table {
     background: white;
     border-radius: 4px;
 }
 
-.admin-layout .ant-btn {
+.admin-layout .ant-btn,
+.public-layout .ant-btn {
     border-radius: 4px;
 }
 
 .admin-layout .ant-input,
 .admin-layout .ant-input-number,
-.admin-layout .ant-select-selector {
+.admin-layout .ant-select-selector,
+.public-layout .ant-input,
+.public-layout .ant-input-number,
+.public-layout .ant-select-selector {
     border-radius: 4px;
 }
 

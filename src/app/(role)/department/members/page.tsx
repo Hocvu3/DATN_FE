@@ -273,29 +273,30 @@ const DepartmentMembersPage = () => {
   ];
 
   return (
-    <>
-      <div className="flex justify-between items-center mb-6">
+    <div style={{ padding: 24, background: "#f5f5f5", minHeight: "100vh" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
         <div>
-          <h1 className="text-2xl font-semibold text-gray-800">
+          <h1 style={{ fontSize: 20, fontWeight: 500, color: "#262626", marginBottom: 8 }}>
             Department Members
           </h1>
-          <p className="text-gray-600">Manage team members and their roles</p>
+          <p style={{ color: "#8c8c8c" }}>Manage team members and their roles</p>
         </div>
-        <div className="flex items-center">
+        <div style={{ display: "flex", alignItems: "center" }}>
           <Image
             src="/users-illustration.svg"
             alt="Members Management"
             width={100}
             height={100}
-            className="hidden md:block"
+            style={{ display: "none" }}
+            className="md:block"
           />
         </div>
       </div>
 
       {/* Statistics Cards */}
-      <Row gutter={16} className="mb-6">
+      <Row gutter={16} style={{ marginBottom: 16 }}>
         <Col xs={24} sm={8}>
-          <Card className="text-center">
+          <Card bordered={false} style={{ textAlign: "center", boxShadow: "0 1px 3px rgba(0,0,0,0.12)", borderRadius: 4 }}>
             <Statistic
               title="Total Members"
               value={members.length}
@@ -305,38 +306,37 @@ const DepartmentMembersPage = () => {
           </Card>
         </Col>
         <Col xs={24} sm={8}>
-          <Card className="text-center">
+          <Card bordered={false} style={{ textAlign: "center", boxShadow: "0 1px 3px rgba(0,0,0,0.12)", borderRadius: 4 }}>
             <Statistic
               title="Active Members"
               value={activeMembers}
-              prefix={<UserOutlined className="text-green-600" />}
+              prefix={<UserOutlined style={{ color: "#52c41a" }} />}
               valueStyle={{ color: "#52c41a" }}
             />
           </Card>
         </Col>
         <Col xs={24} sm={8}>
-          <Card className="text-center">
+          <Card bordered={false} style={{ textAlign: "center", boxShadow: "0 1px 3px rgba(0,0,0,0.12)", borderRadius: 4 }}>
             <Statistic
               title="Managers"
               value={managerCount}
-              prefix={<CrownOutlined className="text-orange-600" />}
+              prefix={<CrownOutlined style={{ color: "#fa8c16" }} />}
               valueStyle={{ color: "#fa8c16" }}
             />
           </Card>
         </Col>
       </Row>
 
-      <Card className="shadow-md">
-        <div className="flex justify-between mb-4 flex-col md:flex-row gap-4">
-          <div className="flex gap-2 flex-1 md:max-w-md">
+      <Card bordered={false} style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.12)", borderRadius: 4 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 16, flexDirection: "column", gap: 16 }} className="md:flex-row">
+          <div style={{ display: "flex", gap: 8, flex: 1 }} className="md:max-w-md">
             <Input
               placeholder="Search members..."
-              prefix={<SearchOutlined className="text-gray-400" />}
-              className="flex-1"
+              prefix={<SearchOutlined style={{ color: "#bfbfbf" }} />}
+              style={{ flex: 1 }}
             />
             <Button
               icon={<FilterOutlined />}
-              className="bg-white border-gray-200"
             >
               Filter
             </Button>
@@ -345,7 +345,6 @@ const DepartmentMembersPage = () => {
             type="primary"
             icon={<UserAddOutlined />}
             onClick={() => showModal()}
-            className="bg-blue-600"
           >
             Add Member
           </Button>
@@ -489,7 +488,7 @@ const DepartmentMembersPage = () => {
           )}
         </Form>
       </Modal>
-    </>
+    </div>
   );
 };
 

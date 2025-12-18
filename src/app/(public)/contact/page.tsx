@@ -1,31 +1,27 @@
 "use client";
 
-import { useState } from "react";
-import {
-  Typography,
-  Row,
-  Col,
-  Form,
-  Input,
-  Button,
-  Select,
-  Card,
-  message,
-} from "antd";
-import {
-  EnvironmentOutlined,
-  MailOutlined,
-  PhoneOutlined,
-  GlobalOutlined,
-  SendOutlined,
-} from "@ant-design/icons";
-// import Image from "next/image";
-
-const { Title, Paragraph } = Typography;
-const { Option } = Select;
-const { TextArea } = Input;
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { Spin } from "antd";
 
 export default function ContactPage() {
+  const router = useRouter();
+
+  useEffect(() => {
+    router.replace("/documents");
+  }, [router]);
+
+  return (
+    <div style={{ 
+      display: "flex", 
+      justifyContent: "center", 
+      alignItems: "center", 
+      minHeight: "100vh" 
+    }}>
+      <Spin size="large" />
+    </div>
+  );
+}
   const [form] = Form.useForm();
   const [submitting, setSubmitting] = useState(false);
 

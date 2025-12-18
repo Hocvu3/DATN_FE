@@ -1,9 +1,24 @@
 "use client";
 
-// Import the landing page component
-import LandingPage from "../page";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { Spin } from "antd";
 
 export default function HomePage() {
-  // Simply render the landing page content
-  return <LandingPage />;
+  const router = useRouter();
+
+  useEffect(() => {
+    router.replace("/documents");
+  }, [router]);
+
+  return (
+    <div style={{ 
+      display: "flex", 
+      justifyContent: "center", 
+      alignItems: "center", 
+      minHeight: "100vh" 
+    }}>
+      <Spin size="large" />
+    </div>
+  );
 }

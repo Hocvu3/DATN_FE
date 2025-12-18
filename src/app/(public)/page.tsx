@@ -1,29 +1,27 @@
 "use client";
 
-import {
-  Typography,
-  Card,
-  Button,
-  Row,
-  Col,
-  Statistic,
-  List,
-  Space,
-  Carousel,
-} from "antd";
-import {
-  FileTextOutlined,
-  SecurityScanOutlined,
-  TeamOutlined,
-  SearchOutlined,
-  RightOutlined,
-  CheckCircleOutlined,
-} from "@ant-design/icons";
-import Link from "next/link";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { Spin } from "antd";
 
-const { Title, Paragraph } = Typography;
+export default function HomePage() {
+  const router = useRouter();
 
-export default function LandingPage() {
+  useEffect(() => {
+    router.replace("/documents");
+  }, [router]);
+
+  return (
+    <div style={{ 
+      display: "flex", 
+      justifyContent: "center", 
+      alignItems: "center", 
+      minHeight: "100vh" 
+    }}>
+      <Spin size="large" />
+    </div>
+  );
+}
   // Removed unused scroll effect
 
   // Features data

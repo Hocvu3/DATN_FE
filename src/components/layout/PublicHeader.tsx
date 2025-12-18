@@ -17,23 +17,11 @@ export default function PublicHeader() {
     setIsMenuOpen(!isMenuOpen);
   };
 
-  // Define navigation menu items
+  // Define navigation menu items - Only Documents
   const navigationItems = [
-    {
-      key: "/home",
-      label: <Link href="/home">Home</Link>,
-    },
     {
       key: "/documents",
       label: <Link href="/documents">Documents</Link>,
-    },
-    {
-      key: "/about",
-      label: <Link href="/about">About</Link>,
-    },
-    {
-      key: "/contact",
-      label: <Link href="/contact">Contact</Link>,
     },
   ];
 
@@ -49,7 +37,7 @@ export default function PublicHeader() {
     <Header className="bg-white shadow-md px-4 h-16 flex items-center">
       <div className="container mx-auto flex justify-between items-center h-full">
         <div className="flex items-center">
-          <Link href="/home" className="flex items-center">
+          <Link href="/documents" className="flex items-center">
             <Image
               src="/docuflow-logo-new.svg"
               alt="DocuFlow Logo"

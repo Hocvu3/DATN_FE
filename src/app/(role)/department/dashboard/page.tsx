@@ -53,48 +53,49 @@ const pendingApprovals = [
 
 export default function DepartmentDashboardPage() {
   return (
-    <div className="space-y-6">
+    <div style={{ padding: 24, background: "#f5f5f5", minHeight: "100vh" }}>
       <UnauthorizedAccess />
-      <div className="flex justify-between items-center">
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
         <div>
-          <h1 className="text-2xl font-semibold text-gray-800">
+          <h1 style={{ fontSize: 20, fontWeight: 500, color: "#262626", marginBottom: 8 }}>
             Department Dashboard
           </h1>
-          <p className="text-gray-600">Welcome back, Department Manager</p>
+          <p style={{ color: "#8c8c8c" }}>Welcome back, Department Manager</p>
         </div>
         <Image
           src="/document-illustration.svg"
           alt="Dashboard"
           width={100}
           height={100}
-          className="hidden md:block"
+          style={{ display: "none" }}
+          className="md:block"
         />
       </div>
 
       {/* Stats Overview */}
-      <Row gutter={16}>
+      <Row gutter={16} style={{ marginBottom: 16 }}>
         <Col xs={24} sm={12}>
-          <Card variant="borderless" className="shadow-sm">
+          <Card bordered={false} style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.12)", borderRadius: 4 }}>
             <Statistic
               title="Department Documents"
               value={45}
               prefix={<FileTextOutlined />}
               valueStyle={{ color: "#3f8600" }}
             />
-            <div className="mt-2 text-xs text-gray-500">
+            <div style={{ marginTop: 8, fontSize: 12, color: "#8c8c8c" }}>
               12 new in last 30 days
             </div>
           </Card>
         </Col>
         <Col xs={24} sm={12}>
-          <Card variant="borderless" className="shadow-sm">
+          <Card bordered={false} style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.12)", borderRadius: 4 }}>
             <Statistic
               title="Pending Approvals"
               value={5}
               prefix={<ClockCircleOutlined />}
               valueStyle={{ color: "#faad14" }}
             />
-            <div className="mt-2 text-xs text-gray-500">
+            <div style={{ marginTop: 8, fontSize: 12, color: "#8c8c8c" }}>
               2 new requests today
             </div>
           </Card>
@@ -106,8 +107,8 @@ export default function DepartmentDashboardPage() {
         <Col xs={24} lg={16}>
           <Card
             title="Recent Documents"
-            variant="borderless"
-            className="shadow-sm"
+            bordered={false}
+            style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.12)", borderRadius: 4 }}
             extra={
               <Link
                 href="/(role)/department/documents"
@@ -126,8 +127,8 @@ export default function DepartmentDashboardPage() {
         <Col xs={24} lg={8}>
           <Card
             title="Pending Approvals"
-            variant="borderless"
-            className="shadow-sm"
+            bordered={false}
+            style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.12)", borderRadius: 4 }}
             extra={
               <Link
                 href="/(role)/department/documents?filter=pending"
@@ -145,15 +146,14 @@ export default function DepartmentDashboardPage() {
 
           <Card
             title="Quick Actions"
-            variant="borderless"
-            className="shadow-sm mt-4"
+            bordered={false}
+            style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.12)", borderRadius: 4, marginTop: 16 }}
           >
-            <div className="space-y-2">
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               <Button
                 icon={<UploadOutlined />}
                 type="primary"
                 block
-                className="bg-blue-600"
               >
                 Upload Document
               </Button>

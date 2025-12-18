@@ -61,22 +61,25 @@ export default function EmployeeDashboardPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div style={{ padding: 24, background: "#f5f5f5", minHeight: "100vh" }}>
       <UnauthorizedAccess />
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-semibold text-gray-800">
-            Employee Dashboard
-          </h1>
-          <p className="text-gray-600">Welcome back, Employee</p>
+      <div style={{ marginBottom: 24 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div>
+            <h1 style={{ fontSize: 20, fontWeight: 500, margin: 0, color: "rgba(0,0,0,0.87)" }}>
+              Dashboard
+            </h1>
+            <p style={{ color: "rgba(0,0,0,0.6)", fontSize: 14, marginTop: 4 }}>Welcome back</p>
+          </div>
+          <Image
+            src="/document-illustration.svg"
+            alt="Dashboard"
+            width={100}
+            height={100}
+            style={{ display: "none" }}
+            className="md:block"
+          />
         </div>
-        <Image
-          src="/document-illustration.svg"
-          alt="Dashboard"
-          width={100}
-          height={100}
-          className="hidden md:block"
-        />
       </div>
 
       {/* Stats Overview */}

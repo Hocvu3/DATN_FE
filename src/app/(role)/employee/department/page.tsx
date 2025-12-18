@@ -203,18 +203,18 @@ const getProjectStatusColor = (status: string) => {
 
 export default function MyDepartmentPage() {
   return (
-    <div className="space-y-6">
+    <div style={{ padding: 24, background: "#f5f5f5", minHeight: "100vh" }}>
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
         <div>
-          <Title level={2} className="!mb-2">
+          <Title level={3} style={{ marginBottom: 8, fontWeight: 500 }}>
             My Department
           </Title>
           <Text type="secondary">
             Overview of your department information and team activities
           </Text>
         </div>
-        <div className="hidden md:block">
+        <div style={{ display: "none" }} className="md:block">
           <Image
             src="/departments-illustration.svg"
             alt="My Department"
@@ -225,7 +225,7 @@ export default function MyDepartmentPage() {
       </div>
 
       {/* Department Overview */}
-      <Row gutter={[24, 24]}>
+      <Row gutter={[16, 16]}>
         <Col xs={24} lg={16}>
           <Card 
             title={
@@ -234,12 +234,13 @@ export default function MyDepartmentPage() {
                 Department Information
               </Space>
             }
-            className="h-full"
+            bordered={false}
+            style={{ height: "100%", boxShadow: "0 1px 3px rgba(0,0,0,0.12)", borderRadius: 4 }}
           >
-            <div className="space-y-6">
+            <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
               <div>
-                <Title level={3} className="!mb-2 flex items-center">
-                  <TeamOutlined className="mr-2 text-blue-500" />
+                <Title level={4} style={{ marginBottom: 8, display: "flex", alignItems: "center", fontWeight: 500 }}>
+                  <TeamOutlined style={{ marginRight: 8, color: "#1890ff" }} />
                   {departmentInfo.name}
                 </Title>
                 <Paragraph type="secondary">

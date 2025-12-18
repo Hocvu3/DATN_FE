@@ -390,60 +390,61 @@ const DepartmentActivityLogsPage = () => {
   ];
 
   return (
-    <>
-      <div className="flex justify-between items-center mb-6">
+    <div style={{ padding: 24, background: "#f5f5f5", minHeight: "100vh" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
         <div>
-          <h1 className="text-2xl font-semibold text-gray-800">
+          <h1 style={{ fontSize: 20, fontWeight: 500, color: "#262626", marginBottom: 8 }}>
             Department Activity Logs
           </h1>
-          <p className="text-gray-600">Monitor and audit all department activities</p>
+          <p style={{ color: "#8c8c8c" }}>Monitor and audit all department activities</p>
         </div>
-        <div className="flex items-center">
+        <div style={{ display: "flex", alignItems: "center" }}>
           <Image
             src="/departments-illustration.svg"
             alt="Activity Logs"
             width={100}
             height={100}
-            className="hidden md:block"
+            style={{ display: "none" }}
+            className="md:block"
           />
         </div>
       </div>
 
       {/* Statistics Cards */}
-      <Row gutter={16} className="mb-6">
+      <Row gutter={16} style={{ marginBottom: 16 }}>
         <Col xs={24} sm={8}>
-          <Card className="text-center">
+          <Card bordered={false} style={{ textAlign: "center", boxShadow: "0 1px 3px rgba(0,0,0,0.12)", borderRadius: 4 }}>
             <Statistic
               title="Total Activities"
               value={activityLogs.length}
-              prefix={<ClockCircleOutlined className="text-blue-600" />}
+              prefix={<ClockCircleOutlined style={{ color: "#1890ff" }} />}
               valueStyle={{ color: "#1890ff" }}
             />
           </Card>
         </Col>
         <Col xs={24} sm={8}>
-          <Card className="text-center">
+          <Card bordered={false} style={{ textAlign: "center", boxShadow: "0 1px 3px rgba(0,0,0,0.12)", borderRadius: 4 }}>
             <Statistic
               title="Today's Activities"
               value={todayCount}
-              prefix={<TeamOutlined className="text-green-600" />}
+              prefix={<TeamOutlined style={{ color: "#52c41a" }} />}
               valueStyle={{ color: "#52c41a" }}
             />
           </Card>
         </Col>
         <Col xs={24} sm={8}>
-          <Card className="text-center">
+          <Card bordered={false} style={{ textAlign: "center", boxShadow: "0 1px 3px rgba(0,0,0,0.12)", borderRadius: 4 }}>
             <Statistic
               title="High Priority"
               value={highSeverityCount}
-              prefix={<FilterOutlined className="text-red-600" />}
+              prefix={<FilterOutlined style={{ color: "#ff4d4f" }} />}
               valueStyle={{ color: "#ff4d4f" }}
             />
           </Card>
         </Col>
       </Row>
 
-      <Card className="shadow-md">
+      <Card bordered={false} style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.12)", borderRadius: 4 }}>
         <Tabs
           activeKey={activeTab}
           onChange={setActiveTab}
@@ -543,7 +544,7 @@ const DepartmentActivityLogsPage = () => {
           </div>
         )}
       </Modal>
-    </>
+    </div>
   );
 };
 

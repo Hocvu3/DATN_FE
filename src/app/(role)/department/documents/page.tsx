@@ -785,16 +785,16 @@ export default function DepartmentDocumentsPage() {
   ];
 
   return (
-    <>
+    <div style={{ padding: 24, background: "#f5f5f5", minHeight: "100vh" }}>
       {/* Page header */}
-      <div className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between">
+      <div style={{ marginBottom: 24, display: "flex", flexDirection: "column", gap: 16 }} className="md:flex-row md:items-center md:justify-between">
         <div>
-          <Title level={3} className="!text-gray-800 !mb-1">
+          <Title level={3} style={{ color: "#262626", marginBottom: 4, fontWeight: 500 }}>
             Documents
           </Title>
-          <Text className="text-gray-600">Manage your documents and files</Text>
+          <Text style={{ color: "#8c8c8c" }}>Manage your documents and files</Text>
         </div>
-        <div className="mt-4 md:mt-0">
+        <div style={{ marginTop: 0 }} className="mt-4 md:mt-0">
           <Button
             type="primary"
             icon={<PlusOutlined />}
@@ -831,24 +831,24 @@ export default function DepartmentDocumentsPage() {
       />
 
       {/* Filters */}
-      <Card className="mb-6">
-        <div className="flex flex-col md:flex-row gap-4 items-end">
-          <div className="flex-1">
-            <Text strong className="block mb-2">
+      <Card bordered={false} style={{ marginBottom: 16, boxShadow: "0 1px 3px rgba(0,0,0,0.12)", borderRadius: 4 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }} className="md:flex-row items-end">
+          <div style={{ flex: 1 }}>
+            <Text strong style={{ display: "block", marginBottom: 8 }}>
               Search
             </Text>
             <Input
               placeholder="Search documents..."
-              prefix={<SearchOutlined className="text-gray-400" />}
+              prefix={<SearchOutlined style={{ color: "#bfbfbf" }} />}
               value={filters.keyword}
               onChange={(e) => handleSearch(e.target.value)}
               allowClear
-              className="w-full"
+              style={{ width: "100%" }}
             />
           </div>
 
-          <div className="w-full md:w-48">
-            <Text strong className="block mb-2">
+          <div style={{ width: "100%" }} className="md:w-48">
+            <Text strong style={{ display: "block", marginBottom: 8 }}>
               Status
             </Text>
             <Select
@@ -1214,6 +1214,6 @@ export default function DepartmentDocumentsPage() {
         }}
         onSave={handleSaveEdit}
       />
-    </>
+    </div>
   );
 }
