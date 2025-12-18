@@ -614,10 +614,15 @@ export default function DashboardLayout({
           </div>
         </Header>
 
-        <Content className="p-4 bg-gray-50">
-          <div className="max-w-7xl mx-auto">
-            {children}
-          </div>
+        <Content 
+          className="admin-layout" 
+          style={{ 
+            padding: 0,
+            background: "#f5f5f5",
+            minHeight: "calc(100vh - 64px)"
+          }}
+        >
+          {children}
         </Content>
       </Layout>
     </Layout>

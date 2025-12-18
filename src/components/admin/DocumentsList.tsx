@@ -344,20 +344,32 @@ export default function DocumentsList() {
   ];
 
   return (
-    <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
-        <Title level={3}>Documents Management</Title>
-        <Button 
-          type="primary" 
-          icon={<PlusOutlined />}
-          onClick={() => setShowCreateModal(true)}
-        >
-          Create Document
-        </Button>
+    <div style={{ padding: 24, background: "#f5f5f5", minHeight: "100vh" }}>
+      <div style={{ marginBottom: 24 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div>
+            <Title level={3} style={{ margin: 0, fontWeight: 500 }}>
+              Documents
+            </Title>
+          </div>
+          <Button 
+            type="primary" 
+            icon={<PlusOutlined />}
+            onClick={() => setShowCreateModal(true)}
+          >
+            Create Document
+          </Button>
+        </div>
       </div>
 
-      <div className="bg-white p-4 mb-4 rounded-md shadow">
-        <div className="flex flex-wrap gap-4 mb-4">
+      <div style={{ 
+        background: "white", 
+        padding: 16, 
+        marginBottom: 16, 
+        borderRadius: 4,
+        boxShadow: "0 1px 3px rgba(0,0,0,0.12)"
+      }}>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 16 }}>
           <Input
             placeholder="Search documents"
             prefix={<SearchOutlined />}
@@ -390,21 +402,27 @@ export default function DocumentsList() {
         </div>
       </div>
 
-      <Table
-        columns={columns}
-        dataSource={documents}
-        rowKey="id"
-        loading={loading}
-        pagination={{
-          current: pagination.current,
-          pageSize: pagination.pageSize,
+      <div style={{
+        background: "white",
+        borderRadius: 4,
+        boxShadow: "0 1px 3px rgba(0,0,0,0.12)"
+      }}>
+        <Table
+          columns={columns}
+          dataSource={documents}
+          rowKey="id"
+          loading={loading}
+          pagination={{
+            current: pagination.current,
+            pageSize: pagination.pageSize,
           total: pagination.total,
           showSizeChanger: true,
           showTotal: (total) => `Total ${total} documents`,
         }}
         onChange={handleTableChange}
-        className="bg-white rounded-md shadow"
+        bordered={false}
       />
+      </div>
 
       {/* Edit Document Modal */}
       {editingDocument && (

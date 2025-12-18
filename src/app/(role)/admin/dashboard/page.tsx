@@ -265,206 +265,118 @@ export default function AdminDashboardPage() {
   }
 
   return (
-    <div className="space-y-6 p-6">
+    <div style={{ padding: 24, background: "#f5f5f5", minHeight: "100vh" }}>
       {contextHolder}
 
       {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <Title level={2} style={{ margin: 0, color: "#1a1a2e" }}>
-            Admin Dashboard
-          </Title>
-          <Text type="secondary">
-            Welcome back! Here&apos;s what&apos;s happening with your documents.
-          </Text>
+      <div style={{ marginBottom: 24 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div>
+            <Title level={3} style={{ margin: 0, fontWeight: 500 }}>
+              Dashboard
+            </Title>
+            <Text type="secondary" style={{ fontSize: 14 }}>
+              Overview of your system
+            </Text>
+          </div>
+          <Button
+            icon={<ReloadOutlined />}
+            onClick={fetchDashboardData}
+            loading={loading}
+          >
+            Refresh
+          </Button>
         </div>
-        <Button
-          icon={<ReloadOutlined />}
-          onClick={fetchDashboardData}
-          loading={loading}
-        >
-          Refresh
-        </Button>
       </div>
 
-      {/* Stats Cards - Clean pastel theme */}
-      <Row gutter={[16, 16]}>
+      {/* Stats Cards - Material Design style */}
+      <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
         <Col xs={24} sm={12} lg={6}>
-          <Card
-            className="hover:shadow-lg transition-shadow duration-300"
-            style={{
-              background: "#fff7ed", // Orange-50 pastel
-              border: "1px solid #fed7aa", // Orange-200 border
-            }}
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <Text style={{ color: "#9a3412", fontSize: 14, fontWeight: 500 }}>
-                  Total Documents
+          <Card bordered={false} style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.12)" }}>
+            <Space direction="vertical" size={0} style={{ width: "100%" }}>
+              <Text type="secondary" style={{ fontSize: 14 }}>
+                Total Documents
+              </Text>
+              <Title level={2} style={{ margin: "8px 0", fontWeight: 500 }}>
+                {stats?.overview?.totalDocuments || 0}
+              </Title>
+              <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                <Text style={{ fontSize: 14, color: "#4caf50" }}>
+                  <FileTextOutlined /> {stats?.overview?.documentsThisMonth || 0} new in last 30 days
                 </Text>
-                <Title level={2} style={{ color: "#ea580c", margin: "8px 0 0 0" }}>
-                  {stats?.overview?.totalDocuments || 0}
-                </Title>
-                <div className="flex items-center mt-2">
-                  {(stats?.overview?.growthPercentage || 0) >= 0 ? (
-                    <RiseOutlined style={{ color: "#16a34a" }} />
-                  ) : (
-                    <FallOutlined style={{ color: "#dc2626" }} />
-                  )}
-                  <Text
-                    style={{
-                      color:
-                        (stats?.overview?.growthPercentage || 0) >= 0
-                          ? "#16a34a"
-                          : "#dc2626",
-                      marginLeft: 4,
-                      fontSize: 12,
-                    }}
-                  >
-                    {Math.abs(stats?.overview?.growthPercentage || 0)}% this month
-                  </Text>
-                </div>
               </div>
-              <div
-                className="flex items-center justify-center rounded-full"
-                style={{
-                  width: 60,
-                  height: 60,
-                  background: "#fed7aa", // Orange-200
-                }}
-              >
-                <FileTextOutlined style={{ fontSize: 28, color: "#ea580c" }} />
-              </div>
-            </div>
+            </Space>
           </Card>
         </Col>
 
         <Col xs={24} sm={12} lg={6}>
-          <Card
-            className="hover:shadow-lg transition-shadow duration-300"
-            style={{
-              background: "#ecfdf5", // Emerald-50 pastel
-              border: "1px solid #a7f3d0", // Emerald-200 border
-            }}
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <Text style={{ color: "#065f46", fontSize: 14, fontWeight: 500 }}>
-                  Total Users
-                </Text>
-                <Title level={2} style={{ color: "#059669", margin: "8px 0 0 0" }}>
-                  {stats?.overview?.totalUsers || 0}
-                </Title>
-                <Text
-                  style={{ color: "#047857", fontSize: 12 }}
-                >
-                  Active across {stats?.overview?.totalDepartments || 0} departments
+          <Card bordered={false} style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.12)" }}>
+            <Space direction="vertical" size={0} style={{ width: "100%" }}>
+              <Text type="secondary" style={{ fontSize: 14 }}>
+                Total Users
+              </Text>
+              <Title level={2} style={{ margin: "8px 0", fontWeight: 500 }}>
+                {stats?.overview?.totalUsers || 0}
+              </Title>
+              <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                <Text style={{ fontSize: 14, color: "#666" }}>
+                  <TeamOutlined /> Active across {stats?.overview?.totalDepartments || 0} departments
                 </Text>
               </div>
-              <div
-                className="flex items-center justify-center rounded-full"
-                style={{
-                  width: 60,
-                  height: 60,
-                  background: "#a7f3d0", // Emerald-200
-                }}
-              >
-                <TeamOutlined style={{ fontSize: 28, color: "#059669" }} />
-              </div>
-            </div>
+            </Space>
           </Card>
         </Col>
 
         <Col xs={24} sm={12} lg={6}>
-          <Card
-            className="hover:shadow-lg transition-shadow duration-300"
-            style={{
-              background: "#fefce8", // Yellow-50 pastel
-              border: "1px solid #fde047", // Yellow-300 border
-            }}
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <Text style={{ color: "#854d0e", fontSize: 14, fontWeight: 500 }}>
-                  Pending Approvals
-                </Text>
-                <Title level={2} style={{ color: "#ca8a04", margin: "8px 0 0 0" }}>
-                  {stats?.overview?.pendingApprovals || 0}
-                </Title>
-                <Text
-                  style={{ color: "#a16207", fontSize: 12 }}
-                >
-                  Awaiting your review
+          <Card bordered={false} style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.12)" }}>
+            <Space direction="vertical" size={0} style={{ width: "100%" }}>
+              <Text type="secondary" style={{ fontSize: 14 }}>
+                Pending Approvals
+              </Text>
+              <Title level={2} style={{ margin: "8px 0", fontWeight: 500 }}>
+                {stats?.overview?.pendingApprovals || 0}
+              </Title>
+              <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                <Text style={{ fontSize: 14, color: "#ff9800" }}>
+                  <ClockCircleOutlined /> Awaiting review
                 </Text>
               </div>
-              <div
-                className="flex items-center justify-center rounded-full"
-                style={{
-                  width: 60,
-                  height: 60,
-                  background: "#fde047", // Yellow-300
-                }}
-              >
-                <ClockCircleOutlined style={{ fontSize: 28, color: "#ca8a04" }} />
-              </div>
-            </div>
+            </Space>
           </Card>
         </Col>
 
         <Col xs={24} sm={12} lg={6}>
-          <Card
-            className="hover:shadow-lg transition-shadow duration-300"
-            style={{
-              background: "#eff6ff", // Blue-50 pastel
-              border: "1px solid #bfdbfe", // Blue-200 border
-            }}
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <Text style={{ color: "#1e3a8a", fontSize: 14, fontWeight: 500 }}>
-                  Departments
-                </Text>
-                <Title level={2} style={{ color: "#2563eb", margin: "8px 0 0 0" }}>
-                  {stats?.overview?.totalDepartments || 0}
-                </Title>
-                <Text
-                  style={{ color: "#1e40af", fontSize: 12 }}
-                >
-                  Active departments
+          <Card bordered={false} style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.12)" }}>
+            <Space direction="vertical" size={0} style={{ width: "100%" }}>
+              <Text type="secondary" style={{ fontSize: 14 }}>
+                Departments
+              </Text>
+              <Title level={2} style={{ margin: "8px 0", fontWeight: 500 }}>
+                {stats?.overview?.totalDepartments || 0}
+              </Title>
+              <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                <Text style={{ fontSize: 14, color: "#666" }}>
+                  <AppstoreOutlined /> Marketing, HR, Finance, IT, Sales
                 </Text>
               </div>
-              <div
-                className="flex items-center justify-center rounded-full"
-                style={{
-                  width: 60,
-                  height: 60,
-                  background: "#bfdbfe", // Blue-200
-                }}
-              >
-                <AppstoreOutlined style={{ fontSize: 28, color: "#2563eb" }} />
-              </div>
-            </div>
+            </Space>
           </Card>
         </Col>
       </Row>
 
-      {/* Pie Charts Row - 3 biểu đồ tròn */}
-      <Row gutter={[16, 16]}>
+      {/* Pie Charts Row */}
+      <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
         <Col xs={24} md={8}>
-          <Card
-            title={
-              <Space>
-                <FileProtectOutlined />
-                <span>Documents by Status</span>
-              </Space>
-            }
-            className="shadow-sm"
+          <Card 
+            title="Documents by Status" 
+            bordered={false}
+            style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.12)" }}
           >
-            <div style={{ height: 300 }}>
+            <div style={{ height: 280 }}>
               {stats?.documentsByStatus && stats.documentsByStatus.length > 0 ? (
                 <Pie {...pieConfig} />
               ) : (
-                <div className="flex items-center justify-center h-full text-gray-400">
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", color: "#999" }}>
                   No data available
                 </div>
               )}
@@ -473,20 +385,16 @@ export default function AdminDashboardPage() {
         </Col>
 
         <Col xs={24} md={8}>
-          <Card
-            title={
-              <Space>
-                <UserOutlined />
-                <span>Users by Status</span>
-              </Space>
-            }
-            className="shadow-sm"
+          <Card 
+            title="Users by Status" 
+            bordered={false}
+            style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.12)" }}
           >
-            <div style={{ height: 300 }}>
+            <div style={{ height: 280 }}>
               {stats?.usersByStatus && stats.usersByStatus.length > 0 ? (
                 <Pie {...usersPieConfig} />
               ) : (
-                <div className="flex items-center justify-center h-full text-gray-400">
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", color: "#999" }}>
                   No data available
                 </div>
               )}
@@ -495,20 +403,16 @@ export default function AdminDashboardPage() {
         </Col>
 
         <Col xs={24} md={8}>
-          <Card
-            title={
-              <Space>
-                <AppstoreOutlined />
-                <span>Top Departments</span>
-              </Space>
-            }
-            className="shadow-sm"
+          <Card 
+            title="Top Departments" 
+            bordered={false}
+            style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.12)" }}
           >
-            <div style={{ height: 300 }}>
+            <div style={{ height: 280 }}>
               {stats?.topDepartments && stats.topDepartments.length > 0 ? (
                 <Pie {...departmentsPieConfig} />
               ) : (
-                <div className="flex items-center justify-center h-full text-gray-400">
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", color: "#999" }}>
                   No data available
                 </div>
               )}
@@ -517,23 +421,19 @@ export default function AdminDashboardPage() {
         </Col>
       </Row>
 
-      {/* Charts Row - Biểu đồ cột */}
-      <Row gutter={[16, 16]}>
+      {/* Column Chart */}
+      <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
         <Col xs={24}>
-          <Card
-            title={
-              <Space>
-                <CalendarOutlined />
-                <span>Documents This Week</span>
-              </Space>
-            }
-            className="shadow-sm"
+          <Card 
+            title="Documents This Week" 
+            bordered={false}
+            style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.12)" }}
           >
             <div style={{ height: 300 }}>
               {stats?.documentsPerDay && stats.documentsPerDay.length > 0 ? (
                 <Column {...columnConfig} />
               ) : (
-                <div className="flex items-center justify-center h-full text-gray-400">
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", color: "#999" }}>
                   No data available
                 </div>
               )}
