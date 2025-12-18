@@ -55,8 +55,19 @@ interface DashboardStats {
   };
   documentsByStatus: Array<{
     status: string;
+    name: string;
     count: number;
     color: string;
+  }>;
+  usersByStatus: Array<{
+    status: string;
+    name: string;
+    count: number;
+    color: string;
+  }>;
+  topDepartments: Array<{
+    name: string;
+    count: number;
   }>;
   documentsPerDay: Array<{
     date: string;
@@ -186,12 +197,12 @@ export default function AdminDashboardPage() {
   const pieConfig = {
     data: stats?.documentsByStatus || [],
     angleField: "count",
-    colorField: "status",
+    colorField: "name",
     radius: 0.8,
     innerRadius: 0.6,
     color: stats?.documentsByStatus?.map((d) => d.color) || [],
     label: {
-      type: "outer",
+      type: "outer" as const,
       content: "{name}: {value}",
     },
     legend: {
@@ -206,6 +217,42 @@ export default function AdminDashboardPage() {
         content: String(stats?.overview?.totalDocuments || 0),
         style: { fontSize: "24px", fontWeight: "bold" },
       },
+    },
+  };
+
+  const usersPieConfig = {
+    data: stats?.usersByStatus || [],
+    angleField: "count",
+    colorField: "name",
+    radius: 0.75,
+    color: stats?.usersByStatus?.map((d) => d.color) || [],
+    label: {
+      type: "inner" as const,
+      offset: "-30%",
+      content: "{value}",
+      style: {
+        fontSize: 14,
+        fontWeight: "bold",
+        fill: "#fff",
+      },
+    },
+    legend: {
+      position: "bottom" as const,
+    },
+  };
+
+  const departmentsPieConfig = {
+    data: stats?.topDepartments || [],
+    angleField: "count",
+    colorField: "name",
+    radius: 0.75,
+    color: ["#1890ff", "#52c41a", "#faad14", "#f5222d", "#722ed1"],
+    label: {
+      type: "spider" as const,
+      content: "{name}: {value}",
+    },
+    legend: {
+      position: "bottom" as const,
     },
   };
 
@@ -401,31 +448,9 @@ export default function AdminDashboardPage() {
         </Col>
       </Row>
 
-      {/* Charts Row */}
+      {/* Pie Charts Row - 3 biểu đồ tròn */}
       <Row gutter={[16, 16]}>
-        <Col xs={24} lg={16}>
-          <Card
-            title={
-              <Space>
-                <CalendarOutlined />
-                <span>Documents This Week</span>
-              </Space>
-            }
-            className="shadow-sm"
-          >
-            <div style={{ height: 300 }}>
-              {stats?.documentsPerDay && stats.documentsPerDay.length > 0 ? (
-                <Column {...columnConfig} />
-              ) : (
-                <div className="flex items-center justify-center h-full text-gray-400">
-                  No data available
-                </div>
-              )}
-            </div>
-          </Card>
-        </Col>
-
-        <Col xs={24} lg={8}>
+        <Col xs={24} md={8}>
           <Card
             title={
               <Space>
@@ -438,6 +463,75 @@ export default function AdminDashboardPage() {
             <div style={{ height: 300 }}>
               {stats?.documentsByStatus && stats.documentsByStatus.length > 0 ? (
                 <Pie {...pieConfig} />
+              ) : (
+                <div className="flex items-center justify-center h-full text-gray-400">
+                  No data available
+                </div>
+              )}
+            </div>
+          </Card>
+        </Col>
+
+        <Col xs={24} md={8}>
+          <Card
+            title={
+              <Space>
+                <UserOutlined />
+                <span>Users by Status</span>
+              </Space>
+            }
+            className="shadow-sm"
+          >
+            <div style={{ height: 300 }}>
+              {stats?.usersByStatus && stats.usersByStatus.length > 0 ? (
+                <Pie {...usersPieConfig} />
+              ) : (
+                <div className="flex items-center justify-center h-full text-gray-400">
+                  No data available
+                </div>
+              )}
+            </div>
+          </Card>
+        </Col>
+
+        <Col xs={24} md={8}>
+          <Card
+            title={
+              <Space>
+                <AppstoreOutlined />
+                <span>Top Departments</span>
+              </Space>
+            }
+            className="shadow-sm"
+          >
+            <div style={{ height: 300 }}>
+              {stats?.topDepartments && stats.topDepartments.length > 0 ? (
+                <Pie {...departmentsPieConfig} />
+              ) : (
+                <div className="flex items-center justify-center h-full text-gray-400">
+                  No data available
+                </div>
+              )}
+            </div>
+          </Card>
+        </Col>
+      </Row>
+
+      {/* Charts Row - Biểu đồ cột */}
+      <Row gutter={[16, 16]}>
+        <Col xs={24}>
+          <Card
+            title={
+              <Space>
+                <CalendarOutlined />
+                <span>Documents This Week</span>
+              </Space>
+            }
+            className="shadow-sm"
+          >
+            <div style={{ height: 300 }}>
+              {stats?.documentsPerDay && stats.documentsPerDay.length > 0 ? (
+                <Column {...columnConfig} />
               ) : (
                 <div className="flex items-center justify-center h-full text-gray-400">
                   No data available
