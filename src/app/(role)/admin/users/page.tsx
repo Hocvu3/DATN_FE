@@ -447,7 +447,7 @@ const UsersPage = () => {
   ];
 
   return (
-    <>
+    <div className="p-8 bg-gray-50 min-h-screen">
       {contextHolder}
       <div className="flex justify-between items-center mb-6">
         <div>
@@ -875,7 +875,7 @@ const UsersPage = () => {
           </Form.Item>
         </Form>
       </Modal>
-    </>
+    </div>
   );
 };
 

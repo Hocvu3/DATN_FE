@@ -365,11 +365,8 @@ const EditDocumentModal: React.FC<EditDocumentModalProps> = ({
               rules={[{ required: true, message: "Please select status" }]}
             >
               <Select placeholder="Select status">
-                {Object.values(DocumentStatus).map((status) => (
-                  <Option key={status} value={status}>
-                    {status.replace('_', ' ')}
-                  </Option>
-                ))}
+                <Option value={DocumentStatus.DRAFT}>Draft</Option>
+                <Option value={DocumentStatus.PENDING_APPROVAL}>Pending Approval</Option>
               </Select>
             </Form.Item>
           </div>

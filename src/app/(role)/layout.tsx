@@ -14,40 +14,45 @@ export default function RoleLayout({ children }: RoleLayoutProps) {
   const pathname = usePathname();
   const { isAuthenticated, loading } = useAuth();
 
-  // Get user role from cookie or localStorage - NOT from pathname
-  const [userRole, setUserRole] = useState<"admin" | "department" | "employee">("employee");
-
-  useEffect(() => {
-    const getUserRole = (): "admin" | "department" | "employee" => {
-      // Try to get role from cookie first
-      if (typeof document !== 'undefined') {
-        const roleCookie = document.cookie
-          .split('; ')
-          .find(row => row.startsWith('user_role='))
-          ?.split('=')[1];
-          
-        if (roleCookie) {
-          return roleCookie as "admin" | "department" | "employee";
-        }
+  // Get user role from cookie or localStorage BEFORE first render - NOT from pathname
+  const getUserRole = (): "admin" | "department" | "employee" => {
+    // Try to get role from cookie first
+    if (typeof document !== 'undefined') {
+      const roleCookie = document.cookie
+        .split('; ')
+        .find(row => row.startsWith('user_role='))
+        ?.split('=')[1];
         
-        // Try localStorage as fallback
-        try {
-          const userData = localStorage.getItem("docuflow_user");
-          if (userData) {
-            const user = JSON.parse(userData);
-            return (user?.role || "employee").toLowerCase() as "admin" | "department" | "employee";
-          }
-        } catch (error) {
-          // Silently fail
-        }
+      if (roleCookie) {
+        return roleCookie as "admin" | "department" | "employee";
       }
       
-      // Default fallback (though this should not happen in normal flow)
-      return "employee";
-    };
+      // Try localStorage as fallback
+      try {
+        const userData = localStorage.getItem("docuflow_user");
+        if (userData) {
+          const user = JSON.parse(userData);
+          return (user?.role || "employee").toLowerCase() as "admin" | "department" | "employee";
+        }
+      } catch (error) {
+        // Silently fail
+      }
+    }
+    
+    // Default fallback (though this should not happen in normal flow)
+    return "employee";
+  };
 
-    setUserRole(getUserRole());
-  }, []);
+  // Initialize with actual role immediately to prevent menu flicker
+  const [userRole, setUserRole] = useState<"admin" | "department" | "employee">(() => getUserRole());
+
+  useEffect(() => {
+    // Update role if it changes (e.g., after login)
+    const currentRole = getUserRole();
+    if (currentRole !== userRole) {
+      setUserRole(currentRole);
+    }
+  }, [pathname]); // Re-check when pathname changes
 
   useEffect(() => {
     // Only check if we need to redirect when auth status is ready

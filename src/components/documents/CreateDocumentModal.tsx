@@ -108,16 +108,22 @@ export default function CreateDocumentModal({
       setLoading(true);
       
       // Step 1: Create the document
-      const { data } = await DocumentsApi.createDocument(values);
+      const response = await DocumentsApi.createDocument(values);
       
-      if (data && data.document) {
-        const documentId = data.document.id;
+      // Handle nested response structure: { success, data: { message, document } }
+      const responseData = response.data as any;
+      const documentData = responseData.data || responseData;
+      const createdDocument = documentData.document || documentData;
+      
+      if (createdDocument && createdDocument.id) {
+        const documentId = createdDocument.id;
         
         // Step 2: Upload cover image if selected
         const tempCoverFile = (window as any).tempCoverFile;
         if (tempCoverFile) {
           try {
             await uploadDocumentCover(documentId, tempCoverFile);
+            message.success('Document and cover created successfully');
           } catch (coverError) {
             message.warning('Document created but cover upload failed');
           }
@@ -129,19 +135,25 @@ export default function CreateDocumentModal({
           if (tempFile) {
             try {
               await uploadDocumentFile(documentId, tempFile);
+              message.success('Document and file created successfully');
             } catch (fileError) {
               message.warning(`Document created but file "${asset.filename}" upload failed`);
             }
           }
         }
         
-        message.success('Document created successfully');
-        onSave(data.document);
-        handleCancel();
+        // Only show generic success if no files were uploaded
+        if (!tempCoverFile && documentAssets.length === 0) {
+          message.success('Document created successfully');
+        }
+        
+        handleCancel(); // Close modal first
+        onSave(createdDocument); // Then trigger parent refresh
       } else {
         message.error('Failed to create document');
       }
     } catch (error) {
+      console.error('Create document error:', error);
       message.error('Error creating document');
     } finally {
       setLoading(false);
@@ -290,7 +302,6 @@ export default function CreateDocumentModal({
             <Select placeholder="Select status">
               <Option value={DocumentStatus.DRAFT}>Draft</Option>
               <Option value={DocumentStatus.PENDING_APPROVAL}>Pending Approval</Option>
-              <Option value={DocumentStatus.APPROVED}>Approved</Option>
             </Select>
           </Form.Item>
 

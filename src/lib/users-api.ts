@@ -49,7 +49,8 @@ export interface UpdateProfileRequest {
  * Get current user profile
  */
 export async function fetchUserProfile(): Promise<UserProfile> {
-  const response = await apiGet<{ data: UserProfile }>('/users/me');
+  const response = await apiGet<{ success: boolean; data: UserProfile }>('/users/me');
+  // Backend returns: { success: true, data: { ...user fields, avatar: { s3Url: "..." } } }
   return response.data.data;
 }
 
@@ -71,11 +72,12 @@ export async function updateUserProfile(data: UpdateProfileRequest): Promise<Use
  * Upload user avatar (similar to document cover upload)
  */
 export async function uploadUserAvatar(file: File): Promise<string> {
-  const presignedResponse = await apiPost<{ data: { uploadUrl: string; avatarUrl: string } }>(
+  const presignedResponse = await apiPost<{ data: { presignedUrl: string; publicUrl: string; assetId: string } }>(
     '/users/avatar/presigned-url',
     {
       fileName: file.name,
-      fileType: file.type,
+      contentType: file.type,
+      fileSize: file.size,
     }
   );
 
@@ -88,10 +90,11 @@ export async function uploadUserAvatar(file: File): Promise<string> {
     presignedData = responseData;
   }
 
-  const { uploadUrl, avatarUrl } = presignedData;
+  // Backend returns: { presignedUrl, publicUrl, assetId }
+  const { presignedUrl, publicUrl, assetId } = presignedData;
 
   // Upload to S3 using presigned URL
-  await fetch(uploadUrl, {
+  const s3Response = await fetch(presignedUrl, {
     method: 'PUT',
     body: file,
     headers: {
@@ -99,10 +102,32 @@ export async function uploadUserAvatar(file: File): Promise<string> {
     },
   });
 
-  // Link uploaded avatar to user profile
-  await apiPost<{ data: UserProfile }>('/users/avatar', { avatarUrl });
+  if (!s3Response.ok) {
+    throw new Error(`S3 upload failed: ${s3Response.status}`);
+  }
 
-  return avatarUrl;
+  // Link uploaded avatar to user profile - Backend uses PUT method and expects assetId
+  const linkResponse = await apiPut<{ success: boolean; data: { message: string; user: UserProfile } }>('/users/avatar', { assetId });
+  
+  // Extract the actual avatar URL from the response
+  // Backend returns: { success: true, data: { message: "...", user: { avatar: { s3Url: "..." } } } }
+  const responseAvatarData = linkResponse.data as any;
+  if (responseAvatarData.data && responseAvatarData.data.user && responseAvatarData.data.user.avatar) {
+    return responseAvatarData.data.user.avatar.s3Url;
+  }
+
+  // Fallback to the publicUrl from presigned response
+  return publicUrl;
+}
+
+/**
+ * Change user password
+ */
+export async function changeUserPassword(currentPassword: string, newPassword: string): Promise<void> {
+  await apiPut<{ success: boolean; message: string }>('/users/change-password', {
+    currentPassword,
+    newPassword,
+  });
 }
 
 export interface GetUsersResponse {

@@ -262,7 +262,7 @@ export const VersionTimeline: React.FC<VersionTimelineProps> = ({
                 <span>
                   {version.createdBy 
                     ? `${version.createdBy.firstName} ${version.createdBy.lastName}`
-                    : 'Unknown User'}
+                    : '—'}
                 </span>
                 <span>•</span>
                 <ClockCircleOutlined className="text-xs" />

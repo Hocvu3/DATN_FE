@@ -42,7 +42,7 @@ import { useAuth } from "@/lib/authProvider";
 import { fetchUserProfile, UserProfile } from "@/lib/users-api";
 import Image from "next/image";
 
-const { Header, Sider, Content } = Layout;
+const { Header, Sider, Content, Footer } = Layout;
 
 interface Props {
   children: ReactNode;
@@ -196,18 +196,6 @@ export default function DashboardLayout({
           path: "/admin/departments",
         },
         {
-          key: "tags",
-          icon: <TagOutlined />,
-          label: <Link href="/admin/tags">Tags</Link>,
-          path: "/admin/tags",
-        },
-        {
-          key: "users",
-          icon: <TeamOutlined />,
-          label: <Link href="/admin/users">Users</Link>,
-          path: "/admin/users",
-        },
-        {
           key: "signatures",
           icon: <SecurityScanOutlined />,
           label: <Link href="/admin/signatures">Digital Sign</Link>,
@@ -218,6 +206,18 @@ export default function DashboardLayout({
           icon: <SafetyCertificateOutlined />,
           label: <Link href="/admin/stamps">Stamps</Link>,
           path: "/admin/stamps",
+        },
+        {
+          key: "tags",
+          icon: <TagOutlined />,
+          label: <Link href="/admin/tags">Tags</Link>,
+          path: "/admin/tags",
+        },
+        {
+          key: "users",
+          icon: <TeamOutlined />,
+          label: <Link href="/admin/users">Users</Link>,
+          path: "/admin/users",
         },
         {
           key: "audit-log",
@@ -279,7 +279,9 @@ export default function DashboardLayout({
     return [...baseItems, profileItem];
   };
 
-  const navigationItems = getNavigationItems();
+  // Use useMemo to prevent navigation items from being recalculated unnecessarily
+  // This fixes the issue where menu items don't show on first login
+  const navigationItems = useMemo(() => getNavigationItems(), [userRole]);
 
   // Handle responsive layout
 
@@ -440,7 +442,7 @@ export default function DashboardLayout({
         }}
       >
         <div className="h-16 flex items-center justify-center px-4 py-4 border-b border-gray-100">
-          <Link href="/" className="flex items-center">
+          <Link href={`/${userRole}/dashboard`} className="flex items-center">
             {collapsed ? (
               <Image
                 src="/docuflow-logo-new.svg"
@@ -484,7 +486,7 @@ export default function DashboardLayout({
         }}
       >
         <div className="h-16 flex items-center justify-center px-4 py-4 border-b border-gray-100">
-          <Link href="/" className="flex items-center">
+          <Link href={`/${userRole}/dashboard`} className="flex items-center">
             <Image
               src="/docuflow-logo-new.svg"
               alt="DocuFlow Logo"
@@ -536,7 +538,7 @@ export default function DashboardLayout({
             {/* Breadcrumb/navigation indicator */}
             <div className="ml-4 hidden sm:block">
               <Space>
-                <Link href="/" className="text-gray-500 hover:text-orange-500">
+                <Link href={`/${userRole}/dashboard`} className="text-gray-500 hover:text-orange-500">
                   <HomeOutlined />
                 </Link>
                 <span className="text-gray-300">/</span>
@@ -619,11 +621,31 @@ export default function DashboardLayout({
           style={{ 
             padding: 0,
             background: "#f5f5f5",
-            minHeight: "calc(100vh - 64px)"
+            minHeight: "calc(100vh - 64px - 48px)"
           }}
         >
           {children}
         </Content>
+        
+        <Footer 
+          style={{ 
+            textAlign: 'center', 
+            background: '#ffffff',
+            borderTop: '1px solid #f0f0f0',
+            padding: '12px 50px',
+            fontSize: '13px',
+            color: '#666'
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+            <span>
+              DocuFlow ©{new Date().getFullYear()} - Document Management System
+            </span>
+            <span style={{ color: '#999' }}>
+              DocuFlow Team
+            </span>
+          </div>
+        </Footer>
       </Layout>
     </Layout>
   );

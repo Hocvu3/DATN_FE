@@ -15,16 +15,16 @@ import {
   App,
 } from "antd";
 import {
-  Building,
-  Users,
-  FileText,
-  Plus,
-  Edit,
-  Trash2,
-  UserPlus,
-  AlertCircle,
-  Search,
-} from "lucide-react";
+  AppstoreOutlined,
+  TeamOutlined,
+  FileTextOutlined,
+  PlusOutlined,
+  EditOutlined,
+  DeleteOutlined,
+  UserAddOutlined,
+  ExclamationCircleOutlined,
+  SearchOutlined,
+} from "@ant-design/icons";
 import CreateDepartmentModal from "@/components/departments/CreateDepartmentModal";
 import EditDepartmentModal from "@/components/departments/EditDepartmentModal";
 import AddMemberModal from "@/components/departments/AddMemberModal";
@@ -178,7 +178,7 @@ const DepartmentsPage = () => {
             size={40}
             className="bg-blue-100 text-blue-600"
           >
-            <Building className="h-5 w-5" />
+            <AppstoreOutlined style={{ fontSize: 20 }} />
           </Avatar>
           <div>
             <div className="font-medium text-gray-900">{text}</div>
@@ -201,7 +201,7 @@ const DepartmentsPage = () => {
       key: "members",
       render: (count: number) => (
         <div className="flex items-center gap-1">
-          <Users className="h-4 w-4 text-gray-400" />
+          <TeamOutlined style={{ fontSize: 16, color: '#9ca3af' }} />
           <span>{count || 0}</span>
         </div>
       ),
@@ -212,7 +212,7 @@ const DepartmentsPage = () => {
       key: "documents",
       render: (count: number) => (
         <div className="flex items-center gap-1">
-          <FileText className="h-4 w-4 text-gray-400" />
+          <FileTextOutlined style={{ fontSize: 16, color: '#9ca3af' }} />
           <span>{count || 0}</span>
         </div>
       ),
@@ -236,7 +236,7 @@ const DepartmentsPage = () => {
             <Button
               type="text"
               size="small"
-              icon={<Edit className="h-4 w-4" />}
+              icon={<EditOutlined style={{ fontSize: 16 }} />}
               onClick={() => {
                 setSelectedDepartment(record);
                 setShowEditModal(true);
@@ -248,7 +248,7 @@ const DepartmentsPage = () => {
             <Button
               type="text"
               size="small"
-              icon={<UserPlus className="h-4 w-4" />}
+              icon={<UserAddOutlined style={{ fontSize: 16 }} />}
               onClick={() => {
                 console.log("[Department] Add Members clicked:", { id: record.id, name: record.name, record });
                 setSelectedDepartment(record);
@@ -261,7 +261,7 @@ const DepartmentsPage = () => {
             <Button
               type="text"
               size="small"
-              icon={<Plus className="h-4 w-4" />}
+              icon={<PlusOutlined style={{ fontSize: 16 }} />}
               onClick={() => {
                 console.log("[Department] Add Documents clicked:", { id: record.id, name: record.name, record });
                 setSelectedDepartment(record);
@@ -274,7 +274,7 @@ const DepartmentsPage = () => {
             <Button
               type="text"
               size="small"
-              icon={<Trash2 className="h-4 w-4" />}
+              icon={<DeleteOutlined style={{ fontSize: 16 }} />}
               onClick={() => handleDeleteDepartment(record.id)}
               className="text-red-600 hover:text-red-700"
             />
@@ -298,7 +298,7 @@ const DepartmentsPage = () => {
           <Button
             type="primary"
             size="large"
-            icon={<Plus className="h-5 w-5" />}
+            icon={<PlusOutlined style={{ fontSize: 20 }} />}
             onClick={() => setShowCreateModal(true)}
             className="bg-blue-600 hover:bg-blue-700 border-blue-600"
           >
@@ -312,7 +312,7 @@ const DepartmentsPage = () => {
         <Card className="border-0 shadow-sm">
           <div className="flex items-center gap-3">
             <div className="p-3 bg-blue-100 rounded-lg">
-              <Building className="h-6 w-6 text-blue-600" />
+              <AppstoreOutlined className="h-6 w-6 text-blue-600" style={{ fontSize: 24 }} />
             </div>
             <div>
               <div className="text-2xl font-bold text-gray-900">{departments.length}</div>
@@ -323,7 +323,7 @@ const DepartmentsPage = () => {
         <Card className="border-0 shadow-sm">
           <div className="flex items-center gap-3">
             <div className="p-3 bg-green-100 rounded-lg">
-              <Users className="h-6 w-6 text-green-600" />
+              <TeamOutlined className="h-6 w-6 text-green-600" style={{ fontSize: 24 }} />
             </div>
             <div>
               <div className="text-2xl font-bold text-gray-900">
@@ -336,7 +336,7 @@ const DepartmentsPage = () => {
         <Card className="border-0 shadow-sm">
           <div className="flex items-center gap-3">
             <div className="p-3 bg-purple-100 rounded-lg">
-              <FileText className="h-6 w-6 text-purple-600" />
+              <FileTextOutlined className="h-6 w-6 text-purple-600" style={{ fontSize: 24 }} />
             </div>
             <div>
               <div className="text-2xl font-bold text-gray-900">
@@ -354,7 +354,7 @@ const DepartmentsPage = () => {
         <div className="mb-4">
           <Input
             placeholder="Search departments by name or description..."
-            prefix={<Search className="h-4 w-4 text-gray-400" />}
+            prefix={<SearchOutlined style={{ fontSize: 16, color: '#9ca3af' }} />}
             size="large"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}

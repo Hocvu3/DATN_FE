@@ -115,13 +115,11 @@ export const VersionComparison: React.FC<VersionComparisonProps> = ({
                 <UserOutlined /> Created By
               </span>
             }
-          >
+            >
             {version.createdBy 
               ? `${version.createdBy.firstName} ${version.createdBy.lastName}`
-              : 'Unknown User'}
-          </Descriptions.Item>
-          
-          <Descriptions.Item 
+              : '—'}
+          </Descriptions.Item>          <Descriptions.Item 
             label={
               <span className="flex items-center gap-2">
                 <ClockCircleOutlined /> Created At

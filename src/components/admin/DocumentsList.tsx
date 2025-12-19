@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { Table, Tag, Button, Input, Select, Badge, Typography, Dropdown, Menu, Modal, message, App } from 'antd';
-import { SearchOutlined, EyeOutlined, EditOutlined, DeleteOutlined, DownloadOutlined, ShareAltOutlined, MoreOutlined, DownOutlined, PlusOutlined } from '@ant-design/icons';
+import { SearchOutlined, EyeOutlined, EditOutlined, DeleteOutlined, MoreOutlined, DownOutlined, PlusOutlined } from '@ant-design/icons';
 import { DocumentsApi, getDocumentCoverUrl } from '@/lib/documents-api';
 import { Document, DocumentStatus, DocumentsQueryParams, SecurityLevel } from '@/lib/types/document.types';
 import EditDocumentModal from '@/components/documents/EditDocumentModal';
@@ -317,12 +317,6 @@ export default function DocumentsList() {
               </Menu.Item>
               <Menu.Item key="edit" icon={<EditOutlined />} onClick={() => handleEdit(record)}>
                 Edit
-              </Menu.Item>
-              <Menu.Item key="download" icon={<DownloadOutlined />}>
-                Download
-              </Menu.Item>
-              <Menu.Item key="share" icon={<ShareAltOutlined />}>
-                Share
               </Menu.Item>
               <Menu.Divider />
               <Menu.Item 
