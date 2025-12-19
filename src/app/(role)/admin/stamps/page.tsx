@@ -72,6 +72,30 @@ interface DocumentVersion {
   };
 }
 
+interface SignatureRequest {
+  id: string;
+  status: string;
+  reason?: string;
+  type: number;
+  createdAt: string;
+  signedAt?: string;
+  documentVersion: {
+    id: string;
+    versionNumber: number;
+    document: {
+      id: string;
+      title: string;
+      documentNumber: string;
+    };
+  };
+  requester: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+  };
+}
+
 const StampsPage = () => {
   const [messageApi, contextHolder] = message.useMessage();
   const [activeTab, setActiveTab] = useState("library");
@@ -95,12 +119,24 @@ const StampsPage = () => {
   const [selectedDocument, setSelectedDocument] = useState<DocumentVersion | null>(null);
   const [availableStamps, setAvailableStamps] = useState<Stamp[]>([]);
   const [applyStampForm] = Form.useForm();
+  
+  // Signature Requests State
+  const [signatureRequests, setSignatureRequests] = useState<SignatureRequest[]>([]);
+  const [filteredRequests, setFilteredRequests] = useState<SignatureRequest[]>([]);
+  const [requestSearchText, setRequestSearchText] = useState<string>("");
+  const [requestStatusFilter, setRequestStatusFilter] = useState<string>("all");
+  const [requestsLoading, setRequestsLoading] = useState(false);
+  const [applyRequestStampModalVisible, setApplyRequestStampModalVisible] = useState(false);
+  const [selectedRequest, setSelectedRequest] = useState<SignatureRequest | null>(null);
 
   useEffect(() => {
     if (activeTab === "library") {
       fetchStamps();
     } else if (activeTab === "documents") {
       fetchDocuments();
+      fetchAvailableStamps();
+    } else if (activeTab === "requested") {
+      fetchSignatureRequests();
       fetchAvailableStamps();
     }
   }, [activeTab]);
@@ -148,6 +184,36 @@ const StampsPage = () => {
 
     setFilteredDocuments(filtered);
   }, [docSearchText, statusFilter, documents]);
+
+  // Filter signature requests
+  useEffect(() => {
+    let filtered = signatureRequests;
+
+    // Status filter
+    if (requestStatusFilter !== "all") {
+      filtered = filtered.filter(req => req.status === requestStatusFilter);
+    }
+
+    // Search filter
+    if (requestSearchText) {
+      const searchLower = requestSearchText.toLowerCase();
+      filtered = filtered.filter(req => {
+        if (!req || !req.documentVersion) return false;
+        
+        const title = req.documentVersion.document.title?.toLowerCase() || '';
+        const documentNumber = req.documentVersion.document.documentNumber?.toLowerCase() || '';
+        const requesterName = req.requester 
+          ? `${req.requester.firstName || ''} ${req.requester.lastName || ''}`.toLowerCase()
+          : '';
+        
+        return title.includes(searchLower) ||
+               documentNumber.includes(searchLower) ||
+               requesterName.includes(searchLower);
+      });
+    }
+
+    setFilteredRequests(filtered);
+  }, [requestSearchText, requestStatusFilter, signatureRequests]);
 
   const fetchStamps = async () => {
     try {
@@ -211,6 +277,24 @@ const StampsPage = () => {
       setFilteredDocuments([]);
     } finally {
       setDocLoading(false);
+    }
+  };
+
+  const fetchSignatureRequests = async () => {
+    try {
+      setRequestsLoading(true);
+      const response = await SignaturesApi.getSignatureRequests();
+      const requestsData = (response.data as any)?.data?.requests || [];
+      setSignatureRequests(Array.isArray(requestsData) ? requestsData : []);
+      setFilteredRequests(Array.isArray(requestsData) ? requestsData : []);
+    } catch (error: any) {
+      console.error("Failed to load signature requests:", error);
+      const errorMsg = error?.response?.data?.message || error?.message || "Failed to load signature requests";
+      messageApi.error(errorMsg, 3);
+      setSignatureRequests([]);
+      setFilteredRequests([]);
+    } finally {
+      setRequestsLoading(false);
     }
   };
 
@@ -304,6 +388,26 @@ const StampsPage = () => {
       setApplyStampModalVisible(false);
       applyStampForm.resetFields();
       fetchDocuments();
+    } catch (error: any) {
+      messageApi.error(error?.response?.data?.message || "Failed to apply stamp", 3);
+    }
+  };
+
+  const handleApplyRequestStamp = async (values: { signatureStampId: string; reason?: string }) => {
+    if (!selectedRequest) return;
+
+    try {
+      await SignaturesApi.applySignature({
+        documentId: selectedRequest.documentVersion.document.id,
+        signatureStampId: values.signatureStampId,
+        reason: values.reason || 'Stamp applied to signature request',
+        type: 2, // Type 2 for signature requests (with hash)
+      });
+      
+      messageApi.success("Stamp applied to signature request successfully!", 3);
+      setApplyRequestStampModalVisible(false);
+      setSelectedRequest(null);
+      fetchSignatureRequests();
     } catch (error: any) {
       messageApi.error(error?.response?.data?.message || "Failed to apply stamp", 3);
     }
@@ -441,13 +545,13 @@ const StampsPage = () => {
     },
     {
       title: "Creator",
-      dataIndex: "creator",
+      dataIndex: ["document", "creator"],
       key: "creator",
       render: (creator: any) => (
         <Space direction="vertical" size="small">
-          <Text>{`${creator?.firstName} ${creator?.lastName}`}</Text>
+          <Text>{creator?.firstName && creator?.lastName ? `${creator.firstName} ${creator.lastName}` : "N/A"}</Text>
           <Text type="secondary" style={{ fontSize: "12px" }}>
-            {creator?.email}
+            {creator?.email || "N/A"}
           </Text>
         </Space>
       ),
@@ -493,6 +597,84 @@ const StampsPage = () => {
                 setApplyStampModalVisible(true);
               },
             });
+          }}
+        >
+          Apply Stamp
+        </Button>
+      ),
+    },
+  ];
+
+  // Signature Requests Columns
+  const requestColumns = [
+    {
+      title: "Document",
+      dataIndex: ["document"],
+      key: "document",
+      render: (doc: any) => (
+        <Space direction="vertical" size="small">
+          <Text strong>{doc?.title || "N/A"}</Text>
+          <Text type="secondary" style={{ fontSize: "12px" }}>
+            {doc?.documentNumber || "N/A"}
+          </Text>
+        </Space>
+      ),
+    },
+    {
+      title: "Version",
+      dataIndex: ["documentVersion", "versionNumber"],
+      key: "version",
+      render: (version: number) => <Tag>v{version}</Tag>,
+    },
+    {
+      title: "Status",
+      dataIndex: "status",
+      key: "status",
+      render: (status: string) => {
+        const colors: Record<string, string> = {
+          PENDING: "gold",
+          SIGNED: "green",
+          CANCELLED: "red",
+        };
+        return <Tag color={colors[status] || "default"}>{status}</Tag>;
+      },
+    },
+    {
+      title: "Type",
+      dataIndex: "type",
+      key: "type",
+      render: (type: number) => type === 1 ? "Standard" : "With Hash",
+    },
+    {
+      title: "Requester",
+      dataIndex: "requester",
+      key: "requester",
+      render: (requester: any) => (
+        <Space direction="vertical" size="small">
+          <Text>{`${requester?.firstName} ${requester?.lastName}`}</Text>
+          <Text type="secondary" style={{ fontSize: "12px" }}>
+            {requester?.email}
+          </Text>
+        </Space>
+      ),
+    },
+    {
+      title: "Created",
+      dataIndex: "requestedAt",
+      key: "requestedAt",
+      render: (date: string) => new Date(date).toLocaleDateString(),
+    },
+    {
+      title: "Action",
+      key: "action",
+      render: (_: any, record: SignatureRequest) => (
+        <Button
+          type="primary"
+          size="small"
+          icon={<SafetyCertificateOutlined />}
+          onClick={() => {
+            setSelectedRequest(record);
+            setApplyRequestStampModalVisible(true);
           }}
         >
           Apply Stamp
@@ -560,7 +742,7 @@ const StampsPage = () => {
           },
           {
             key: 'documents',
-            label: 'Documents to Stamp',
+            label: 'All',
             children: (
               <Card title="Documents Available for Stamping">
                 <Space style={{ marginBottom: 16, width: '100%', justifyContent: 'space-between' }}>
@@ -599,6 +781,50 @@ const StampsPage = () => {
                     pageSize: 10,
                     showSizeChanger: true,
                     showTotal: (total) => `Total ${total} documents`,
+                  }}
+                />  
+              </Card>
+            ),
+          },
+          {
+            key: 'requested',
+            label: 'Requested',
+            children: (
+              <Card title="Signature Requests">
+                <Space style={{ marginBottom: 16, width: '100%', justifyContent: 'space-between' }}>
+                  <Space>
+                    <Search
+                      placeholder="Search by document, number, or requester..."
+                      allowClear
+                      style={{ width: 350 }}
+                      prefix={<SearchOutlined />}
+                      onChange={(e) => setRequestSearchText(e.target.value)}
+                      onSearch={setRequestSearchText}
+                    />
+                    <Select
+                      value={requestStatusFilter}
+                      onChange={setRequestStatusFilter}
+                      style={{ width: 180 }}
+                      options={[
+                        { label: "All Status", value: "all" },
+                        { label: "Pending", value: "PENDING" },
+                        { label: "Signed", value: "SIGNED" },
+                        { label: "Cancelled", value: "CANCELLED" },
+                      ]}
+                    />
+                  </Space>
+                  <Button onClick={fetchSignatureRequests}>Refresh</Button>
+                </Space>
+
+                <Table
+                  columns={requestColumns}
+                  dataSource={filteredRequests}
+                  rowKey="id"
+                  loading={requestsLoading}
+                  pagination={{
+                    pageSize: 10,
+                    showSizeChanger: true,
+                    showTotal: (total) => `Total ${total} requests`,
                   }}
                 />
               </Card>
@@ -787,6 +1013,102 @@ const StampsPage = () => {
                     onClick={() => {
                       setApplyStampModalVisible(false);
                       applyStampForm.resetFields();
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                </Space>
+              </Form.Item>
+            </Form>
+          </>
+        )}
+      </Modal>
+
+      {/* Apply Stamp to Request Modal */}
+      <Modal
+        title="Apply Stamp to Signature Request"
+        open={applyRequestStampModalVisible}
+        onCancel={() => {
+          setApplyRequestStampModalVisible(false);
+          setSelectedRequest(null);
+        }}
+        footer={null}
+        width={600}
+      >
+        {selectedRequest && (
+          <>
+            <Space direction="vertical" style={{ marginBottom: 16, width: '100%' }}>
+              <div>
+                <Text strong>Document: </Text>
+                <Text>{selectedRequest.documentVersion.document.title}</Text>
+              </div>
+              <div>
+                <Text strong>Version: </Text>
+                <Tag>v{selectedRequest.documentVersion.versionNumber}</Tag>
+              </div>
+              <div>
+                <Text strong>Document Number: </Text>
+                <Text>{selectedRequest.documentVersion.document.documentNumber}</Text>
+              </div>
+              <div>
+                <Text strong>Status: </Text>
+                <Tag color={
+                  selectedRequest.status === "PENDING" ? "gold" :
+                  selectedRequest.status === "SIGNED" ? "green" : "red"
+                }>
+                  {selectedRequest.status}
+                </Tag>
+              </div>
+            </Space>
+
+            <Form onFinish={handleApplyRequestStamp} layout="vertical">
+              <Form.Item
+                label="Select Stamp"
+                name="signatureStampId"
+                rules={[{ required: true, message: "Please select a stamp" }]}
+              >
+                <Select
+                  placeholder="Choose a signature stamp"
+                  showSearch
+                  optionFilterProp="children"
+                >
+                  {availableStamps.map((stamp) => (
+                    <Select.Option key={stamp.id} value={stamp.id}>
+                      <Space>
+                        <Image
+                          src={stamp.imageUrl}
+                          alt={stamp.name}
+                          width={30}
+                          height={30}
+                          preview={false}
+                          style={{ objectFit: "contain" }}
+                        />
+                        <span>{stamp.name}</span>
+                      </Space>
+                    </Select.Option>
+                  ))}
+                </Select>
+              </Form.Item>
+
+              <Form.Item
+                label="Reason (optional)"
+                name="reason"
+              >
+                <Input.TextArea
+                  rows={3}
+                  placeholder="Add a reason for applying this stamp..."
+                />
+              </Form.Item>
+
+              <Form.Item>
+                <Space>
+                  <Button type="primary" htmlType="submit" icon={<SafetyCertificateOutlined />}>
+                    Apply Stamp
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      setApplyRequestStampModalVisible(false);
+                      setSelectedRequest(null);
                     }}
                   >
                     Cancel

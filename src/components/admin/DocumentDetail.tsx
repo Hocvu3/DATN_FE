@@ -273,13 +273,9 @@ export default function DocumentDetail({ documentId }: DocumentDetailProps) {
         }
       },
       onCancel: async () => {
-        // User chose to skip - just update status to APPROVED
+        // User chose to skip - just approve without stamp
         try {
-          await VersionApi.updateVersionStatus(
-            documentId, 
-            version.id, 
-            DocumentStatus.APPROVED
-          );
+          await VersionApi.approveVersion(documentId, version.id, {});
           message.success(`Version ${version.versionNumber} approved successfully`);
           fetchDocument(); // Refresh document
         } catch (error) {
@@ -299,19 +295,11 @@ export default function DocumentDetail({ documentId }: DocumentDetailProps) {
     try {
       setApproving(true);
       
-      // Apply signature with type=2 (with hash)
-      await SignaturesApi.applySignature({
-        documentId: documentId,
-        signatureStampId: selectedSignatureId,
-        reason: "Document approved",
-        type: 2, // Type 2 for document version approval (with hash)
-      });
-
-      // Update version status to APPROVED
-      await VersionApi.updateVersionStatus(
-        documentId, 
-        versionToApprove.id, 
-        DocumentStatus.APPROVED
+      // Approve version with signature stamp
+      await VersionApi.approveVersion(
+        documentId,
+        versionToApprove.id,
+        { signatureStampId: selectedSignatureId }
       );
 
       message.success(`Version ${versionToApprove.versionNumber} approved successfully with signature`);
@@ -336,7 +324,7 @@ export default function DocumentDetail({ documentId }: DocumentDetailProps) {
       cancelText: 'Cancel',
       onOk: async () => {
         try {
-          await VersionApi.updateVersionStatus(documentId, version.id, DocumentStatus.REJECTED);
+          await VersionApi.rejectVersion(documentId, version.id, 'Version rejected by admin');
           message.success(`Version ${version.versionNumber} rejected`);
           fetchDocument(); // Refresh document
         } catch (error) {

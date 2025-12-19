@@ -163,4 +163,25 @@ export const SignaturesApi = {
   async verifySignature(signatureId: string) {
     return apiPost<SignatureVerificationResult>(`/stamps/verify/${signatureId}`, {});
   },
+
+  /**
+   * Get signature requests for stamping
+   */
+  async getSignatureRequests(params?: {
+    page?: number;
+    limit?: number;
+    status?: string;
+  }) {
+    return apiGet<{
+      success: boolean;
+      message: string;
+      data: {
+        requests: any[];
+        total: number;
+        page: number;
+        limit: number;
+        totalPages: number;
+      };
+    }>('/stamps/requests', { params: params as any });
+  },
 };

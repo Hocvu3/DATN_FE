@@ -267,4 +267,26 @@ export const VersionApi = {
             message: string;
         }>(`/documents/${documentId}/versions/${versionId}/validate-public`);
     },
+
+    /**
+     * Approve document version
+     */
+    approveVersion(
+        documentId: string,
+        versionId: string,
+        data: { signatureStampId?: string; reason?: string; type?: number }
+    ): Promise<ApiResult<any>> {
+        return apiPost(`/documents/${documentId}/versions/${versionId}/approve`, data);
+    },
+
+    /**
+     * Reject document version
+     */
+    rejectVersion(
+        documentId: string,
+        versionId: string,
+        reason: string
+    ): Promise<ApiResult<any>> {
+        return apiPost(`/documents/${documentId}/versions/${versionId}/reject`, { reason });
+    },
 };

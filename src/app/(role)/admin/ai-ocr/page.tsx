@@ -34,7 +34,7 @@ import {
   StopOutlined,
   SearchOutlined,
 } from "@ant-design/icons";
-import { analyzeDocument, type DocumentAnalysisResult } from "@/lib/ocr-api";
+import { analyzeDocument, approveDocumentOcr, rejectDocumentOcr, type DocumentAnalysisResult } from "@/lib/ocr-api";
 import { apiGet } from "@/lib/api";
 import { SignaturesApi, type Signature } from "@/lib/signatures-api";
 import { VersionApi } from "@/lib/version-api";
@@ -294,7 +294,7 @@ export default function AiOcrPage() {
     setAnalysisResult(null);
   };
 
-  // Approve/Reject handlers (same as DocumentDetail)
+  // Approve/Reject handlers - using new OCR API endpoints
   const handleApprove = async (version: DocumentVersion) => {
     modal.confirm({
       title: 'Apply Stamp and Digital Sign?',
@@ -322,13 +322,11 @@ export default function AiOcrPage() {
         }
       },
       onCancel: async () => {
-        // User chose to skip - just update status to APPROVED
+        // User chose to skip - use OCR approve API without stamp
         try {
-          await VersionApi.updateVersionStatus(
-            version.document.id, 
-            version.id, 
-            DocumentStatus.APPROVED
-          );
+          await approveDocumentOcr(version.document.id, {
+            reason: 'Approved after AI analysis',
+          });
           messageApi.success(`Version ${version.versionNumber} approved successfully!`);
           
           // Close drawer and refresh
@@ -354,20 +352,12 @@ export default function AiOcrPage() {
     try {
       setApproving(true);
       
-      // Apply signature with type=2 (with hash)
-      await SignaturesApi.applySignature({
-        documentId: versionToApprove.document.id,
+      // Use OCR approve API with signature stamp
+      await approveDocumentOcr(versionToApprove.document.id, {
         signatureStampId: selectedSignatureId,
-        reason: "Document approved",
-        type: 2,
+        reason: 'Approved after AI analysis with digital signature',
+        type: 2, // stamp with hash
       });
-
-      // Update version status to APPROVED
-      await VersionApi.updateVersionStatus(
-        versionToApprove.document.id, 
-        versionToApprove.id, 
-        DocumentStatus.APPROVED
-      );
 
       messageApi.success(`Version ${versionToApprove.versionNumber} approved successfully with signature!`);
       
@@ -396,11 +386,8 @@ export default function AiOcrPage() {
       cancelText: 'Cancel',
       onOk: async () => {
         try {
-          await VersionApi.updateVersionStatus(
-            version.document.id, 
-            version.id, 
-            DocumentStatus.REJECTED
-          );
+          // Use OCR reject API
+          await rejectDocumentOcr(version.document.id, 'Rejected after AI analysis');
           messageApi.success(`Version ${version.versionNumber} rejected successfully!`);
           
           // Close drawer and refresh

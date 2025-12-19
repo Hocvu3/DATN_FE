@@ -77,3 +77,23 @@ export async function getDocumentsForOcr(params?: {
 export async function analyzeDocument(documentId: string): Promise<ApiResult<AnalyzeDocumentResponse>> {
   return apiPost<AnalyzeDocumentResponse>('/ocr/analyze', { documentId }, { timeout: 300000 });
 }
+
+/**
+ * Approve document after AI analysis
+ */
+export async function approveDocumentOcr(
+  documentId: string,
+  data: { signatureStampId?: string; reason?: string; type?: number }
+): Promise<ApiResult<any>> {
+  return apiPost(`/ocr/documents/${documentId}/approve`, data);
+}
+
+/**
+ * Reject document after AI analysis
+ */
+export async function rejectDocumentOcr(
+  documentId: string,
+  reason: string
+): Promise<ApiResult<any>> {
+  return apiPost(`/ocr/documents/${documentId}/reject`, { reason });
+}

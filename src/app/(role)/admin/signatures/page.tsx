@@ -150,6 +150,16 @@ const SignaturesPage = () => {
     }
   };
 
+  const handleReopen = async (requestId: string) => {
+    try {
+      const response = await apiPut(`/signatures/requests/${requestId}/reopen`, {});
+      messageApi.success((response as any).data?.message || "Signature request reopened successfully!", 3);
+      fetchSignatureRequests();
+    } catch (error: any) {
+      messageApi.error(error?.response?.data?.message || "Failed to reopen request", 3);
+    }
+  };
+
   const getStatusTag = (status: string) => {
     const statusConfig = {
       PENDING: { color: "orange", icon: <ClockCircleOutlined />, text: "Pending" },
@@ -268,6 +278,16 @@ const SignaturesPage = () => {
                 </Button>
               </Popconfirm>
             </>
+          )}
+          {record.status === "CANCELLED" && (
+            <Button
+              type="default"
+              size="small"
+              icon={<UndoOutlined />}
+              onClick={() => handleReopen(record.id)}
+            >
+              Reopen
+            </Button>
           )}
         </Space>
       ),
