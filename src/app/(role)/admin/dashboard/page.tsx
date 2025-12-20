@@ -200,10 +200,13 @@ export default function AdminDashboardPage() {
     colorField: "name",
     radius: 0.8,
     innerRadius: 0.6,
-    color: stats?.documentsByStatus?.map((d) => d.color) || [],
+    color: (datum: any) => {
+      const item = stats?.documentsByStatus?.find((d) => d.name === datum.name);
+      return item?.color || "#ccc";
+    },
     label: {
       type: "outer" as const,
-      content: "{name}: {value}",
+      formatter: (datum: any) => `${datum.name}: ${datum.count}`,
     },
     legend: {
       position: "bottom" as const,
@@ -218,6 +221,7 @@ export default function AdminDashboardPage() {
         style: { fontSize: "24px", fontWeight: "bold" },
       },
     },
+    appendPadding: 10,
   };
 
   const usersPieConfig = {
@@ -225,11 +229,14 @@ export default function AdminDashboardPage() {
     angleField: "count",
     colorField: "name",
     radius: 0.75,
-    color: stats?.usersByStatus?.map((d) => d.color) || [],
+    color: (datum: any) => {
+      const item = stats?.usersByStatus?.find((d) => d.name === datum.name);
+      return item?.color || "#ccc";
+    },
     label: {
       type: "inner" as const,
       offset: "-30%",
-      content: "{value}",
+      formatter: (datum: any) => String(datum.count),
       style: {
         fontSize: 14,
         fontWeight: "bold",
@@ -239,6 +246,7 @@ export default function AdminDashboardPage() {
     legend: {
       position: "bottom" as const,
     },
+    appendPadding: 10,
   };
 
   const departmentsPieConfig = {
@@ -249,11 +257,12 @@ export default function AdminDashboardPage() {
     color: ["#1890ff", "#52c41a", "#faad14", "#f5222d", "#722ed1"],
     label: {
       type: "spider" as const,
-      content: "{name}: {value}",
+      formatter: (datum: any) => `${datum.name}: ${datum.count}`,
     },
     legend: {
       position: "bottom" as const,
     },
+    appendPadding: 10,
   };
 
   if (loading) {
