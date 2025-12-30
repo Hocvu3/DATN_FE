@@ -6,6 +6,10 @@ import DocumentDetailPage from "../../../../../components/documents/DocumentDeta
 import EditDocumentModal from "../../../../../components/documents/EditDocumentModal";
 import { message } from "antd";
 
+// Disable caching
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 // Mock data - same structure as in documents listing
 const mockDocuments = [
   {
@@ -125,23 +129,29 @@ const EmployeeDocumentDetail: React.FC = () => {
   const [editModalVisible, setEditModalVisible] = useState(false);
 
   useEffect(() => {
-    // Simulate API call
+    // Fetch document - force refresh
     const fetchDocument = () => {
       setLoading(true);
+      setDocument(null); // Clear old data
       
       // Find document by ID
-      const foundDocument = mockDocuments.find(doc => doc.id === params.id);
+      const documentId = Array.isArray(params.id) ? params.id[0] : params.id;
+      const foundDocument = mockDocuments.find(doc => doc.id === documentId);
       
       setTimeout(() => {
-        setDocument(foundDocument || null);
+        if (foundDocument) {
+          setDocument(foundDocument);
+        } else {
+          setDocument(null);
+        }
         setLoading(false);
       }, 500);
     };
 
-    if (params.id) {
+    if (params?.id) {
       fetchDocument();
     }
-  }, [params]);
+  }, [params?.id]); // Re-fetch when ID changes
 
   const handleEdit = () => {
     if (document) {

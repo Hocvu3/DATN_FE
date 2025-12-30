@@ -232,18 +232,19 @@ export default function DashboardLayout({
     // Additional items for department role
     if (userRole === "department") {
       return [
-        ...baseItems,
+        baseItems[0], // Dashboard
+        baseItems[1], // Documents
         {
-          key: "members",
+          key: "users",
           icon: <TeamOutlined />,
-          label: <Link href="/department/members">Members</Link>,
-          path: "/department/members",
+          label: <Link href="/department/users">Users</Link>,
+          path: "/department/users",
         },
         {
-          key: "permissions",
-          icon: <SecurityScanOutlined />,
-          label: <Link href="/department/permissions">Permissions</Link>,
-          path: "/department/permissions",
+          key: "department-info",
+          icon: <AppstoreOutlined />,
+          label: <Link href="/department/department-info">Department</Link>,
+          path: "/department/department-info",
         },
         {
           key: "activity-logs",
@@ -258,13 +259,14 @@ export default function DashboardLayout({
     // Return base items plus profile for other roles (employee)
     if (userRole === "employee") {
       return [
-        ...baseItems,
+        baseItems[0], // Dashboard
         {
           key: "department",
           icon: <AppstoreOutlined />,
           label: <Link href="/employee/department">My Department</Link>,
           path: "/employee/department",
         },
+        baseItems[1], // Documents
         {
           key: "activities",
           icon: <ClockCircleOutlined />,

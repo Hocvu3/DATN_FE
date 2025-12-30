@@ -20,7 +20,7 @@ import {
   UserOutlined,
   CalendarOutlined,
 } from "@ant-design/icons";
-import { EmployeeApi } from "@/lib/employee-api";
+import { apiGet } from "@/lib/api";
 
 const { Title, Text } = Typography;
 
@@ -39,7 +39,7 @@ interface DepartmentInfo {
   };
 }
 
-const MyDepartmentPage = () => {
+const DepartmentInfoPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [departmentInfo, setDepartmentInfo] = useState<DepartmentInfo | null>(null);
@@ -52,7 +52,7 @@ const MyDepartmentPage = () => {
     setLoading(true);
     setError(null);
     try {
-      const result = await EmployeeApi.getMyDepartment();
+      const result = await apiGet<any>("/department-info");
       if (result.data.success && result.data.data) {
         setDepartmentInfo(result.data.data);
       } else {
@@ -103,7 +103,7 @@ const MyDepartmentPage = () => {
 
   return (
     <div style={{ padding: 24, background: "#f5f5f5", minHeight: "100vh" }}>
-      <Title level={2} style={{ marginBottom: 24 }}>My Department</Title>
+      <Title level={2} style={{ marginBottom: 24 }}>Department Information</Title>
 
       <Row gutter={[16, 16]}>
         <Col xs={24} sm={12} md={6}>
@@ -163,4 +163,4 @@ const MyDepartmentPage = () => {
   );
 };
 
-export default MyDepartmentPage;
+export default DepartmentInfoPage;
