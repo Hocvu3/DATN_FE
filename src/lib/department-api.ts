@@ -101,7 +101,7 @@ export const DepartmentApi = {
    * Get department dashboard statistics
    */
   getDashboardStats(): Promise<ApiResult<ApiDepartmentDashboardResponse>> {
-    return apiGet<ApiDepartmentDashboardResponse>('/dashboard-stats');
+    return apiGet<ApiDepartmentDashboardResponse>('/documents/dashboard-stats');
   },
 
   /**

@@ -46,7 +46,7 @@ const { Header, Sider, Content, Footer } = Layout;
 
 interface Props {
   children: ReactNode;
-  userRole?: "admin" | "department" | "employee";
+  userRole?: "admin" | "department" | "employee" | "manager";
 }
 
 export default function DashboardLayout({
@@ -81,30 +81,30 @@ export default function DashboardLayout({
   useEffect(() => {
     // Unique key for this specific path to avoid checking on every component re-render
     const pathKey = pathname ? `dashboard_auth_${pathname.replace(/\//g, '_')}` : 'dashboard_auth_root';
-    
+
     if (sessionStorage.getItem(pathKey) === 'true') {
       return;
     }
-    
+
     // Mark this specific path as checked
     sessionStorage.setItem(pathKey, 'true');
-    
+
     // Only check authentication after a short delay to give auth state time to initialize
     const authCheckTimer = setTimeout(() => {
       if (!isAuthenticated && typeof window !== "undefined") {
         const hasAuthCookie = document.cookie.includes('auth=true');
         const hasToken = localStorage.getItem('docuflow_access_token');
         const hasUserData = localStorage.getItem('docuflow_user');
-        
+
         const roleCookie = document.cookie.split('; ')
           .find(row => row.startsWith('user_role='))
           ?.split('=')[1];
-        
+
         if (hasAuthCookie && hasToken && hasUserData) {
           try {
             const userData = JSON.parse(hasUserData);
             const role = userData.role?.toLowerCase();
-            
+
             if (role) {
               window.location.href = `/${role}/dashboard?forceReload=true`;
               return;
@@ -112,19 +112,19 @@ export default function DashboardLayout({
           } catch (e) {
             // Silently fail
           }
-          
+
           if (roleCookie) {
             window.location.href = `/${roleCookie}/dashboard?forceReload=true`;
             return;
           }
-          
+
           window.location.reload();
         } else {
           window.location.href = "/login";
         }
       }
     }, 300);
-    
+
     return () => {
       clearTimeout(authCheckTimer);
     };
@@ -150,18 +150,21 @@ export default function DashboardLayout({
 
   // Navigation items based on user role
   const getNavigationItems = () => {
+    // Normalize role for paths: 'manager' should use 'department' paths
+    const roleForPath = userRole === 'manager' ? 'department' : userRole;
+
     const baseItems = [
       {
         key: "dashboard",
         icon: <DashboardOutlined />,
-        label: <Link href={`/${userRole}/dashboard`}>Dashboard</Link>,
-        path: `/${userRole}/dashboard`,
+        label: <Link href={`/${roleForPath}/dashboard`}>Dashboard</Link>,
+        path: `/${roleForPath}/dashboard`,
       },
       {
         key: "documents",
         icon: <FileTextOutlined />,
-        label: <Link href={`/${userRole}/documents`}>Documents</Link>,
-        path: `/${userRole}/documents`,
+        label: <Link href={`/${roleForPath}/documents`}>Documents</Link>,
+        path: `/${roleForPath}/documents`,
       },
     ];
 
@@ -169,8 +172,8 @@ export default function DashboardLayout({
     const profileItem = {
       key: "profile",
       icon: <UserOutlined />,
-      label: <Link href={`/${userRole}/profile`}>My Profile</Link>,
-      path: `/${userRole}/profile`,
+      label: <Link href={`/${roleForPath}/profile`}>My Profile</Link>,
+      path: `/${roleForPath}/profile`,
     };
 
     // Additional items for admin only
@@ -229,8 +232,8 @@ export default function DashboardLayout({
       ];
     }
 
-    // Additional items for department role
-    if (userRole === "department") {
+    // Additional items for department/manager role
+    if (userRole === "department" || userRole === "manager") {
       return [
         baseItems[0], // Dashboard
         baseItems[1], // Documents
@@ -288,11 +291,12 @@ export default function DashboardLayout({
   // Handle responsive layout
 
   // User dropdown menu
+  const roleForPath = userRole === 'manager' ? 'department' : userRole;
   const userMenuItems = [
     {
       key: "profile",
       icon: <UserOutlined />,
-      label: <Link href={`/${userRole}/profile`}>My Profile</Link>,
+      label: <Link href={`/${roleForPath}/profile`}>My Profile</Link>,
     },
     {
       type: "divider",
@@ -306,17 +310,17 @@ export default function DashboardLayout({
         // Remove auth cookies directly before calling logout
         document.cookie = "auth=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax";
         document.cookie = "user_role=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax";
-        
+
         // Clear any auth-related session storage items
         for (let i = 0; i < sessionStorage.length; i++) {
           const key = sessionStorage.key(i);
-          if (key?.startsWith('dashboard_auth_') || 
-              key === 'user_authenticated' || 
-              key === 'auth_status_checked') {
+          if (key?.startsWith('dashboard_auth_') ||
+            key === 'user_authenticated' ||
+            key === 'auth_status_checked') {
             sessionStorage.removeItem(key);
           }
         }
-        
+
         // Now call the main logout function
         logout();
       },
@@ -618,9 +622,9 @@ export default function DashboardLayout({
           </div>
         </Header>
 
-        <Content 
-          className="admin-layout" 
-          style={{ 
+        <Content
+          className="admin-layout"
+          style={{
             padding: 0,
             background: "#f5f5f5",
             minHeight: "calc(100vh - 64px - 48px)"
@@ -628,10 +632,10 @@ export default function DashboardLayout({
         >
           {children}
         </Content>
-        
-        <Footer 
-          style={{ 
-            textAlign: 'center', 
+
+        <Footer
+          style={{
+            textAlign: 'center',
             background: '#ffffff',
             borderTop: '1px solid #f0f0f0',
             padding: '12px 50px',
