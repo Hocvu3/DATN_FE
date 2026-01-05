@@ -258,12 +258,6 @@ export default function DashboardLayout({
     if (userRole === "employee") {
       return [
         baseItems[0], // Dashboard
-        {
-          key: "department",
-          icon: <AppstoreOutlined />,
-          label: <Link href="/employee/department">My Department</Link>,
-          path: "/employee/department",
-        },
         baseItems[1], // Documents
         {
           key: "activities",

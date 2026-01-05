@@ -7,18 +7,19 @@ import {
   Tag,
   Spin,
   Alert,
-  Avatar,
   Space,
   Typography,
   Row,
   Col,
   Statistic,
+  Divider,
 } from "antd";
 import {
   TeamOutlined,
   FileTextOutlined,
-  UserOutlined,
   CalendarOutlined,
+  HomeOutlined,
+  IdcardOutlined,
 } from "@ant-design/icons";
 import { EmployeeApi } from "@/lib/employee-api";
 
@@ -103,62 +104,108 @@ const MyDepartmentPage = () => {
 
   return (
     <div style={{ padding: 24, background: "#f5f5f5", minHeight: "100vh" }}>
-      <Title level={2} style={{ marginBottom: 24 }}>My Department</Title>
-
-      <Row gutter={[16, 16]}>
-        <Col xs={24} sm={12} md={6}>
-          <Card bordered={false} style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.12)", borderRadius: 4 }}>
-            <Statistic
-              title="Total Members"
-              value={departmentInfo.memberCount}
-              prefix={<TeamOutlined />}
-              valueStyle={{ color: "#1890ff" }}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} md={6}>
-          <Card bordered={false} style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.12)", borderRadius: 4 }}>
-            <Statistic
-              title="Total Documents"
-              value={departmentInfo.documentCount}
-              prefix={<FileTextOutlined />}
-              valueStyle={{ color: "#52c41a" }}
-            />
-          </Card>
-        </Col>
-      </Row>
-
-      <Card
-        title={<Space><TeamOutlined /><Text strong>Department Details</Text></Space>}
-        bordered={false}
-        style={{ marginTop: 16, boxShadow: "0 1px 3px rgba(0,0,0,0.12)", borderRadius: 4 }}
-      >
-        <Descriptions column={{ xs: 1, sm: 2 }} bordered>
-          <Descriptions.Item label="Department Name">
-            <Tag color="blue">{departmentInfo.name}</Tag>
-          </Descriptions.Item>
-          <Descriptions.Item label="Created Date">
+      <Space direction="vertical" size="large" style={{ width: "100%" }}>
+        <div>
+          <Title level={2} style={{ margin: 0 }}>
             <Space>
-              <CalendarOutlined />
-              {new Date(departmentInfo.createdAt).toLocaleDateString()}
+              <HomeOutlined />
+              My Department
             </Space>
-          </Descriptions.Item>
-          <Descriptions.Item label="Description" span={2}>
-            {departmentInfo.description || "N/A"}
-          </Descriptions.Item>
-          {departmentInfo.manager && (
-            <Descriptions.Item label="Manager" span={2}>
+          </Title>
+          <Text type="secondary">View your department information and statistics</Text>
+        </div>
+
+        <Row gutter={[16, 16]}>
+          <Col xs={24} sm={12} lg={8}>
+            <Card
+              variant="outlined"
+              style={{
+                boxShadow: "0 1px 3px rgba(0,0,0,0.12)",
+                borderRadius: 8,
+                background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+              }}
+            >
+              <Statistic
+                title={<span style={{ color: "white", fontSize: 14 }}>Department Members</span>}
+                value={departmentInfo.memberCount}
+                prefix={<TeamOutlined style={{ color: "white" }} />}
+                valueStyle={{ color: "white", fontSize: 32, fontWeight: "bold" }}
+              />
+            </Card>
+          </Col>
+          <Col xs={24} sm={12} lg={8}>
+            <Card
+              variant="outlined"
+              style={{
+                boxShadow: "0 1px 3px rgba(0,0,0,0.12)",
+                borderRadius: 8,
+                background: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
+              }}
+            >
+              <Statistic
+                title={<span style={{ color: "white", fontSize: 14 }}>Total Documents</span>}
+                value={departmentInfo.documentCount}
+                prefix={<FileTextOutlined style={{ color: "white" }} />}
+                valueStyle={{ color: "white", fontSize: 32, fontWeight: "bold" }}
+              />
+            </Card>
+          </Col>
+          <Col xs={24} sm={12} lg={8}>
+            <Card
+              variant="outlined"
+              style={{
+                boxShadow: "0 1px 3px rgba(0,0,0,0.12)",
+                borderRadius: 8,
+                background: "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
+              }}
+            >
+              <Statistic
+                title={<span style={{ color: "white", fontSize: 14 }}>Member Since</span>}
+                value={new Date(departmentInfo.createdAt).toLocaleDateString()}
+                prefix={<CalendarOutlined style={{ color: "white" }} />}
+                valueStyle={{ color: "white", fontSize: 20, fontWeight: "bold" }}
+              />
+            </Card>
+          </Col>
+        </Row>
+
+        <Card
+          title={
+            <Space>
+              <IdcardOutlined style={{ fontSize: 20, color: "#1890ff" }} />
+              <Text strong style={{ fontSize: 16 }}>Department Information</Text>
+            </Space>
+          }
+          variant="outlined"
+          style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.12)", borderRadius: 8 }}
+        >
+          <Descriptions column={{ xs: 1, sm: 1, md: 2 }} layout="horizontal">
+            <Descriptions.Item label={<Text strong>Department Name</Text>}>
+              <Tag color="blue" style={{ fontSize: 14, padding: "4px 12px" }}>
+                {departmentInfo.name}
+              </Tag>
+            </Descriptions.Item>
+            <Descriptions.Item label={<Text strong>Status</Text>}>
+              <Tag color="green" style={{ fontSize: 14, padding: "4px 12px" }}>
+                Active
+              </Tag>
+            </Descriptions.Item>
+            <Descriptions.Item label={<Text strong>Description</Text>} span={2}>
+              <Text>{departmentInfo.description || "No description available"}</Text>
+            </Descriptions.Item>
+            <Descriptions.Item label={<Text strong>Created Date</Text>}>
               <Space>
-                <Avatar icon={<UserOutlined />} style={{ backgroundColor: "#1890ff" }} />
-                <div>
-                  <div><Text strong>{departmentInfo.manager.firstName} {departmentInfo.manager.lastName}</Text></div>
-                  <div><Text type="secondary">{departmentInfo.manager.email}</Text></div>
-                </div>
+                <CalendarOutlined style={{ color: "#1890ff" }} />
+                <Text>{new Date(departmentInfo.createdAt).toLocaleDateString("en-US", {
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric"
+                })}</Text>
               </Space>
             </Descriptions.Item>
-          )}
-        </Descriptions>
-      </Card>
+          </Descriptions>
+        </Card>
+      </Space>
     </div>
   );
 };

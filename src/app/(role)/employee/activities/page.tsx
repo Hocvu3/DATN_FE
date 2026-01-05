@@ -32,6 +32,8 @@ interface Activity {
   entityType: string;
   entityId: string;
   metadata?: any;
+  resource?: string;
+  details?: any;
   ipAddress?: string;
   userAgent?: string;
   createdAt: string;
@@ -40,6 +42,12 @@ interface Activity {
     firstName: string;
     lastName: string;
     email: string;
+    role?: {
+      name: string;
+    };
+    department?: {
+      name: string;
+    };
   };
 }
 
@@ -67,8 +75,11 @@ const EmployeeActivitiesPage = () => {
       });
 
       if (result.data.success && result.data.data) {
-        setActivities(result.data.data.activities || []);
-        setTotal(result.data.data.total || 0);
+        // API returns nested structure: result.data.data.data (array of activities)
+        const activitiesData = result.data.data.data || [];
+        const pagination = result.data.data.pagination || {};
+        setActivities(activitiesData);
+        setTotal(pagination.total || 0);
       } else {
         setError(result.data.message || "Failed to fetch activities");
       }
@@ -131,10 +142,93 @@ const EmployeeActivitiesPage = () => {
       dataIndex: "metadata",
       key: "metadata",
       render: (metadata: any, record: Activity) => {
-        if (metadata?.documentTitle) {
-          return <Text>{metadata.documentTitle}</Text>;
+        const details = record.details || metadata;
+        
+        // Filter out token refresh actions for cleaner display
+        if (record.action === 'REFRESH' && record.resource === 'Auth') {
+          return <Text type="secondary">Token refreshed</Text>;
         }
-        return <Text type="secondary">Entity ID: {record.entityId}</Text>;
+
+        // Handle LOGIN action
+        if (record.action === 'LOGIN') {
+          const loginTime = new Date(record.createdAt).toLocaleString();
+          return (
+            <div>
+              <Text>Logged in at {loginTime}</Text>
+            </div>
+          );
+        }
+
+        // Handle LOGOUT action
+        if (record.action === 'LOGOUT') {
+          return <Text>User logged out</Text>;
+        }
+
+        // Handle CREATE action
+        if (record.action === 'CREATE') {
+          if (details?.email) {
+            return <Text>Created user: {details.email}</Text>;
+          }
+          if (details?.title) {
+            return <Text>Created document: {details.title}</Text>;
+          }
+          if (record.resource) {
+            return <Text>Created {record.resource}</Text>;
+          }
+        }
+
+        // Handle UPDATE action
+        if (record.action === 'UPDATE') {
+          if (details?.changes) {
+            const changes = Object.keys(details.changes).filter(
+              key => !['accessToken', 'refreshToken', 'password', 'passwordHash'].includes(key)
+            );
+            if (changes.length > 0) {
+              return (
+                <div>
+                  <Text>Updated fields: {changes.join(', ')}</Text>
+                </div>
+              );
+            }
+          }
+          if (details?.title) {
+            return <Text>Updated document: {details.title}</Text>;
+          }
+          if (record.resource) {
+            return <Text>Updated {record.resource}</Text>;
+          }
+        }
+
+        // Handle DELETE action
+        if (record.action === 'DELETE') {
+          if (details?.email) {
+            return <Text type="danger">Deleted user: {details.email}</Text>;
+          }
+          if (details?.title) {
+            return <Text type="danger">Deleted document: {details.title}</Text>;
+          }
+          if (record.resource) {
+            return <Text type="danger">Deleted {record.resource}</Text>;
+          }
+        }
+
+        // Handle VIEW action
+        if (record.action === 'VIEW' && details?.title) {
+          return <Text>Viewed document: {details.title}</Text>;
+        }
+
+        // Handle DOWNLOAD action
+        if (record.action === 'DOWNLOAD' && details?.title) {
+          return <Text>Downloaded document: {details.title}</Text>;
+        }
+
+        // Fallback to document title if available
+        if (details?.documentTitle) {
+          return <Text>{details.documentTitle}</Text>;
+        }
+
+        // Default fallback
+        return <Text type="secondary">Entity ID: {record.entityId?.substring(0, 8) || 'N/A'}</Text>;
       },
     },
     {
@@ -151,13 +245,6 @@ const EmployeeActivitiesPage = () => {
           </Text>
         </div>
       ),
-    },
-    {
-      title: "IP Address",
-      dataIndex: "ipAddress",
-      key: "ipAddress",
-      width: 120,
-      render: (ip: string) => <Text type="secondary">{ip || "N/A"}</Text>,
     },
   ];
 
@@ -182,7 +269,7 @@ const EmployeeActivitiesPage = () => {
         />
       )}
 
-      <Card bordered={false} style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.12)", borderRadius: 4 }}>
+      <Card variant="outlined" style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.12)", borderRadius: 4 }}>
         <Space direction="vertical" size="middle" style={{ width: "100%", marginBottom: 16 }}>
           <Space wrap>
             <Input

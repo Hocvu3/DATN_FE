@@ -13,6 +13,8 @@ import {
   Spin,
   Avatar,
   Typography,
+  Descriptions,
+  Statistic,
 } from "antd";
 import {
   FileTextOutlined,
@@ -25,6 +27,12 @@ import {
   CalendarOutlined,
   FileProtectOutlined,
   CheckCircleOutlined,
+  FolderOpenOutlined,
+  SyncOutlined,
+  TrophyOutlined,
+  TeamOutlined,
+  HomeOutlined,
+  IdcardOutlined,
 } from "@ant-design/icons";
 import { EmployeeApi } from "@/lib/employee-api";
 import dynamic from "next/dynamic";
@@ -46,13 +54,21 @@ export default function EmployeeDashboardPage() {
   const [messageApi, contextHolder] = message.useMessage();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<any | null>(null);
+  const [departmentInfo, setDepartmentInfo] = useState<any | null>(null);
 
   const fetchDashboardData = useCallback(async () => {
     try {
       setLoading(true);
-      const statsResponse = await EmployeeApi.getDashboardStats();
+      const [statsResponse, deptResponse] = await Promise.all([
+        EmployeeApi.getDashboardStats(),
+        EmployeeApi.getMyDepartment(),
+      ]);
       const statsData = statsResponse.data?.data || statsResponse.data;
       setStats(statsData);
+      
+      if (deptResponse.data.success && deptResponse.data.data) {
+        setDepartmentInfo(deptResponse.data.data);
+      }
     } catch (error) {
       console.error("Failed to fetch dashboard data:", error);
       messageApi.error("Failed to load dashboard data");
@@ -92,7 +108,9 @@ export default function EmployeeDashboardPage() {
     radius: 0.8,
     innerRadius: 0.6,
     color: (datum: any) => stats?.documentsByStatus?.find((d: any) => d.name === datum.name)?.color || "#ccc",
-    label: { type: "outer" as const },
+    label: {
+      type: "spider" as const,
+    },
     legend: { position: "bottom" as const },
   };
 
@@ -145,12 +163,51 @@ export default function EmployeeDashboardPage() {
         </Button>
       </div>
 
+      {departmentInfo && (
+        <Card
+          title={
+            <Space>
+              <HomeOutlined style={{ fontSize: 18, color: "#1890ff" }} />
+              <Text strong>My Department</Text>
+            </Space>
+          }
+          variant="outlined"
+          style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.12)", borderRadius: 8, marginBottom: 24 }}
+        >
+          <Descriptions column={{ xs: 1, sm: 1, md: 2 }} layout="horizontal">
+            <Descriptions.Item label={<Text strong>Department Name</Text>}>
+              <Tag color="blue" style={{ fontSize: 14, padding: "4px 12px" }}>
+                {departmentInfo.name}
+              </Tag>
+            </Descriptions.Item>
+            <Descriptions.Item label={<Text strong>Status</Text>}>
+              <Tag color="green" style={{ fontSize: 14, padding: "4px 12px" }}>
+                Active
+              </Tag>
+            </Descriptions.Item>
+            <Descriptions.Item label={<Text strong>Description</Text>} span={2}>
+              <Text>{departmentInfo.description || "No description available"}</Text>
+            </Descriptions.Item>
+            <Descriptions.Item label={<Text strong>Created Date</Text>}>
+              <Space>
+                <CalendarOutlined style={{ color: "#1890ff" }} />
+                <Text>{new Date(departmentInfo.createdAt).toLocaleDateString("en-US", {
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric"
+                })}</Text>
+              </Space>
+            </Descriptions.Item>
+          </Descriptions>
+        </Card>
+      )}
+
       <Row gutter={16} style={{ marginBottom: 24 }}>
         <Col xs={24} sm={12} lg={6}>
           <Card bordered={false} style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.12)", borderRadius: 4 }}>
             <Space direction="vertical" style={{ width: "100%" }}>
               <Space>
-                <Avatar size={48} icon={<FileTextOutlined />} style={{ backgroundColor: "#1890ff" }} />
+                <Avatar size={48} icon={<FolderOpenOutlined />} style={{ backgroundColor: "#1890ff" }} />
                 <div>
                   <Text type="secondary" style={{ fontSize: 12 }}>My Documents</Text>
                   <Title level={3} style={{ margin: 0 }}>{stats?.overview?.myDocuments || 0}</Title>
@@ -164,7 +221,7 @@ export default function EmployeeDashboardPage() {
           <Card bordered={false} style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.12)", borderRadius: 4 }}>
             <Space direction="vertical" style={{ width: "100%" }}>
               <Space>
-                <Avatar size={48} icon={<ClockCircleOutlined />} style={{ backgroundColor: "#faad14" }} />
+                <Avatar size={48} icon={<SyncOutlined />} style={{ backgroundColor: "#faad14" }} />
                 <div>
                   <Text type="secondary" style={{ fontSize: 12 }}>Pending Reviews</Text>
                   <Title level={3} style={{ margin: 0 }}>{stats?.overview?.pendingReviews || 0}</Title>
@@ -192,7 +249,7 @@ export default function EmployeeDashboardPage() {
           <Card bordered={false} style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.12)", borderRadius: 4 }}>
             <Space direction="vertical" style={{ width: "100%" }}>
               <Space>
-                <Avatar size={48} icon={<CalendarOutlined />} style={{ backgroundColor: "#722ed1" }} />
+                <Avatar size={48} icon={<TrophyOutlined />} style={{ backgroundColor: "#722ed1" }} />
                 <div>
                   <Text type="secondary" style={{ fontSize: 12 }}>Growth</Text>
                   <Title level={3} style={{ margin: 0 }}>
@@ -207,7 +264,7 @@ export default function EmployeeDashboardPage() {
 
       <Row gutter={16} style={{ marginBottom: 24 }}>
         <Col xs={24} lg={16}>
-          <Card title={<Space><FileTextOutlined /><Text strong>My Activity (Last 7 Days)</Text></Space>} 
+          <Card title={<Space><RiseOutlined /><Text strong>My Activity (Last 7 Days)</Text></Space>} 
             bordered={false} style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.12)", borderRadius: 4 }}>
             <Column {...columnConfig} />
           </Card>

@@ -177,7 +177,7 @@ export const EmployeeApi = {
       if (params.endDate) queryParams.endDate = params.endDate;
     }
 
-    return apiGet<ApiEmployeeActivitiesResponse>('/audit-logs/my-activities', { params: queryParams });
+    return apiGet<ApiEmployeeActivitiesResponse>('/admin/audit-logs/my-activities', { params: queryParams });
   },
 
   /**

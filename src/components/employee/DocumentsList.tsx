@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { Table, Tag, Button, Input, Select, Typography, Dropdown, Menu, Modal, message, App } from 'antd';
+import { Table, Tag, Button, Input, Select, Typography, Dropdown, Modal, message, App } from 'antd';
 import { SearchOutlined, EyeOutlined, EditOutlined, DeleteOutlined, MoreOutlined, PlusOutlined } from '@ant-design/icons';
 import { EmployeeApi } from '@/lib/employee-api';
 import { getDocumentCoverUrl } from '@/lib/documents-api';
@@ -232,25 +232,31 @@ export default function EmployeeDocumentsList() {
       key: 'actions',
       render: (text: string, record: Document) => (
         <Dropdown
-          overlay={
-            <Menu>
-              <Menu.Item key="view" icon={<EyeOutlined />}>
-                <Link href={`/employee/documents/${record.id}`}>View Details</Link>
-              </Menu.Item>
-              <Menu.Item key="edit" icon={<EditOutlined />} onClick={() => handleEdit(record)}>
-                Edit
-              </Menu.Item>
-              <Menu.Divider />
-              <Menu.Item 
-                key="delete" 
-                icon={<DeleteOutlined />} 
-                danger
-                onClick={() => handleDelete(record.id)}
-              >
-                Delete
-              </Menu.Item>
-            </Menu>
-          }
+          menu={{
+            items: [
+              {
+                key: 'view',
+                icon: <EyeOutlined />,
+                label: <Link href={`/employee/documents/${record.id}`}>View Details</Link>,
+              },
+              {
+                key: 'edit',
+                icon: <EditOutlined />,
+                label: 'Edit',
+                onClick: () => handleEdit(record),
+              },
+              {
+                type: 'divider',
+              },
+              {
+                key: 'delete',
+                icon: <DeleteOutlined />,
+                label: 'Delete',
+                danger: true,
+                onClick: () => handleDelete(record.id),
+              },
+            ],
+          }}
           trigger={['click']}
         >
           <Button type="text" icon={<MoreOutlined />} />

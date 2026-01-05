@@ -320,7 +320,7 @@ const EditDocumentModal: React.FC<EditDocumentModalProps> = ({
       footer={null}
       width={800}
       style={{ zIndex: 1050 }}
-      destroyOnClose
+      destroyOnHidden
       centered
     >
       <Form form={form} layout="vertical" onFinish={handleSave}>
