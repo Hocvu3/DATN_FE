@@ -20,7 +20,7 @@ import {
   UserOutlined,
   CalendarOutlined,
 } from "@ant-design/icons";
-import { apiGet } from "@/lib/api";
+import { DepartmentApi } from "@/lib/department-api";
 
 const { Title, Text } = Typography;
 
@@ -52,9 +52,19 @@ const DepartmentInfoPage = () => {
     setLoading(true);
     setError(null);
     try {
-      const result = await apiGet<any>("/department-info");
-      if (result.data.success && result.data.data) {
-        setDepartmentInfo(result.data.data);
+      const result = await DepartmentApi.getDepartmentInfo();
+      // Handle nested data structure: response.data -> { message: ..., data: ... }
+      if (result.data.success) {
+        // Access nested data.data if it exists (from backend { data: { ... } })
+        // or check if result.data.data contains the info directly
+        const data = result.data.data;
+        const info = (data && 'data' in data) ? data.data : data;
+
+        if (info) {
+          setDepartmentInfo(info);
+        } else {
+          setError("No department data found");
+        }
       } else {
         setError(result.data.message || "Failed to fetch department info");
       }

@@ -51,7 +51,7 @@ export default function DepartmentDocumentsList() {
     limit: 10,
   });
 
-  const { 
+  const {
     showApprovalFlow,
     signatureModalVisible,
     signatures,
@@ -126,7 +126,7 @@ export default function DepartmentDocumentsList() {
       securityLevel: value,
     });
   };
-  
+
   const handleEdit = (document: Document) => {
     setEditingDocument(document);
     setShowEditModal(true);
@@ -205,7 +205,7 @@ export default function DepartmentDocumentsList() {
       render: (_: any, record: Document) => {
         const versionCount = record.versions?.length || 0;
         const latestVersion = record.versions?.find(v => v.isLatest) || record.versions?.[0];
-        
+
         return (
           <div>
             <div className="font-medium">{versionCount} version{versionCount !== 1 ? 's' : ''}</div>
@@ -217,6 +217,13 @@ export default function DepartmentDocumentsList() {
           </div>
         );
       },
+    },
+    {
+      title: 'Department',
+      key: 'department',
+      render: (text: string, record: Document) => (
+        <span>{record.department?.name || 'N/A'}</span>
+      ),
     },
     {
       title: 'Security',
@@ -266,9 +273,9 @@ export default function DepartmentDocumentsList() {
                 Edit
               </Menu.Item>
               <Menu.Divider />
-              <Menu.Item 
-                key="delete" 
-                icon={<DeleteOutlined />} 
+              <Menu.Item
+                key="delete"
+                icon={<DeleteOutlined />}
                 danger
                 onClick={() => handleDelete(record.id)}
               >
@@ -293,8 +300,8 @@ export default function DepartmentDocumentsList() {
               Department Documents
             </Title>
           </div>
-          <Button 
-            type="primary" 
+          <Button
+            type="primary"
             icon={<PlusOutlined />}
             onClick={() => setShowCreateModal(true)}
           >
@@ -303,10 +310,10 @@ export default function DepartmentDocumentsList() {
         </div>
       </div>
 
-      <div style={{ 
-        background: "white", 
-        padding: 16, 
-        marginBottom: 16, 
+      <div style={{
+        background: "white",
+        padding: 16,
+        marginBottom: 16,
         borderRadius: 4,
         boxShadow: "0 1px 3px rgba(0,0,0,0.12)"
       }}>
@@ -318,8 +325,8 @@ export default function DepartmentDocumentsList() {
             style={{ width: 250 }}
             allowClear
           />
-          
-          <Select 
+
+          <Select
             placeholder="Filter by status"
             style={{ width: 180 }}
             allowClear
@@ -329,8 +336,8 @@ export default function DepartmentDocumentsList() {
               <Option key={status} value={status}>{status}</Option>
             ))}
           </Select>
-          
-          <Select 
+
+          <Select
             placeholder="Filter by security"
             style={{ width: 180 }}
             allowClear

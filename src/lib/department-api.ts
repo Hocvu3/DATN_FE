@@ -135,6 +135,7 @@ export const DepartmentApi = {
 
   /**
    * Get department members/users
+   * Pass departmentId to filter by specific department
    */
   getMembers(params?: {
     page?: number;
@@ -142,6 +143,7 @@ export const DepartmentApi = {
     search?: string;
     isActive?: boolean;
     roleId?: string;
+    departmentId?: string;
     sortField?: string;
     sortOrder?: 'ASC' | 'DESC';
   }): Promise<ApiResult<ApiDepartmentMembersResponse>> {
@@ -153,6 +155,7 @@ export const DepartmentApi = {
       if (params.search) queryParams.search = params.search;
       if (params.isActive !== undefined) queryParams.isActive = String(params.isActive);
       if (params.roleId) queryParams.roleId = params.roleId;
+      if (params.departmentId) queryParams.departmentId = params.departmentId;
       if (params.sortField) queryParams.sortField = params.sortField;
       if (params.sortOrder) queryParams.sortOrder = params.sortOrder;
     }
@@ -174,6 +177,7 @@ export const DepartmentApi = {
     firstName?: string;
     lastName?: string;
     isActive?: boolean;
+    departmentId?: string | null;
   }): Promise<ApiResult<any>> {
     return apiPut<any>(`/users/${userId}`, data);
   },
@@ -213,6 +217,36 @@ export const DepartmentApi = {
     return apiPost<any>(`/documents/${id}/reject`, { comment });
   },
 
+  async createMember(data: any) {
+    try {
+      // Use generic users endpoint (backend enforces RLS)
+      const response = await apiPost('/users', data);
+      return response;
+    } catch (error) {
+      console.error('Error creating member:', error);
+      throw error;
+    }
+  },
+
+  async deleteMember(id: string) {
+    try {
+      // Use generic users endpoint (backend enforces RLS)
+      const response = await apiDelete(`/users/${id}`);
+      return response;
+    } catch (error) {
+      console.error('Error deleting member:', error);
+      throw error;
+    }
+  },
+
+  async searchUsers(params: any) {
+    return apiGet('/users', params);
+  },
+
+  async addExistingMember(userId: string, departmentId: string) {
+    return apiPut(`/users/${userId}`, { departmentId });
+  },
+
   /**
    * Get department activity logs
    */
@@ -221,6 +255,7 @@ export const DepartmentApi = {
     limit?: number;
     action?: string;
     userId?: string;
+    userType?: number;
     entityType?: string;
     startDate?: string;
     endDate?: string;
@@ -232,11 +267,20 @@ export const DepartmentApi = {
       if (params.limit) queryParams.limit = params.limit;
       if (params.action) queryParams.action = params.action;
       if (params.userId) queryParams.userId = params.userId;
+      if (params.userType) queryParams.userType = params.userType;
       if (params.entityType) queryParams.entityType = params.entityType;
       if (params.startDate) queryParams.startDate = params.startDate;
       if (params.endDate) queryParams.endDate = params.endDate;
     }
 
     return apiGet<any>('/audit-logs', { params: queryParams });
+  },
+
+  /**
+   * Get current user's department info
+   * Uses /departments/me endpoint which returns department info based on JWT
+   */
+  getDepartmentInfo(): Promise<ApiResult<any>> {
+    return apiGet<any>('/departments/me');
   },
 };

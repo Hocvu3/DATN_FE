@@ -17,6 +17,14 @@ export interface AuditLog {
     username: string;
     firstName: string;
     lastName: string;
+    role?: {
+      id: string;
+      name: string;
+    };
+    department?: {
+      id: string;
+      name: string;
+    };
   };
   document?: {
     id: string;
@@ -51,6 +59,7 @@ export interface GetAuditLogsQueryParams {
   resource?: string;
   resourceId?: string;
   userId?: string;
+  userType?: number;
   ipAddress?: string;
   startDate?: string;
   endDate?: string;

@@ -25,6 +25,7 @@ import {
   UserOutlined,
   CalendarOutlined,
   FileProtectOutlined,
+  AppstoreOutlined,
 } from "@ant-design/icons";
 import { DepartmentApi } from "@/lib/department-api";
 import dynamic from "next/dynamic";
@@ -145,10 +146,10 @@ export default function DepartmentDashboardPage() {
   return (
     <div style={{ padding: 24, background: "#f5f5f5", minHeight: "100vh" }}>
       {contextHolder}
+
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
         <div>
-          <Title level={2} style={{ margin: 0 }}>Department Dashboard</Title>
-          <Text type="secondary">Welcome back, Department Manager</Text>
+          <Title level={4} style={{ margin: 0 }}>Overview</Title>
         </div>
         <Button icon={<ReloadOutlined />} onClick={fetchDashboardData}>
           Refresh
@@ -223,14 +224,14 @@ export default function DepartmentDashboardPage() {
 
       <Row gutter={16} style={{ marginBottom: 24 }}>
         <Col xs={24} lg={16}>
-          <Card title={<Space><FileTextOutlined /><Text strong>Documents Activity (Last 7 Days)</Text></Space>} 
+          <Card title={<Space><FileTextOutlined /><Text strong>Documents Activity (Last 7 Days)</Text></Space>}
             bordered={false} style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.12)", borderRadius: 4 }}>
             <Column {...columnConfig} />
           </Card>
         </Col>
 
         <Col xs={24} lg={8}>
-          <Card title={<Space><FileProtectOutlined /><Text strong>Documents by Status</Text></Space>} 
+          <Card title={<Space><FileProtectOutlined /><Text strong>Documents by Status</Text></Space>}
             bordered={false} style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.12)", borderRadius: 4 }}>
             <Pie {...pieConfig} />
           </Card>
@@ -239,7 +240,7 @@ export default function DepartmentDashboardPage() {
 
       <Row gutter={16}>
         <Col xs={24}>
-          <Card title={<Space><FileTextOutlined /><Text strong>Recent Documents</Text></Space>} 
+          <Card title={<Space><FileTextOutlined /><Text strong>Recent Documents</Text></Space>}
             bordered={false} style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.12)", borderRadius: 4 }}
             extra={<Link href="/department/documents"><Button type="link">View All <EyeOutlined /></Button></Link>}>
             <Table columns={columns} dataSource={stats?.recentDocuments || []} rowKey="id" pagination={false} size="small" />

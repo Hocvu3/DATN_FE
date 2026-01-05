@@ -31,6 +31,8 @@ interface ActivityLog {
   action: string;
   entityType: string;
   entityId: string;
+  resource?: string;
+  details?: any;
   metadata?: any;
   ipAddress?: string;
   userAgent?: string;
@@ -40,6 +42,18 @@ interface ActivityLog {
     firstName: string;
     lastName: string;
     email: string;
+    role?: {
+      id: string;
+      name: string;
+    };
+    department?: {
+      id: string;
+      name: string;
+    };
+  };
+  document?: {
+    id: string;
+    title: string;
   };
 }
 
@@ -52,6 +66,7 @@ const ActivityLogsPage = () => {
   const [pageSize, setPageSize] = useState(10);
   const [searchText, setSearchText] = useState("");
   const [actionFilter, setActionFilter] = useState<string | undefined>(undefined);
+  const [userType, setUserType] = useState<number>(0);
   const [dateRange, setDateRange] = useState<[string, string] | null>(null);
 
   const fetchLogs = useCallback(async () => {
@@ -62,13 +77,22 @@ const ActivityLogsPage = () => {
         page,
         limit: pageSize,
         action: actionFilter,
+        userType: userType !== 0 ? userType : undefined,
         startDate: dateRange?.[0],
         endDate: dateRange?.[1],
       });
 
       if (result.data.success && result.data.data) {
-        setLogs(result.data.data.logs || []);
-        setTotal(result.data.data.total || 0);
+        // Backend returns { data: [], pagination: {} }
+        // result.data.data is that object
+        // So logs are in result.data.data.data
+        const backendData = result.data.data;
+        // Check if 'data' property exists and is array (standard audit log response)
+        // or fall back to 'logs' if that was used before
+        const logsData = (backendData as any).data || (backendData as any).logs || [];
+
+        setLogs(logsData);
+        setTotal(backendData.pagination?.total || (backendData as any).total || 0);
       } else {
         setError(result.data.message || "Failed to fetch activity logs");
       }
@@ -79,7 +103,7 @@ const ActivityLogsPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [page, pageSize, actionFilter, dateRange]);
+  }, [page, pageSize, actionFilter, userType, dateRange]);
 
   useEffect(() => {
     fetchLogs();
@@ -111,13 +135,25 @@ const ActivityLogsPage = () => {
       title: "User",
       dataIndex: "user",
       key: "user",
-      width: 200,
+      width: 250,
       render: (user: any) => (
         <Space>
           <Avatar icon={<UserOutlined />} style={{ backgroundColor: "#1890ff" }} />
           <div>
             <div><Text strong>{user.firstName} {user.lastName}</Text></div>
             <div><Text type="secondary" style={{ fontSize: 12 }}>{user.email}</Text></div>
+            {user.role && (
+              <Space size={4} style={{ marginTop: 4 }}>
+                <Tag color="blue" style={{ fontSize: 10, margin: 0 }}>
+                  {user.role.name}
+                </Tag>
+                {user.department && (
+                  <Tag color="green" style={{ fontSize: 10, margin: 0 }}>
+                    {user.department.name}
+                  </Tag>
+                )}
+              </Space>
+            )}
           </div>
         </Space>
       ),
@@ -147,11 +183,107 @@ const ActivityLogsPage = () => {
       title: "Details",
       dataIndex: "metadata",
       key: "metadata",
+      width: 250,
       render: (metadata: any, record: ActivityLog) => {
+        // Show document title if available
+        if (record.document?.title) {
+          return (
+            <Space direction="vertical" size={0}>
+              <Text strong>{record.document.title}</Text>
+              <Text type="secondary" style={{ fontSize: 11 }}>
+                {record.resource}
+              </Text>
+            </Space>
+          );
+        }
+        
+        // For metadata with documentTitle
         if (metadata?.documentTitle) {
           return <Text>{metadata.documentTitle}</Text>;
         }
-        return <Text type="secondary">Entity ID: {record.entityId}</Text>;
+        
+        // Enhanced display based on action and resource
+        const { action, resource, details } = record;
+        
+        if (action === 'LOGIN') {
+          return (
+            <Space direction="vertical" size={0}>
+              <Text>User logged in</Text>
+              <Text type="secondary" style={{ fontSize: 11 }}>
+                {new Date(record.createdAt).toLocaleTimeString()}
+              </Text>
+            </Space>
+          );
+        }
+        
+        if (action === 'LOGOUT') {
+          return <Text type="secondary">User logged out</Text>;
+        }
+        
+        if (action === 'CREATE') {
+          const resourceName = resource === 'users' ? 'User' : 
+                              resource === 'documents' ? 'Document' : 
+                              resource.slice(0, -1);
+          return (
+            <Space direction="vertical" size={0}>
+              <Text>{resourceName} created</Text>
+              {details?.new_data?.email && (
+                <Text type="secondary" style={{ fontSize: 11 }}>
+                  {details.new_data.email}
+                </Text>
+              )}
+            </Space>
+          );
+        }
+        
+        if (action === 'UPDATE') {
+          const changedFields = details?.changed_fields;
+          if (changedFields && Object.keys(changedFields).length > 0) {
+            const meaningfulFields = Object.keys(changedFields).filter(
+              key => !['updated_at', 'refresh_token_hash'].includes(key)
+            );
+            
+            if (meaningfulFields.length > 0) {
+              return (
+                <Space direction="vertical" size={0}>
+                  <Text>Updated: {meaningfulFields.join(', ')}</Text>
+                  <Text type="secondary" style={{ fontSize: 11 }}>
+                    {resource}
+                  </Text>
+                </Space>
+              );
+            }
+            return <Text type="secondary">Token refresh</Text>;
+          }
+          return <Text>{resource} updated</Text>;
+        }
+        
+        if (action === 'DELETE') {
+          return (
+            <Space direction="vertical" size={0}>
+              <Text type="danger">{resource.slice(0, -1)} deleted</Text>
+              {record.entityId && (
+                <Text type="secondary" style={{ fontSize: 11 }}>
+                  ID: {record.entityId.substring(0, 12)}...
+                </Text>
+              )}
+            </Space>
+          );
+        }
+        
+        if (action === 'APPROVE') {
+          return <Text style={{ color: '#52c41a' }}>Approved</Text>;
+        }
+        
+        if (action === 'REJECT') {
+          return <Text type="danger">Rejected</Text>;
+        }
+        
+        // Fallback
+        if (record.entityId) {
+          return <Text type="secondary">Entity ID: {record.entityId.substring(0, 12)}...</Text>;
+        }
+        return <Text type="secondary">-</Text>;
       },
     },
     {
@@ -221,6 +353,16 @@ const ActivityLogsPage = () => {
               <Select.Option value="DELETE">Delete</Select.Option>
               <Select.Option value="APPROVE">Approve</Select.Option>
               <Select.Option value="REJECT">Reject</Select.Option>
+            </Select>
+            <Select
+              placeholder="Filter by user type"
+              value={userType}
+              onChange={setUserType}
+              style={{ width: 150 }}
+            >
+              <Select.Option value={0}>All Users</Select.Option>
+              <Select.Option value={1}>Managers</Select.Option>
+              <Select.Option value={2}>Employees</Select.Option>
             </Select>
             <RangePicker
               onChange={(dates) => {

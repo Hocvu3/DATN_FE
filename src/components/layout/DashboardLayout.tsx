@@ -243,12 +243,7 @@ export default function DashboardLayout({
           label: <Link href="/department/users">Users</Link>,
           path: "/department/users",
         },
-        {
-          key: "department-info",
-          icon: <AppstoreOutlined />,
-          label: <Link href="/department/department-info">Department</Link>,
-          path: "/department/department-info",
-        },
+
         {
           key: "activity-logs",
           icon: <ClockCircleOutlined />,

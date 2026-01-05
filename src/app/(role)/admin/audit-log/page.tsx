@@ -59,6 +59,7 @@ const AuditLogPage = () => {
   const [searchText, setSearchText] = useState("");
   const [action, setAction] = useState<string | undefined>(undefined);
   const [resource, setResource] = useState<string | undefined>(undefined);
+  const [userType, setUserType] = useState<number>(0);
   const [dateRange, setDateRange] = useState<[Dayjs, Dayjs] | null>(null);
   
   const [pagination, setPagination] = useState({
@@ -96,6 +97,7 @@ const AuditLogPage = () => {
       if (searchText) params.search = searchText;
       if (action) params.action = action;
       if (resource) params.resource = resource;
+      if (userType !== 0) params.userType = userType;
       if (dateRange) {
         params.startDate = dateRange[0].toISOString();
         params.endDate = dateRange[1].toISOString();
@@ -106,9 +108,10 @@ const AuditLogPage = () => {
       console.log("Audit logs response:", response);
       console.log("Response data:", response.data);
       
-      // Handle triple nested response structure: response.data.data.data
-      if (response.data?.data?.data) {
-        const logsData = response.data.data.data;
+      // Handle nested response structure: response.data.data
+      const responseData = response.data as any;
+      if (responseData?.data) {
+        const logsData = responseData.data;
         console.log("Logs array:", logsData);
         console.log("Is array?", Array.isArray(logsData));
         console.log("Length:", logsData.length);
@@ -121,15 +124,15 @@ const AuditLogPage = () => {
           setLogs([]);
         }
         
-        if (response.data.data.pagination) {
+        if (responseData.pagination) {
           setPagination({
-            current: response.data.data.pagination.page || page,
-            pageSize: response.data.data.pagination.limit || pageSize,
-            total: response.data.data.pagination.total || 0,
+            current: responseData.pagination.page || page,
+            pageSize: responseData.pagination.limit || pageSize,
+            total: responseData.pagination.total || 0,
           });
         }
       } else {
-        console.warn("No response.data.data.data found");
+        console.warn("No response.data found");
         setLogs([]);
         message.warning("No audit logs found");
       }
@@ -149,16 +152,15 @@ const AuditLogPage = () => {
       const response = await getAuditLogStats();
       console.log("📊 Stats API response:", response);
       console.log("📊 Response.data:", response.data);
-      console.log("📊 Response.data.data:", response.data?.data);
       
-      // Handle structure: response.data.data.data (API returns {data: {message, data: {stats}}})
-      if (response.data?.data?.data) {
-        const statsData = response.data.data.data;
-        console.log("📊 Stats data to set:", statsData);
-        console.log("📊 totalLogs:", statsData.totalLogs);
-        console.log("📊 last24Hours:", statsData.last24Hours);
-        console.log("📊 last7Days:", statsData.last7Days);
-        console.log("📊 last30Days:", statsData.last30Days);
+      // Handle structure: response.data
+      const statsData = response.data as any;
+      if (statsData?.data) {
+        console.log("📊 Stats data to set:", statsData.data);
+        setStats(statsData.data);
+      } else if (statsData) {
+        // Direct stats object
+        console.log("📊 Stats data (direct):", statsData);
         setStats(statsData);
       } else {
         console.warn("⚠️ No stats data in response");
@@ -225,6 +227,7 @@ const AuditLogPage = () => {
     setSearchText("");
     setAction(undefined);
     setResource(undefined);
+    setUserType(0);
     setDateRange(null);
     setPagination({ ...pagination, current: 1 });
     fetchAuditLogs(1, pagination.pageSize);
@@ -308,22 +311,130 @@ const AuditLogPage = () => {
       ),
     },
     {
-      title: "Resource ID",
+      title: "Details",
       dataIndex: "resourceId",
-      key: "resourceId",
-      width: 150,
-      render: (resourceId: string) => (
-        <Text code copyable style={{ fontSize: 12 }}>
-          {resourceId.substring(0, 12)}...
-        </Text>
-      ),
+      key: "details",
+      width: 250,
+      render: (resourceId: string, record: any) => {
+        // Show document title if available
+        if (record.document?.title) {
+          return (
+            <Space direction="vertical" size={0}>
+              <Tooltip title={`Document: ${record.document.title}`}>
+                <Text ellipsis style={{ maxWidth: 200 }}>
+                  {record.document.title}
+                </Text>
+              </Tooltip>
+              <Text type="secondary" style={{ fontSize: 11 }}>
+                {record.resource}
+              </Text>
+            </Space>
+          );
+        }
+        
+        // Enhanced display based on action and resource
+        const { action, resource, details } = record;
+        
+        if (action === 'LOGIN') {
+          return (
+            <Space direction="vertical" size={0}>
+              <Text>User logged in</Text>
+              <Text type="secondary" style={{ fontSize: 11 }}>
+                {new Date(record.timestamp).toLocaleTimeString()}
+              </Text>
+            </Space>
+          );
+        }
+        
+        if (action === 'LOGOUT') {
+          return <Text type="secondary">User logged out</Text>;
+        }
+        
+        if (action === 'CREATE') {
+          const resourceName = resource === 'users' ? 'User' : 
+                              resource === 'documents' ? 'Document' : 
+                              resource.slice(0, -1);
+          return (
+            <Space direction="vertical" size={0}>
+              <Text>{resourceName} created</Text>
+              {details?.new_data?.email && (
+                <Text type="secondary" style={{ fontSize: 11 }}>
+                  {details.new_data.email}
+                </Text>
+              )}
+              {details?.new_data?.title && (
+                <Text type="secondary" style={{ fontSize: 11 }}>
+                  {details.new_data.title}
+                </Text>
+              )}
+            </Space>
+          );
+        }
+        
+        if (action === 'UPDATE') {
+          const changedFields = details?.changed_fields;
+          if (changedFields && Object.keys(changedFields).length > 0) {
+            const meaningfulFields = Object.keys(changedFields).filter(
+              key => !['updated_at', 'refresh_token_hash'].includes(key)
+            );
+            
+            if (meaningfulFields.length > 0) {
+              return (
+                <Space direction="vertical" size={0}>
+                  <Text>Updated: {meaningfulFields.join(', ')}</Text>
+                  <Text type="secondary" style={{ fontSize: 11 }}>
+                    {resource}
+                  </Text>
+                </Space>
+              );
+            }
+            return <Text type="secondary">Token refresh</Text>;
+          }
+          return <Text>{resource} updated</Text>;
+        }
+        
+        if (action === 'DELETE') {
+          return (
+            <Space direction="vertical" size={0}>
+              <Text type="danger">{resource.slice(0, -1)} deleted</Text>
+              {resourceId && (
+                <Tooltip title={resourceId}>
+                  <Text type="secondary" style={{ fontSize: 11 }}>
+                    ID: {resourceId.substring(0, 12)}...
+                  </Text>
+                </Tooltip>
+              )}
+            </Space>
+          );
+        }
+        
+        if (action === 'APPROVE') {
+          return <Text style={{ color: '#52c41a' }}>Approved</Text>;
+        }
+        
+        if (action === 'REJECT') {
+          return <Text type="danger">Rejected</Text>;
+        }
+        
+        // Fallback
+        if (resourceId) {
+          return (
+            <Tooltip title={resourceId}>
+              <Text code copyable={{ text: resourceId }} style={{ fontSize: 12 }}>
+                {resourceId.substring(0, 12)}...
+              </Text>
+            </Tooltip>
+          );
+        }
+        return <Text type="secondary">-</Text>;
+      },
     },
     {
       title: "User",
       dataIndex: "user",
       key: "user",
-      width: 200,
-      render: (user: AuditLog["user"]) => {
+      width: 250,
+      render: (user: any) => {
         if (!user) {
           return <Text type="secondary">System</Text>;
         }
@@ -335,6 +446,18 @@ const AuditLogPage = () => {
             <Text type="secondary" style={{ fontSize: 12 }}>
               {user.email}
             </Text>
+            {user.role && (
+              <Space size={4}>
+                <Tag color="blue" style={{ fontSize: 10, margin: 0 }}>
+                  {user.role.name}
+                </Tag>
+                {user.department && (
+                  <Tag color="green" style={{ fontSize: 10, margin: 0 }}>
+                    {user.department.name}
+                  </Tag>
+                )}
+              </Space>
+            )}
           </Space>
         );
       },
@@ -466,7 +589,19 @@ const AuditLogPage = () => {
               <Select.Option value="tags">Tags</Select.Option>
             </Select>
           </Col>
-          <Col xs={24} sm={12} lg={6}>
+          <Col xs={24} sm={12} lg={5}>
+            <Select
+              placeholder="Filter by user type"
+              value={userType}
+              onChange={setUserType}
+              style={{ width: "100%" }}
+            >
+              <Select.Option value={0}>All Users</Select.Option>
+              <Select.Option value={1}>Managers</Select.Option>
+              <Select.Option value={2}>Employees</Select.Option>
+            </Select>
+          </Col>
+          <Col xs={24} sm={12} lg={7}>
             <RangePicker
               value={dateRange}
               onChange={(dates) => setDateRange(dates as [Dayjs, Dayjs] | null)}
