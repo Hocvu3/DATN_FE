@@ -223,7 +223,7 @@ const ActivityLogsPage = () => {
         if (action === 'CREATE') {
           const resourceName = resource === 'users' ? 'User' : 
                               resource === 'documents' ? 'Document' : 
-                              resource.slice(0, -1);
+                              (resource ? resource.slice(0, -1) : 'Resource');
           return (
             <Space direction="vertical" size={0}>
               <Text>{resourceName} created</Text>
@@ -261,7 +261,7 @@ const ActivityLogsPage = () => {
         if (action === 'DELETE') {
           return (
             <Space direction="vertical" size={0}>
-              <Text type="danger">{resource.slice(0, -1)} deleted</Text>
+              <Text type="danger">{resource ? resource.slice(0, -1) : 'Resource'} deleted</Text>
               {record.entityId && (
                 <Text type="secondary" style={{ fontSize: 11 }}>
                   ID: {record.entityId.substring(0, 12)}...

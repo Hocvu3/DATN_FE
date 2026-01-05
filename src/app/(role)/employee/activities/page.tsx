@@ -74,10 +74,10 @@ const EmployeeActivitiesPage = () => {
         endDate: dateRange?.[1],
       });
 
-      if (result.data.success && result.data.data) {
+      if (result.data.success && (result.data as any).data) {
         // API returns nested structure: result.data.data.data (array of activities)
-        const activitiesData = result.data.data.data || [];
-        const pagination = result.data.data.pagination || {};
+        const activitiesData = (result.data as any).data.data || [];
+        const pagination = (result.data as any).data.pagination || {};
         setActivities(activitiesData);
         setTotal(pagination.total || 0);
       } else {

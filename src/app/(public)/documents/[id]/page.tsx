@@ -140,6 +140,8 @@ export default function DocumentDetailPage() {
 
   // Load PDF when version changes
   useEffect(() => {
+    let currentUrl: string | null = null;
+
     const loadPdf = async () => {
       if (!selectedVersionId) return;
       
@@ -148,12 +150,13 @@ export default function DocumentDetailPage() {
 
       try {
         // Clean up previous URL
-        if (pdfUrl) {
-          URL.revokeObjectURL(pdfUrl);
+        if (currentUrl) {
+          URL.revokeObjectURL(currentUrl);
         }
 
         const blob = await DocumentsApi.downloadFilePublic(selectedVersion.s3Key);
         const url = URL.createObjectURL(blob);
+        currentUrl = url;
         setPdfUrl(url);
       } catch (error) {
         console.error('Failed to load PDF:', error);
@@ -166,8 +169,8 @@ export default function DocumentDetailPage() {
 
     // Cleanup on unmount
     return () => {
-      if (pdfUrl) {
-        URL.revokeObjectURL(pdfUrl);
+      if (currentUrl) {
+        URL.revokeObjectURL(currentUrl);
       }
     };
   }, [selectedVersionId, versions]);

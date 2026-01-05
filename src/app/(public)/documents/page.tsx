@@ -148,7 +148,7 @@ export default function PublicDocumentsPage() {
         }
 
         setLoading(false);
-      } catch (error) {
+      } catch {
         setDocuments([]);
         setTotal(0);
         setLoading(false);
