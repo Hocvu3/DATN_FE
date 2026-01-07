@@ -4,13 +4,11 @@ import { useState, useEffect, ReactNode, useMemo } from "react";
 import {
   Layout,
   Menu,
-  Button,
   Avatar,
   Dropdown,
-  Badge,
   Drawer,
-  Tooltip,
   Space,
+  Button,
 } from "antd";
 import {
   MenuUnfoldOutlined,
@@ -19,15 +17,12 @@ import {
   DashboardOutlined,
   TeamOutlined,
   TagOutlined,
-  BellOutlined,
   UserOutlined,
   LogoutOutlined,
   AppstoreOutlined,
   SecurityScanOutlined,
   ClockCircleOutlined,
   HomeOutlined,
-  CheckCircleOutlined,
-  ExclamationCircleOutlined,
   SafetyOutlined,
   FolderOutlined,
   DeploymentUnitOutlined,
@@ -41,6 +36,7 @@ import { usePathname } from "next/navigation";
 import { useAuth } from "@/lib/authProvider";
 import { fetchUserProfile, UserProfile } from "@/lib/users-api";
 import Image from "next/image";
+import NotificationBell from "@/components/NotificationBell";
 
 const { Header, Sider, Content, Footer } = Layout;
 
@@ -316,93 +312,6 @@ export default function DashboardLayout({
     },
   ] as any;
 
-  // Notifications dropdown content
-  const notificationsMenuItems = [
-    {
-      key: "notification-header",
-      label: (
-        <div className="px-2 py-2 border-b border-gray-100">
-          <span className="font-medium text-gray-800">Notifications</span>
-        </div>
-      ),
-      disabled: true,
-    },
-    {
-      key: "notification-1",
-      label: (
-        <div className="flex items-start py-2">
-          <Avatar
-            style={{ backgroundColor: "#1890ff" }}
-            icon={<FileTextOutlined />}
-            className="flex-shrink-0 mt-1"
-          />
-          <div className="ml-3 flex-1">
-            <div className="font-medium">New document uploaded</div>
-            <div className="text-gray-500 text-sm">
-              Sarah Johnson uploaded &quot;Q3 Financial Report&quot;
-            </div>
-            <div className="text-gray-400 text-xs mt-1">15 minutes ago</div>
-          </div>
-        </div>
-      ),
-    },
-    {
-      key: "notification-2",
-      label: (
-        <div className="flex items-start py-2">
-          <Avatar
-            style={{ backgroundColor: "#52c41a" }}
-            icon={<CheckCircleOutlined />}
-            className="flex-shrink-0 mt-1"
-          />
-          <div className="ml-3 flex-1">
-            <div className="font-medium">Document approved</div>
-            <div className="text-gray-500 text-sm">
-              Your document &quot;Marketing Strategy&quot; was approved by
-              Michael Chen
-            </div>
-            <div className="text-gray-400 text-xs mt-1">2 hours ago</div>
-          </div>
-        </div>
-      ),
-    },
-    {
-      key: "notification-3",
-      label: (
-        <div className="flex items-start py-2">
-          <Avatar
-            style={{ backgroundColor: "#faad14" }}
-            icon={<ExclamationCircleOutlined />}
-            className="flex-shrink-0 mt-1"
-          />
-          <div className="ml-3 flex-1">
-            <div className="font-medium">Approval requested</div>
-            <div className="text-gray-500 text-sm">
-              David Wilson requests your approval for &quot;System Architecture
-              Documentation&quot;
-            </div>
-            <div className="text-gray-400 text-xs mt-1">Yesterday</div>
-          </div>
-        </div>
-      ),
-    },
-    {
-      type: "divider",
-      key: "divider",
-    },
-    {
-      key: "view-all",
-      label: (
-        <Link
-          href="/notifications"
-          className="text-orange-500 hover:text-orange-700 block text-center"
-        >
-          View all notifications
-        </Link>
-      ),
-    },
-  ] as any;
-
   // Memoize current menu key to prevent infinite re-renders
   const currentMenuKey = useMemo(() => {
     if (!pathname) return "dashboard";
@@ -560,25 +469,8 @@ export default function DashboardLayout({
           </div>
 
           <div className="flex items-center gap-2">
-            {/* Notifications */}
-            <Dropdown
-              menu={{ items: notificationsMenuItems }}
-              trigger={["click"]}
-              placement="bottomRight"
-              arrow
-            >
-              <Tooltip title="Notifications">
-                <Button
-                  type="text"
-                  icon={
-                    <Badge count={3} dot>
-                      <BellOutlined style={{ fontSize: "18px" }} />
-                    </Badge>
-                  }
-                  className="hover:bg-gray-50"
-                />
-              </Tooltip>
-            </Dropdown>
+            {/* Notifications - For all users */}
+            <NotificationBell />
 
             {/* User menu */}
             <Dropdown

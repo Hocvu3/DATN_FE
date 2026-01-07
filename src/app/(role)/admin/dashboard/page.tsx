@@ -205,8 +205,8 @@ export default function AdminDashboardPage() {
       return item?.color || "#ccc";
     },
     label: {
-      type: "outer" as const,
-      formatter: (datum: any) => `${datum.name}: ${datum.count}`,
+      type: "spider" as const,
+      formatter: (datum: any) => `${datum?.name || 'Unknown'}: ${datum?.count || 0}`,
     },
     legend: {
       position: "bottom" as const,
@@ -236,7 +236,7 @@ export default function AdminDashboardPage() {
     label: {
       type: "inner" as const,
       offset: "-30%",
-      formatter: (datum: any) => String(datum.count),
+      formatter: (datum: any) => String(datum?.count || 0),
       style: {
         fontSize: 14,
         fontWeight: "bold",
@@ -257,7 +257,7 @@ export default function AdminDashboardPage() {
     color: ["#1890ff", "#52c41a", "#faad14", "#f5222d", "#722ed1"],
     label: {
       type: "spider" as const,
-      formatter: (datum: any) => `${datum.name}: ${datum.count}`,
+      formatter: (datum: any) => `${datum?.name || 'Unknown'}: ${datum?.count || 0}`,
     },
     legend: {
       position: "bottom" as const,
@@ -268,7 +268,7 @@ export default function AdminDashboardPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
-        <Spin size="large" tip="Loading dashboard..." />
+        <Spin size="large" />
       </div>
     );
   }
@@ -301,7 +301,7 @@ export default function AdminDashboardPage() {
       {/* Stats Cards - Material Design style */}
       <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
         <Col xs={24} sm={12} lg={6}>
-          <Card bordered={false} style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.12)" }}>
+          <Card variant="borderless" style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.12)" }}>
             <Space direction="vertical" size={0} style={{ width: "100%" }}>
               <Text type="secondary" style={{ fontSize: 14 }}>
                 Total Documents
@@ -319,7 +319,7 @@ export default function AdminDashboardPage() {
         </Col>
 
         <Col xs={24} sm={12} lg={6}>
-          <Card bordered={false} style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.12)" }}>
+          <Card variant="borderless" style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.12)" }}>
             <Space direction="vertical" size={0} style={{ width: "100%" }}>
               <Text type="secondary" style={{ fontSize: 14 }}>
                 Total Users
@@ -337,7 +337,7 @@ export default function AdminDashboardPage() {
         </Col>
 
         <Col xs={24} sm={12} lg={6}>
-          <Card bordered={false} style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.12)" }}>
+          <Card variant="borderless" style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.12)" }}>
             <Space direction="vertical" size={0} style={{ width: "100%" }}>
               <Text type="secondary" style={{ fontSize: 14 }}>
                 Pending Approvals
@@ -355,7 +355,7 @@ export default function AdminDashboardPage() {
         </Col>
 
         <Col xs={24} sm={12} lg={6}>
-          <Card bordered={false} style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.12)" }}>
+          <Card variant="borderless" style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.12)" }}>
             <Space direction="vertical" size={0} style={{ width: "100%" }}>
               <Text type="secondary" style={{ fontSize: 14 }}>
                 Departments
@@ -378,7 +378,7 @@ export default function AdminDashboardPage() {
         <Col xs={24} md={8}>
           <Card 
             title="Documents by Status" 
-            bordered={false}
+            variant="borderless"
             style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.12)" }}
           >
             <div style={{ height: 280 }}>
@@ -396,7 +396,7 @@ export default function AdminDashboardPage() {
         <Col xs={24} md={8}>
           <Card 
             title="Users by Status" 
-            bordered={false}
+            variant="borderless"
             style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.12)" }}
           >
             <div style={{ height: 280 }}>
@@ -414,7 +414,7 @@ export default function AdminDashboardPage() {
         <Col xs={24} md={8}>
           <Card 
             title="Top Departments" 
-            bordered={false}
+            variant="borderless"
             style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.12)" }}
           >
             <div style={{ height: 280 }}>
@@ -435,7 +435,7 @@ export default function AdminDashboardPage() {
         <Col xs={24}>
           <Card 
             title="Documents This Week" 
-            bordered={false}
+            variant="borderless"
             style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.12)" }}
           >
             <div style={{ height: 300 }}>
