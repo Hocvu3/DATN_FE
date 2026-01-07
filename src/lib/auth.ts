@@ -93,7 +93,24 @@ export function clearAuth() {
 /**
  * Log out the current user
  */
-export function logout() {
+export async function logout() {
+  try {
+    // Call backend logout API first to send notifications
+    const token = localStorage.getItem(ACCESS_TOKEN_KEY);
+    if (token) {
+      await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/auth/logout`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+    }
+  } catch (error) {
+    console.error('Logout API call failed:', error);
+    // Continue with local logout even if API call fails
+  }
+  
   clearAuth();
 }
 
