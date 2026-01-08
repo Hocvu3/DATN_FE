@@ -100,6 +100,14 @@ export interface DocumentVersion {
     comment: string | null;
     assets: Asset[];
     createdBy?: User;
+    signatureRequests?: Array<{
+        id: string;
+        status: string;
+        signatureType: string;
+        requestedAt: string;
+        expiresAt: string;
+        reason?: string;
+    }> | null;
 }
 
 export interface Tag {

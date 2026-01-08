@@ -39,6 +39,7 @@ import { SignaturesApi, type Signature } from "@/lib/signatures-api";
 import { VersionApi } from "@/lib/version-api";
 import { DocumentStatus } from "@/lib/types/document.types";
 import { SignatureSelectionModal } from "@/components/documents/SignatureSelectionModal";
+import { ApprovalOptionsModal } from "@/components/documents/ApprovalOptionsModal";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 
@@ -95,12 +96,14 @@ export default function AiOcrPage() {
   const [analysisResult, setAnalysisResult] = useState<DocumentAnalysisResult | null>(null);
   
   // Signature modal state
+  const [approvalOptionsModalVisible, setApprovalOptionsModalVisible] = useState(false);
   const [signatureModalVisible, setSignatureModalVisible] = useState(false);
   const [signatures, setSignatures] = useState<Signature[]>([]);
   const [selectedSignatureId, setSelectedSignatureId] = useState<string | undefined>();
   const [loadingSignatures, setLoadingSignatures] = useState(false);
   const [approving, setApproving] = useState(false);
   const [versionToApprove, setVersionToApprove] = useState<DocumentVersion | null>(null);
+  const [watermarkOnlyMode, setWatermarkOnlyMode] = useState(false);
 
   useEffect(() => {
     if (activeTab === "pending") {
@@ -267,6 +270,25 @@ export default function AiOcrPage() {
       return;
     }
 
+    // Validate file format before analysis
+    const fileUrl = version.s3Url;
+    const fileExtension = fileUrl.split('.').pop()?.toLowerCase().split('?')[0]; // Remove query params
+    const supportedFormats = ['pdf', 'png', 'jpg', 'jpeg', 'tiff', 'tif'];
+    
+    if (!fileExtension || !supportedFormats.includes(fileExtension)) {
+      modal.error({
+        title: 'Unsupported File Format',
+        content: (
+          <div>
+            <p>AI OCR cannot analyze <strong>.{fileExtension || 'unknown'}</strong> files.</p>
+            <p><strong>Supported formats:</strong> {supportedFormats.join(', ').toUpperCase()}</p>
+            <p style={{ marginTop: 12 }}>Please convert your document to PDF or image format before analyzing.</p>
+          </div>
+        ),
+      });
+      return;
+    }
+
     // Show PDF immediately and start analysis
     setSelectedVersion(version);
     setAnalysisResult(null);
@@ -295,82 +317,119 @@ export default function AiOcrPage() {
 
   // Approve/Reject handlers - using new OCR API endpoints
   const handleApprove = async (version: DocumentVersion) => {
-    modal.confirm({
-      title: 'Apply Stamp and Digital Sign?',
-      content: 'Do you want to apply stamp and digital signature now?',
-      okText: 'Proceed',
-      cancelText: 'Skip',
-      onOk: async () => {
-        // User chose to proceed with stamp
-        setVersionToApprove(version);
-        setSelectedSignatureId(undefined);
-        setSignatureModalVisible(true);
-        
-        // Load signatures
-        try {
-          setLoadingSignatures(true);
-          const result = await SignaturesApi.getActive();
-          const responseData = result.data as any;
-          const signaturesData = responseData?.data || responseData || [];
-          setSignatures(Array.isArray(signaturesData) ? signaturesData : []);
-        } catch (error) {
-          messageApi.error("Failed to load signature stamps");
-          setSignatures([]);
-        } finally {
-          setLoadingSignatures(false);
-        }
-      },
-      onCancel: async () => {
-        // User chose to skip - use OCR approve API without stamp
-        try {
-          await approveDocumentOcr(version.document.id, {
-            reason: 'Approved after AI analysis',
-          });
-          messageApi.success(`Version ${version.versionNumber} approved successfully!`);
-          
-          // Close drawer and refresh
-          setDrawerVisible(false);
-          setSelectedVersion(null);
-          setAnalysisResult(null);
-          setVersionToApprove(null);
-          
-          fetchPendingVersions(); // Refresh list
-        } catch (error) {
-          messageApi.error('Failed to approve version: ' + (error instanceof Error ? error.message : 'Unknown error'));
-        }
-      },
-    });
+    setVersionToApprove(version);
+    setApprovalOptionsModalVisible(true);
+  };
+
+  // Handle Skip - approve without signature or watermark
+  const handleSkipApproval = async () => {
+    if (!versionToApprove) return;
+    
+    try {
+      setApprovalOptionsModalVisible(false);
+      await approveDocumentOcr(versionToApprove.document.id, {
+        reason: 'Approved after AI analysis',
+      });
+      messageApi.success(`Version ${versionToApprove.versionNumber} approved successfully!`);
+      
+      // Close drawer and refresh
+      setDrawerVisible(false);
+      setSelectedVersion(null);
+      setAnalysisResult(null);
+      setVersionToApprove(null);
+      
+      fetchPendingVersions(); // Refresh list
+    } catch (error) {
+      messageApi.error('Failed to approve version: ' + (error instanceof Error ? error.message : 'Unknown error'));
+    }
+  };
+
+  // Handle Watermark Only - show watermark selection
+  const handleWatermarkOnly = async () => {
+    setApprovalOptionsModalVisible(false);
+    setWatermarkOnlyMode(true); // Set mode to watermark only (don't approve)
+    setSelectedSignatureId(undefined);
+    setSignatureModalVisible(true);
+    
+    // Load watermarks
+    try {
+      setLoadingSignatures(true);
+      const result = await SignaturesApi.getActive();
+      const responseData = result.data as any;
+      const signaturesData = responseData?.data || responseData || [];
+      setSignatures(Array.isArray(signaturesData) ? signaturesData : []);
+    } catch (error) {
+      messageApi.error("Failed to load watermarks");
+      setSignatures([]);
+    } finally {
+      setLoadingSignatures(false);
+    }
+  };
+
+  // Handle Apply All - show watermark selection for full approval
+  const handleApplyAll = async () => {
+    setApprovalOptionsModalVisible(false);
+    setWatermarkOnlyMode(false); // Set mode to apply all (watermark + approve)
+    setSelectedSignatureId(undefined);
+    setSignatureModalVisible(true);
+    
+    // Load watermarks
+    try {
+      setLoadingSignatures(true);
+      const result = await SignaturesApi.getActive();
+      const responseData = result.data as any;
+      const signaturesData = responseData?.data || responseData || [];
+      setSignatures(Array.isArray(signaturesData) ? signaturesData : []);
+    } catch (error) {
+      messageApi.error("Failed to load watermarks");
+      setSignatures([]);
+    } finally {
+      setLoadingSignatures(false);
+    }
   };
 
   const handleApproveWithSignature = async () => {
     if (!selectedSignatureId || !versionToApprove) {
-      messageApi.error('Please select a signature');
+      messageApi.error('Please select a watermark');
       return;
     }
 
     try {
       setApproving(true);
       
-      // Use OCR approve API with signature stamp
-      await approveDocumentOcr(versionToApprove.document.id, {
+      // Apply watermark using stamps/apply API
+      await SignaturesApi.applySignature({
+        documentId: versionToApprove.document.id,
+        documentVersionId: versionToApprove.id,
         signatureStampId: selectedSignatureId,
-        reason: 'Approved after AI analysis with digital signature',
-        type: 2, // stamp with hash
+        reason: watermarkOnlyMode ? 'Watermark applied without approval' : 'Watermark applied during approval',
+        type: watermarkOnlyMode ? 2 : 0, // 2 = watermark only, 0 = apply all
       });
 
-      messageApi.success(`Version ${versionToApprove.versionNumber} approved successfully with signature!`);
+      if (watermarkOnlyMode) {
+        // Watermark only - don't approve the version
+        messageApi.success(`Watermark applied to Version ${versionToApprove.versionNumber}`);
+      } else {
+        // Apply All - approve the version after watermark
+        await approveDocumentOcr(versionToApprove.document.id, {
+          signatureStampId: selectedSignatureId,
+          reason: 'Approved after AI analysis with watermark',
+        });
+        messageApi.success(`Version ${versionToApprove.versionNumber} approved successfully with watermark!`);
+      }
       
       // Close everything and refresh
       setSignatureModalVisible(false);
       setVersionToApprove(null);
       setSelectedSignatureId(undefined);
+      setWatermarkOnlyMode(false);
       setDrawerVisible(false);
       setSelectedVersion(null);
       setAnalysisResult(null);
       
       fetchPendingVersions(); // Refresh list
     } catch (error) {
-      messageApi.error('Failed to approve version: ' + (error instanceof Error ? error.message : 'Unknown error'));
+      messageApi.error('Failed to apply watermark: ' + (error instanceof Error ? error.message : 'Unknown error'));
     } finally {
       setApproving(false);
     }
@@ -504,21 +563,32 @@ export default function AiOcrPage() {
       key: "action",
       width: 150,
       fixed: 'right' as const,
-      render: (_: any, record: DocumentVersion) => (
-        <Button
-          type="primary"
-          icon={<ThunderboltOutlined />}
-          onClick={() => {
-            handleAnalyze(record);
-            if (isPending) {
-              setVersionToApprove(record);
-            }
-          }}
-          size="small"
-        >
-          AI Summary
-        </Button>
-      ),
+      render: (_: any, record: DocumentVersion) => {
+        const fileExtension = record.s3Url?.split('.').pop()?.toLowerCase().split('?')[0];
+        const supportedFormats = ['pdf', 'png', 'jpg', 'jpeg', 'tiff', 'tif'];
+        const isSupported = fileExtension && supportedFormats.includes(fileExtension);
+        
+        return (
+          <Tooltip 
+            title={!isSupported ? `Unsupported format (.${fileExtension}). Only ${supportedFormats.join(', ').toUpperCase()} files can be analyzed.` : ''}
+          >
+            <Button
+              type="primary"
+              icon={<ThunderboltOutlined />}
+              onClick={() => {
+                handleAnalyze(record);
+                if (isPending) {
+                  setVersionToApprove(record);
+                }
+              }}
+              disabled={!isSupported}
+              size="small"
+            >
+              AI Summary
+            </Button>
+          </Tooltip>
+        );
+      },
     },
   ];
 
@@ -835,6 +905,18 @@ export default function AiOcrPage() {
           </div>
         </div>
       </Drawer>
+
+      {/* Approval Options Modal */}
+      <ApprovalOptionsModal
+        visible={approvalOptionsModalVisible}
+        onClose={() => {
+          setApprovalOptionsModalVisible(false);
+          setVersionToApprove(null);
+        }}
+        onSkip={handleSkipApproval}
+        onWatermarkOnly={handleWatermarkOnly}
+        onApplyAll={handleApplyAll}
+      />
 
       {/* Signature Selection Modal */}
       <SignatureSelectionModal

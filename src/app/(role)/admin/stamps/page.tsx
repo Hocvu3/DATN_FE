@@ -198,7 +198,7 @@ const StampsPage = () => {
     if (requestSearchText) {
       const searchLower = requestSearchText.toLowerCase();
       filtered = filtered.filter(req => {
-        if (!req || !req.documentVersion) return false;
+        if (!req || !req.documentVersion || !req.documentVersion.document) return false;
         
         const title = req.documentVersion.document.title?.toLowerCase() || '';
         const documentNumber = req.documentVersion.document.documentNumber?.toLowerCase() || '';
@@ -332,7 +332,7 @@ const StampsPage = () => {
       } else {
         // Create new stamp - need to upload image first
         if (!values.imageFile) {
-          messageApi.error("Please upload a stamp image", 3);
+          messageApi.error("Please upload a watermark image", 3);
           return;
         }
         
@@ -342,16 +342,27 @@ const StampsPage = () => {
           values.imageFile.type
         );
         
-        const uploadData = presignedResponse.data;
+        // Extract upload data from nested response structure
+        const uploadData = (presignedResponse.data as any)?.data || presignedResponse.data;
+        
+        if (!uploadData.presignedUrl || !uploadData.key || !uploadData.publicUrl) {
+          messageApi.error("Failed to get upload URL", 3);
+          return;
+        }
         
         // Upload to S3
-        await fetch(uploadData.presignedUrl, {
+        const uploadResponse = await fetch(uploadData.presignedUrl, {
           method: 'PUT',
           body: values.imageFile,
           headers: {
             'Content-Type': values.imageFile.type,
           },
         });
+        
+        if (!uploadResponse.ok) {
+          messageApi.error(`Failed to upload image: ${uploadResponse.statusText}`, 3);
+          return;
+        }
         
         // Create stamp record
         await SignaturesApi.create({
@@ -374,42 +385,51 @@ const StampsPage = () => {
   };
 
   const handleApplyStamp = async (values: { signatureStampId: string; reason?: string }) => {
-    if (!selectedDocument) return;
+    if (!selectedDocument || !selectedDocument.document) {
+      messageApi.error("Invalid document data", 3);
+      return;
+    }
 
     try {
-      await SignaturesApi.applySignature({
+      // Use the /api/stamps/apply endpoint
+      await apiPost('/stamps/apply', {
         documentId: selectedDocument.document.id,
         signatureStampId: values.signatureStampId,
-        reason: values.reason,
-        type: 1, // Type 1 for stamps tab (no hash)
+        reason: values.reason || 'Watermark applied',
       });
       
-      messageApi.success("Stamp applied successfully!", 3);
+      messageApi.success("Watermark applied successfully!", 3);
       setApplyStampModalVisible(false);
       applyStampForm.resetFields();
+      setSelectedDocument(null);
       fetchDocuments();
     } catch (error: any) {
-      messageApi.error(error?.response?.data?.message || "Failed to apply stamp", 3);
+      console.error("Apply watermark error:", error);
+      messageApi.error(error?.response?.data?.message || "Failed to apply watermark", 3);
     }
   };
 
   const handleApplyRequestStamp = async (values: { signatureStampId: string; reason?: string }) => {
-    if (!selectedRequest) return;
+    if (!selectedRequest || !selectedRequest.documentVersion || !selectedRequest.document) {
+      messageApi.error("Invalid signature request data", 3);
+      return;
+    }
 
     try {
-      await SignaturesApi.applySignature({
-        documentId: selectedRequest.documentVersion.document.id,
+      // Use the /api/stamps/apply endpoint
+      await apiPost('/stamps/apply', {
+        documentId: selectedRequest.document.id,
         signatureStampId: values.signatureStampId,
-        reason: values.reason || 'Stamp applied to signature request',
-        type: 2, // Type 2 for signature requests (with hash)
+        reason: values.reason || 'Watermark applied to signature request',
       });
       
-      messageApi.success("Stamp applied to signature request successfully!", 3);
+      messageApi.success("Watermark applied to signature request successfully!", 3);
       setApplyRequestStampModalVisible(false);
       setSelectedRequest(null);
       fetchSignatureRequests();
     } catch (error: any) {
-      messageApi.error(error?.response?.data?.message || "Failed to apply stamp", 3);
+      console.error("Apply watermark error:", error);
+      messageApi.error(error?.response?.data?.message || "Failed to apply watermark", 3);
     }
   };
 
@@ -492,7 +512,7 @@ const StampsPage = () => {
             Edit
           </Button>
           <Popconfirm
-            title="Delete Stamp"
+            title="Delete Watermark"
             description="Are you sure you want to delete this stamp?"
             onConfirm={() => handleDeleteStamp(record.id)}
             okText="Yes"
@@ -544,19 +564,6 @@ const StampsPage = () => {
       },
     },
     {
-      title: "Creator",
-      dataIndex: ["document", "creator"],
-      key: "creator",
-      render: (creator: any) => (
-        <Space direction="vertical" size="small">
-          <Text>{creator?.firstName && creator?.lastName ? `${creator.firstName} ${creator.lastName}` : "N/A"}</Text>
-          <Text type="secondary" style={{ fontSize: "12px" }}>
-            {creator?.email || "N/A"}
-          </Text>
-        </Space>
-      ),
-    },
-    {
       title: "Created Date",
       dataIndex: "createdAt",
       key: "createdAt",
@@ -587,19 +594,11 @@ const StampsPage = () => {
           size="small"
           icon={<SafetyCertificateOutlined />}
           onClick={() => {
-            Modal.confirm({
-              title: 'Sign and Stamping?',
-              content: 'Do you want to sign and stamp this document?',
-              okText: 'Yes',
-              cancelText: 'Skip',
-              onOk() {
-                setSelectedDocument(record);
-                setApplyStampModalVisible(true);
-              },
-            });
+            setSelectedDocument(record);
+            setApplyStampModalVisible(true);
           }}
         >
-          Apply Stamp
+          Apply Watermark
         </Button>
       ),
     },
@@ -609,7 +608,7 @@ const StampsPage = () => {
   const requestColumns = [
     {
       title: "Document",
-      dataIndex: ["document"],
+      dataIndex: "document",
       key: "document",
       render: (doc: any) => (
         <Space direction="vertical" size="small">
@@ -677,7 +676,7 @@ const StampsPage = () => {
             setApplyRequestStampModalVisible(true);
           }}
         >
-          Apply Stamp
+          Apply Watermark
         </Button>
       ),
     },
@@ -688,10 +687,10 @@ const StampsPage = () => {
       {contextHolder}
       <div style={{ marginBottom: "24px" }}>
         <Title level={2}>
-          <SafetyCertificateOutlined /> Stamps
+          <SafetyCertificateOutlined /> Watermarks
         </Title>
         <Text type="secondary">
-          Manage signature stamps and apply them to documents
+          Manage signature watermarks and apply them to documents
         </Text>
       </div>
 
@@ -701,12 +700,12 @@ const StampsPage = () => {
         items={[
           {
             key: 'library',
-            label: 'Stamp Library',
+            label: 'Watermark Library',
             children: (
-              <Card title="Signature Stamps">
+              <Card title="Watermarks">
                 <Space style={{ marginBottom: 16, width: '100%', justifyContent: 'space-between' }}>
                   <Search
-                    placeholder="Search stamps by name or description..."
+                    placeholder="Search watermarks by name or description..."
                     allowClear
                     style={{ width: 350 }}
                     prefix={<SearchOutlined />}
@@ -722,7 +721,7 @@ const StampsPage = () => {
                       setStampModalVisible(true);
                     }}
                   >
-                    Create Stamp
+                    Create Watermark
                   </Button>
                 </Space>
 
@@ -734,7 +733,7 @@ const StampsPage = () => {
                   pagination={{
                     pageSize: 10,
                     showSizeChanger: true,
-                    showTotal: (total) => `Total ${total} stamps`,
+                    showTotal: (total) => `Total ${total} watermarks`,
                   }}
                 />
               </Card>
@@ -744,7 +743,7 @@ const StampsPage = () => {
             key: 'documents',
             label: 'All',
             children: (
-              <Card title="Documents Available for Stamping">
+              <Card title="Documents Available for Watermarking">
                 <Space style={{ marginBottom: 16, width: '100%', justifyContent: 'space-between' }}>
                   <Space>
                     <Search
@@ -835,7 +834,7 @@ const StampsPage = () => {
 
       {/* Create/Edit Stamp Modal */}
       <Modal
-        title={editingStamp ? "Edit Stamp" : "Create Stamp"}
+        title={editingStamp ? "Edit Watermark" : "Create Watermark"}
         open={stampModalVisible}
         onCancel={() => {
           setStampModalVisible(false);
@@ -847,11 +846,11 @@ const StampsPage = () => {
       >
         <Form form={stampForm} onFinish={handleCreateOrUpdateStamp} layout="vertical">
           <Form.Item
-            label="Stamp Name"
+            label="Watermark Name"
             name="name"
-            rules={[{ required: true, message: "Please enter stamp name" }]}
+            rules={[{ required: true, message: "Please enter watermark name" }]}
           >
-            <Input placeholder="Enter stamp name" />
+            <Input placeholder="Enter watermark name" />
           </Form.Item>
 
           <Form.Item
@@ -860,15 +859,15 @@ const StampsPage = () => {
           >
             <Input.TextArea
               rows={3}
-              placeholder="Enter stamp description (optional)"
+              placeholder="Enter watermark description (optional)"
             />
           </Form.Item>
 
           {!editingStamp && (
             <Form.Item
-              label="Stamp Image"
+              label="Watermark Image"
               name="imageFile"
-              rules={[{ required: true, message: "Please upload stamp image" }]}
+              rules={[{ required: true, message: "Please upload watermark image" }]}
               valuePropName="file"
               getValueFromEvent={(e) => {
                 if (Array.isArray(e)) {
@@ -921,7 +920,7 @@ const StampsPage = () => {
           <Form.Item>
             <Space>
               <Button type="primary" htmlType="submit" icon={<PlusOutlined />}>
-                {editingStamp ? "Update Stamp" : "Create Stamp"}
+                {editingStamp ? "Update Watermark" : "Create Watermark"}
               </Button>
               <Button
                 onClick={() => {
@@ -937,9 +936,9 @@ const StampsPage = () => {
         </Form>
       </Modal>
 
-      {/* Apply Stamp Modal */}
+      {/* Apply Watermark Modal */}
       <Modal
-        title="Apply Stamp to Document"
+        title="Apply Watermark to Document"
         open={applyStampModalVisible}
         onCancel={() => {
           setApplyStampModalVisible(false);
@@ -967,12 +966,12 @@ const StampsPage = () => {
 
             <Form form={applyStampForm} onFinish={handleApplyStamp} layout="vertical">
               <Form.Item
-                label="Select Stamp"
+                label="Select Watermark"
                 name="signatureStampId"
-                rules={[{ required: true, message: "Please select a stamp" }]}
+                rules={[{ required: true, message: "Please select a watermark" }]}
               >
                 <Select
-                  placeholder="Choose a signature stamp"
+                  placeholder="Choose a signature watermark"
                   showSearch
                   optionFilterProp="children"
                 >
@@ -1000,14 +999,14 @@ const StampsPage = () => {
               >
                 <Input.TextArea
                   rows={3}
-                  placeholder="Add a reason for applying this stamp..."
+                  placeholder="Add a reason for applying this watermark..."
                 />
               </Form.Item>
 
               <Form.Item>
                 <Space>
                   <Button type="primary" htmlType="submit" icon={<SafetyCertificateOutlined />}>
-                    Apply Stamp
+                    Apply Watermark
                   </Button>
                   <Button
                     onClick={() => {
@@ -1024,9 +1023,9 @@ const StampsPage = () => {
         )}
       </Modal>
 
-      {/* Apply Stamp to Request Modal */}
+      {/* Apply Watermark to Request Modal */}
       <Modal
-        title="Apply Stamp to Signature Request"
+        title="Apply Watermark to Signature Request"
         open={applyRequestStampModalVisible}
         onCancel={() => {
           setApplyRequestStampModalVisible(false);
@@ -1035,12 +1034,12 @@ const StampsPage = () => {
         footer={null}
         width={600}
       >
-        {selectedRequest && (
+        {selectedRequest && selectedRequest.documentVersion && selectedRequest.document && (
           <>
             <Space direction="vertical" style={{ marginBottom: 16, width: '100%' }}>
               <div>
                 <Text strong>Document: </Text>
-                <Text>{selectedRequest.documentVersion.document.title}</Text>
+                <Text>{selectedRequest.document.title}</Text>
               </div>
               <div>
                 <Text strong>Version: </Text>
@@ -1048,7 +1047,7 @@ const StampsPage = () => {
               </div>
               <div>
                 <Text strong>Document Number: </Text>
-                <Text>{selectedRequest.documentVersion.document.documentNumber}</Text>
+                <Text>{selectedRequest.document.documentNumber}</Text>
               </div>
               <div>
                 <Text strong>Status: </Text>
@@ -1063,12 +1062,12 @@ const StampsPage = () => {
 
             <Form onFinish={handleApplyRequestStamp} layout="vertical">
               <Form.Item
-                label="Select Stamp"
+                label="Select Watermark"
                 name="signatureStampId"
-                rules={[{ required: true, message: "Please select a stamp" }]}
+                rules={[{ required: true, message: "Please select a watermark" }]}
               >
                 <Select
-                  placeholder="Choose a signature stamp"
+                  placeholder="Choose a signature watermark"
                   showSearch
                   optionFilterProp="children"
                 >
@@ -1096,14 +1095,14 @@ const StampsPage = () => {
               >
                 <Input.TextArea
                   rows={3}
-                  placeholder="Add a reason for applying this stamp..."
+                  placeholder="Add a reason for applying this watermark..."
                 />
               </Form.Item>
 
               <Form.Item>
                 <Space>
                   <Button type="primary" htmlType="submit" icon={<SafetyCertificateOutlined />}>
-                    Apply Stamp
+                    Apply Watermark
                   </Button>
                   <Button
                     onClick={() => {

@@ -15,6 +15,7 @@ import EditDocumentModal from '@/components/documents/EditDocumentModal';
 import { VersionTimeline } from '@/components/documents/VersionTimeline';
 import { VersionComparison } from '@/components/documents/VersionComparison';
 import { SignatureSelectionModal, SignatureStamp } from '@/components/documents/SignatureSelectionModal';
+import { ApprovalOptionsModal } from '@/components/documents/ApprovalOptionsModal';
 import { Document as PDFDocument, Page, pdfjs } from 'react-pdf';
 import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
 import 'react-pdf/dist/esm/Page/TextLayer.css';
@@ -66,12 +67,14 @@ export default function DocumentDetail({ documentId }: DocumentDetailProps) {
   const [compareVersions, setCompareVersions] = useState<[DocumentVersion | null, DocumentVersion | null]>([null, null]);
   
   // Signature approval states
+  const [approvalOptionsModalVisible, setApprovalOptionsModalVisible] = useState<boolean>(false);
   const [signatureModalVisible, setSignatureModalVisible] = useState<boolean>(false);
   const [signatures, setSignatures] = useState<SignatureStamp[]>([]);
   const [loadingSignatures, setLoadingSignatures] = useState<boolean>(false);
   const [approving, setApproving] = useState<boolean>(false);
   const [selectedSignatureId, setSelectedSignatureId] = useState<string>();
   const [versionToApprove, setVersionToApprove] = useState<DocumentVersion | null>(null);
+  const [watermarkOnlyMode, setWatermarkOnlyMode] = useState<boolean>(false);
 
   const fetchDocument = useCallback(async () => {
     setLoading(true);
@@ -245,70 +248,109 @@ export default function DocumentDetail({ documentId }: DocumentDetailProps) {
     });
   };
 
-  // Handle approve version - show confirmation modal first
+  // Handle approve version - show approval options modal
   const handleApproveVersion = async (version: DocumentVersion) => {
-    modal.confirm({
-      title: 'Apply Stamp and Digital Sign?',
-      content: 'Do you want to apply stamp and digital signature now?',
-      okText: 'Proceed',
-      cancelText: 'Skip',
-      onOk: async () => {
-        // User chose to proceed with stamp
-        setVersionToApprove(version);
-        setSelectedSignatureId(undefined);
-        setSignatureModalVisible(true);
-        
-        // Load signatures
-        try {
-          setLoadingSignatures(true);
-          const result = await SignaturesApi.getActive();
-          const responseData = result.data as any;
-          const signaturesData = responseData?.data || responseData || [];
-          setSignatures(Array.isArray(signaturesData) ? signaturesData : []);
-        } catch (error) {
-          message.error("Failed to load signature stamps");
-          setSignatures([]);
-        } finally {
-          setLoadingSignatures(false);
-        }
-      },
-      onCancel: async () => {
-        // User chose to skip - just approve without stamp
-        try {
-          await VersionApi.approveVersion(documentId, version.id, {});
-          message.success(`Version ${version.versionNumber} approved successfully`);
-          fetchDocument(); // Refresh document
-        } catch (error) {
-          message.error('Failed to approve version: ' + (error instanceof Error ? error.message : 'Unknown error'));
-        }
-      },
-    });
+    setVersionToApprove(version);
+    setApprovalOptionsModalVisible(true);
   };
 
-  // Handle approve with signature
+  // Handle Skip - approve without signature or watermark
+  const handleSkipApproval = async () => {
+    if (!versionToApprove) return;
+    
+    try {
+      setApprovalOptionsModalVisible(false);
+      await VersionApi.approveVersion(documentId, versionToApprove.id, {});
+      message.success(`Version ${versionToApprove.versionNumber} approved successfully`);
+      setVersionToApprove(null);
+      fetchDocument(); // Refresh document
+    } catch (error) {
+      message.error('Failed to approve version: ' + (error instanceof Error ? error.message : 'Unknown error'));
+    }
+  };
+
+  // Handle Watermark Only - show watermark selection
+  const handleWatermarkOnly = async () => {
+    setApprovalOptionsModalVisible(false);
+    setWatermarkOnlyMode(true); // Set mode to watermark only (don't approve)
+    setSelectedSignatureId(undefined);
+    setSignatureModalVisible(true);
+    
+    // Load watermarks
+    try {
+      setLoadingSignatures(true);
+      const result = await SignaturesApi.getActive();
+      const responseData = result.data as any;
+      const signaturesData = responseData?.data || responseData || [];
+      setSignatures(Array.isArray(signaturesData) ? signaturesData : []);
+    } catch (error) {
+      message.error("Failed to load watermarks");
+      setSignatures([]);
+    } finally {
+      setLoadingSignatures(false);
+    }
+  };
+
+  // Handle Apply All - show watermark selection for full approval
+  const handleApplyAll = async () => {
+    setApprovalOptionsModalVisible(false);
+    setWatermarkOnlyMode(false); // Set mode to apply all (watermark + approve)
+    setSelectedSignatureId(undefined);
+    setSignatureModalVisible(true);
+    
+    // Load watermarks
+    try {
+      setLoadingSignatures(true);
+      const result = await SignaturesApi.getActive();
+      const responseData = result.data as any;
+      const signaturesData = responseData?.data || responseData || [];
+      setSignatures(Array.isArray(signaturesData) ? signaturesData : []);
+    } catch (error) {
+      message.error("Failed to load watermarks");
+      setSignatures([]);
+    } finally {
+      setLoadingSignatures(false);
+    }
+  };
+
+  // Handle approve with watermark
   const handleApproveWithSignature = async () => {
     if (!selectedSignatureId || !versionToApprove) {
-      message.error('Please select a signature');
+      message.error('Please select a watermark');
       return;
     }
 
     try {
       setApproving(true);
       
-      // Approve version with signature stamp
-      await VersionApi.approveVersion(
-        documentId,
-        versionToApprove.id,
-        { signatureStampId: selectedSignatureId }
-      );
+      // Apply watermark using stamps/apply API
+      await SignaturesApi.applySignature({
+        documentId: documentId,
+        signatureStampId: selectedSignatureId,
+        reason: watermarkOnlyMode ? 'Watermark applied without approval' : 'Watermark applied during approval',
+        type: 2, // watermark with hash
+      });
 
-      message.success(`Version ${versionToApprove.versionNumber} approved successfully with signature`);
+      if (watermarkOnlyMode) {
+        // Watermark only - don't approve the version
+        message.success(`Watermark applied to Version ${versionToApprove.versionNumber}`);
+      } else {
+        // Apply All - approve the version after watermark
+        await VersionApi.approveVersion(
+          documentId,
+          versionToApprove.id,
+          { signatureStampId: selectedSignatureId }
+        );
+        message.success(`Version ${versionToApprove.versionNumber} approved successfully with watermark`);
+      }
+
       setSignatureModalVisible(false);
       setVersionToApprove(null);
       setSelectedSignatureId(undefined);
+      setWatermarkOnlyMode(false);
       fetchDocument(); // Refresh document
     } catch (error) {
-      message.error('Failed to approve version: ' + (error instanceof Error ? error.message : 'Unknown error'));
+      message.error('Failed to apply watermark: ' + (error instanceof Error ? error.message : 'Unknown error'));
     } finally {
       setApproving(false);
     }
@@ -881,6 +923,18 @@ export default function DocumentDetail({ documentId }: DocumentDetailProps) {
           />
         )}
       </Modal>
+
+      {/* Approval Options Modal */}
+      <ApprovalOptionsModal
+        visible={approvalOptionsModalVisible}
+        onClose={() => {
+          setApprovalOptionsModalVisible(false);
+          setVersionToApprove(null);
+        }}
+        onSkip={handleSkipApproval}
+        onWatermarkOnly={handleWatermarkOnly}
+        onApplyAll={handleApplyAll}
+      />
 
       {/* Signature Approval Modal */}
       <SignatureSelectionModal

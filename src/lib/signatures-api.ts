@@ -46,6 +46,7 @@ export interface SignaturesResponse {
 
 export interface ApplySignatureDto {
   documentId: string;
+  documentVersionId?: string;
   signatureStampId: string;
   reason?: string;
   type?: number; // 1 = stamp only, 2 = stamp with hash
@@ -183,5 +184,43 @@ export const SignaturesApi = {
         totalPages: number;
       };
     }>('/stamps/requests', { params: params as any });
+  },
+
+  /**
+   * Get signature requests (general endpoint)
+   */
+  async getAllSignatureRequests(params?: {
+    documentVersionId?: string;
+    status?: string;
+    page?: number;
+    limit?: number;
+  }) {
+    return apiGet<{
+      requests: any[];
+      total: number;
+      page: number;
+      limit: number;
+    }>('/signatures/requests', { params: params as any });
+  },
+
+  /**
+   * Create a signature request for a document version
+   */
+  async createSignatureRequest(data: {
+    documentVersionId: string;
+    signatureType: string;
+    expiresAt: string;
+    reason?: string;
+  }) {
+    return apiPost<any>('/signatures/requests', data);
+  },
+
+  /**
+   * Sign a signature request (digital signature)
+   */
+  async signRequest(requestId: string, signatureData: string) {
+    return apiPut<DigitalSignature>(`/signatures/requests/${requestId}/sign`, {
+      signatureData
+    });
   },
 };

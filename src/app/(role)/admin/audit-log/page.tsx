@@ -68,22 +68,7 @@ const AuditLogPage = () => {
     total: 0,
   });
 
-  // Debug: Log logs state changes
-  useEffect(() => {
-    console.log("Logs state updated:", logs);
-    console.log("Logs length:", logs.length);
-  }, [logs]);
 
-  // Debug: Log stats state changes
-  useEffect(() => {
-    console.log("📊 Stats state updated:", stats);
-    if (stats) {
-      console.log("📊 Stats.totalLogs:", stats.totalLogs);
-      console.log("📊 Stats.last24Hours:", stats.last24Hours);
-      console.log("📊 Stats.last7Days:", stats.last7Days);
-      console.log("📊 Stats.last30Days:", stats.last30Days);
-    }
-  }, [stats]);
 
   // Fetch audit logs
   const fetchAuditLogs = async (page = 1, pageSize = 20) => {
@@ -105,24 +90,12 @@ const AuditLogPage = () => {
 
       const response = await getAuditLogs(params);
       
-      console.log("Audit logs response:", response);
-      console.log("Response data:", response.data);
+      // Handle nested response structure: response.data.data.data
+      const responseWrapper = response.data as any;
+      const responseData = responseWrapper?.data;
       
-      // Handle nested response structure: response.data.data
-      const responseData = response.data as any;
-      if (responseData?.data) {
-        const logsData = responseData.data;
-        console.log("Logs array:", logsData);
-        console.log("Is array?", Array.isArray(logsData));
-        console.log("Length:", logsData.length);
-        
-        if (Array.isArray(logsData)) {
-          console.log("Setting logs state with:", logsData);
-          setLogs(logsData);
-        } else {
-          console.warn("Logs data is not an array:", logsData);
-          setLogs([]);
-        }
+      if (responseData?.data && Array.isArray(responseData.data)) {
+        setLogs(responseData.data);
         
         if (responseData.pagination) {
           setPagination({
@@ -132,7 +105,6 @@ const AuditLogPage = () => {
           });
         }
       } else {
-        console.warn("No response.data found");
         setLogs([]);
         message.warning("No audit logs found");
       }
@@ -150,23 +122,15 @@ const AuditLogPage = () => {
     setStatsLoading(true);
     try {
       const response = await getAuditLogStats();
-      console.log("📊 Stats API response:", response);
-      console.log("📊 Response.data:", response.data);
       
-      // Handle structure: response.data
-      const statsData = response.data as any;
+      // Handle nested structure: response.data.data.data
+      const responseWrapper = response.data as any;
+      const statsData = responseWrapper?.data;
+      
       if (statsData?.data) {
-        console.log("📊 Stats data to set:", statsData.data);
         setStats(statsData.data);
-      } else if (statsData) {
-        // Direct stats object
-        console.log("📊 Stats data (direct):", statsData);
-        setStats(statsData);
-      } else {
-        console.warn("⚠️ No stats data in response");
       }
     } catch (error: any) {
-      console.error("❌ Failed to fetch stats:", error);
       // Don't show error message for stats, it's not critical
     } finally {
       setStatsLoading(false);
@@ -190,9 +154,7 @@ const AuditLogPage = () => {
         params.endDate = dateRange[1].toISOString();
       }
 
-      console.log("Exporting with params:", params);
       const blob = await exportAuditLogs(params);
-      console.log("Export blob received:", blob);
       
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
@@ -205,7 +167,6 @@ const AuditLogPage = () => {
       
       message.success("Audit logs exported successfully");
     } catch (error: any) {
-      console.error("Export error:", error);
       message.error(error.message || "Failed to export audit logs");
     }
   };
@@ -641,12 +602,6 @@ const AuditLogPage = () => {
 
       {/* Table */}
       <Card>
-        {/* Debug info */}
-        {process.env.NODE_ENV === 'development' && (
-          <div style={{ padding: '8px', background: '#f0f0f0', marginBottom: '16px', fontSize: '12px' }}>
-            <strong>Debug:</strong> Logs count: {logs.length}, Loading: {loading ? 'Yes' : 'No'}
-          </div>
-        )}
         <Table
           columns={columns}
           dataSource={logs}

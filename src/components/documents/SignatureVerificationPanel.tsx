@@ -167,7 +167,7 @@ export const SignatureVerificationPanel: React.FC<
               </Descriptions.Item>
 
               {sig.signatureStamp && (
-                <Descriptions.Item label="Signature Stamp" span={2}>
+                <Descriptions.Item label="Watermark" span={2}>
                   <Space>
                     <img
                       src={sig.signatureStamp.imageUrl}

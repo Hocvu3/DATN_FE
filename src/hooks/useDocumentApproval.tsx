@@ -34,8 +34,8 @@ export const useDocumentApproval = (options?: UseDocumentApprovalOptions) => {
       
       setSignatures(Array.isArray(signaturesData) ? signaturesData : []);
     } catch (error) {
-      console.error("Failed to load signature stamps:", error);
-      message.error("Failed to load signature stamps");
+      console.error("Failed to load watermarks:", error);
+      message.error("Failed to load watermarks");
       setSignatures([]);
     } finally {
       setLoadingSignatures(false);
@@ -61,14 +61,14 @@ export const useDocumentApproval = (options?: UseDocumentApprovalOptions) => {
 
   const handleApproveWithSignature = async () => {
     if (!selectedSignatureId || !currentDocumentId) {
-      message.warning("Please select a signature stamp");
+      message.warning("Please select a watermark");
       return;
     }
 
     try {
       setApproving(true);
 
-      // Apply the signature stamp
+      // Apply the watermark
       await SignaturesApi.applySignature({
         documentId: currentDocumentId,
         signatureStampId: selectedSignatureId,

@@ -448,10 +448,10 @@ const SignatureStampsPage = () => {
     <div className="p-6">
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-800">
-          Signature Stamps Management
+          Watermarks Management
         </h1>
         <p className="text-gray-600 mt-1">
-          Manage signature stamps that can be applied to documents
+          Manage watermarks that can be applied to documents
         </p>
       </div>
 
@@ -571,7 +571,7 @@ const SignatureStampsPage = () => {
           >
             <TextArea
               rows={3}
-              placeholder="Optional description for this signature stamp"
+              placeholder="Optional description for this watermark"
             />
           </Form.Item>
 

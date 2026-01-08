@@ -2,7 +2,7 @@
 
 import React from "react";
 import { Modal, Row, Col, Card, Empty, Spin, Typography, Image, Button, Space } from "antd";
-import { CheckCircleOutlined, PlusOutlined } from "@ant-design/icons";
+import { CheckCircleOutlined, PlusOutlined, CloseOutlined } from "@ant-design/icons";
 
 const { Text } = Typography;
 
@@ -43,16 +43,17 @@ export const SignatureSelectionModal: React.FC<
   
   return (
     <Modal
-      title="Select Signature Stamp to Approve Document"
+      title="Select Watermark to Approve Document"
       open={visible}
       onCancel={onCancel}
+      closeIcon={<CloseOutlined />}
       footer={null}
       width={800}
       centered
     >
       <div style={{ marginTop: 16 }}>
         <Text type="secondary" style={{ display: "block", marginBottom: 16 }}>
-          Choose a signature stamp to apply to this document
+          Choose a watermark to apply to this document
         </Text>
 
         {loading ? (
@@ -61,7 +62,7 @@ export const SignatureSelectionModal: React.FC<
           </div>
         ) : signatures.length === 0 ? (
           <Empty
-            description="No active signature stamps available"
+            description="No active watermarks available"
             style={{ padding: "40px 0" }}
           >
             {onCreateNew && (
@@ -70,7 +71,7 @@ export const SignatureSelectionModal: React.FC<
                 icon={<PlusOutlined />}
                 onClick={onCreateNew}
               >
-                Create New Stamp
+                Create New Watermark
               </Button>
             )}
           </Empty>
@@ -168,7 +169,7 @@ export const SignatureSelectionModal: React.FC<
                   disabled={!selectedSignatureId}
                   loading={approving}
                 >
-                  Approve with Signature
+                  Approve with Watermark
                 </Button>
               </Space>
             </div>
