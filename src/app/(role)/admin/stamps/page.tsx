@@ -1034,12 +1034,12 @@ const StampsPage = () => {
         footer={null}
         width={600}
       >
-        {selectedRequest && selectedRequest.documentVersion && selectedRequest.document && (
+        {selectedRequest && selectedRequest.documentVersion && selectedRequest.documentVersion.document && (
           <>
             <Space direction="vertical" style={{ marginBottom: 16, width: '100%' }}>
               <div>
                 <Text strong>Document: </Text>
-                <Text>{selectedRequest.document.title}</Text>
+                <Text>{selectedRequest.documentVersion.document.title}</Text>
               </div>
               <div>
                 <Text strong>Version: </Text>
@@ -1047,7 +1047,7 @@ const StampsPage = () => {
               </div>
               <div>
                 <Text strong>Document Number: </Text>
-                <Text>{selectedRequest.document.documentNumber}</Text>
+                <Text>{selectedRequest.documentVersion.document.documentNumber}</Text>
               </div>
               <div>
                 <Text strong>Status: </Text>
