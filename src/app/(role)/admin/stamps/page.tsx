@@ -410,7 +410,7 @@ const StampsPage = () => {
   };
 
   const handleApplyRequestStamp = async (values: { signatureStampId: string; reason?: string }) => {
-    if (!selectedRequest || !selectedRequest.documentVersion || !selectedRequest.document) {
+    if (!selectedRequest || !selectedRequest.documentVersion || !selectedRequest.documentVersion.document) {
       messageApi.error("Invalid signature request data", 3);
       return;
     }
@@ -418,7 +418,7 @@ const StampsPage = () => {
     try {
       // Use the /api/stamps/apply endpoint
       await apiPost('/stamps/apply', {
-        documentId: selectedRequest.document.id,
+        documentId: selectedRequest.documentVersion.document.id,
         signatureStampId: values.signatureStampId,
         reason: values.reason || 'Watermark applied to signature request',
       });
