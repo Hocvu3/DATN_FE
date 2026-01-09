@@ -149,7 +149,7 @@ export default function DepartmentDashboardPage() {
 
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
         <div>
-          <Title level={4} style={{ margin: 0 }}>Overview</Title>
+          <Title level={4} style={{ margin: 0 }}>Welcome back, Manager!</Title>
         </div>
         <Button icon={<ReloadOutlined />} onClick={fetchDashboardData}>
           Refresh

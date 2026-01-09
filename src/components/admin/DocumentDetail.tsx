@@ -658,6 +658,7 @@ export default function DocumentDetail({ documentId }: DocumentDetailProps) {
                   onDeleteVersion={handleDeleteVersion}
                   onApproveVersion={handleApproveVersion}
                   onRejectVersion={handleRejectVersion}
+                  onEditVersion={fetchDocument}
                   onCompareVersions={(v1, v2) => {
                     setCompareVersions([v1, v2]);
                     setCompareModalVisible(true);

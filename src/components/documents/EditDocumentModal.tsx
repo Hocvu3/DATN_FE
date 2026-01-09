@@ -7,6 +7,7 @@ import { DepartmentsApi } from "@/lib/departments-api";
 import { TagsApi, Tag } from "@/lib/tags-api";
 import { uploadDocumentCover, uploadDocumentFile, DocumentsApi } from "@/lib/documents-api";
 import { Department, DocumentStatus, SecurityLevel, Asset } from "@/lib/types/document.types";
+import { getCurrentUser } from '@/lib/authProvider';
 import Image from "next/image";
 
 const { Option } = Select;
@@ -69,11 +70,23 @@ const EditDocumentModal: React.FC<EditDocumentModalProps> = ({
   const [currentCover, setCurrentCover] = useState<string | null>(null);
   const [uploadingFile, setUploadingFile] = useState(false);
   const [documentAssets, setDocumentAssets] = useState<Asset[]>([]);
+  const [userDepartmentId, setUserDepartmentId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const documentFileInputRef = useRef<HTMLInputElement>(null);
 
   // Fetch departments and tags when modal opens
   useEffect(() => {
+    const fetchUserDepartment = async () => {
+      if (open) {
+        const user = getCurrentUser();
+        if (user && user.departmentId) {
+          setUserDepartmentId(user.departmentId);
+        } else {
+          setUserDepartmentId(null);
+        }
+      }
+    };
+
     const fetchDepartments = async () => {
       if (open) {
         setLoadingDepartments(true);
@@ -121,6 +134,7 @@ const EditDocumentModal: React.FC<EditDocumentModalProps> = ({
       }
     };
 
+    fetchUserDepartment();
     fetchDepartments();
     fetchTags();
     fetchDocumentAssets();
@@ -130,10 +144,13 @@ const EditDocumentModal: React.FC<EditDocumentModalProps> = ({
   useEffect(() => {
     if (open && document) {
       setCurrentCover(document.cover?.s3Url || null);
+      const user = getCurrentUser();
+      const departmentId = user && user.departmentId ? user.departmentId : (document.departmentId || document.department);
+      
       form.setFieldsValue({
         title: document.title,
         description: document.description,
-        departmentId: document.departmentId || document.department, // Use departmentId if available, fallback to department
+        departmentId: departmentId,
         tags: document.tags, // These should be tag IDs
         status: document.versions?.find(v => v.isLatest)?.status || DocumentStatus.DRAFT,
         securityLevel: document.securityLevel,
@@ -346,10 +363,12 @@ const EditDocumentModal: React.FC<EditDocumentModalProps> = ({
               name="departmentId"
               label="Department"
               rules={[{ required: true, message: "Please select department" }]}
+              tooltip={userDepartmentId ? 'Department is auto-filled based on your assigned department' : ''}
             >
               <Select 
                 placeholder="Select department"
                 loading={loadingDepartments}
+                disabled={!!userDepartmentId}
               >
                 {departments.map((dept) => (
                   <Option key={dept.id} value={dept.id}>

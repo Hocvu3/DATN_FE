@@ -8,6 +8,7 @@ import { DocumentsApi, uploadDocumentCover, uploadDocumentFile } from '@/lib/doc
 import { DepartmentsApi } from '@/lib/departments-api';
 import { TagsApi } from '@/lib/tags-api';
 import { DocumentStatus, SecurityLevel } from '@/lib/types/document.types';
+import { getCurrentUser } from '@/lib/authProvider';
 
 interface Department {
   id: string;
@@ -53,11 +54,25 @@ export default function CreateDocumentModal({
   const [currentCover, setCurrentCover] = useState<string | null>(null);
   const [uploadingFile, setUploadingFile] = useState(false);
   const [documentAssets, setDocumentAssets] = useState<Asset[]>([]);
+  const [userDepartmentId, setUserDepartmentId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const documentFileInputRef = useRef<HTMLInputElement>(null);
 
   // Fetch departments and tags when modal opens
   useEffect(() => {
+    const fetchUserDepartment = async () => {
+      if (open) {
+        const user = getCurrentUser();
+        if (user && user.departmentId) {
+          setUserDepartmentId(user.departmentId);
+          // Auto-fill department field
+          form.setFieldsValue({ departmentId: user.departmentId });
+        } else {
+          setUserDepartmentId(null);
+        }
+      }
+    };
+
     const fetchDepartments = async () => {
       if (open) {
         setLoadingDepartments(true);
@@ -90,9 +105,10 @@ export default function CreateDocumentModal({
       }
     };
 
+    fetchUserDepartment();
     fetchDepartments();
     fetchTags();
-  }, [open]);
+  }, [open, form]);
 
   // Reset form when modal closes
   useEffect(() => {
@@ -271,10 +287,12 @@ export default function CreateDocumentModal({
             name="departmentId"
             label="Department"
             rules={[{ required: true, message: 'Please select department!' }]}
+            tooltip={userDepartmentId ? 'Department is auto-filled based on your assigned department' : ''}
           >
             <Select
               placeholder="Select department"
               loading={loadingDepartments}
+              disabled={!!userDepartmentId}
               showSearch
               filterOption={(input, option) =>
                 option?.children?.toString().toLowerCase().includes(input.toLowerCase()) ?? false

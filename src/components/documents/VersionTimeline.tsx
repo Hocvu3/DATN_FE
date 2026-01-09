@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Timeline, Badge, Button, Space, Tag, Tooltip, Dropdown, Menu, message } from 'antd';
+import { Timeline, Badge, Button, Space, Tag, Tooltip, Dropdown, Menu, message, Switch } from 'antd';
 import {
   ClockCircleOutlined,
   DownloadOutlined,
@@ -18,6 +18,7 @@ import {
   SafetyCertificateOutlined,
 } from '@ant-design/icons';
 import { DocumentVersion, DocumentStatus } from '@/lib/types/document.types';
+import { VersionApi } from '@/lib/version-api';
 import { useDocumentValidation } from '@/hooks/useDocumentValidation';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
@@ -29,7 +30,7 @@ interface VersionTimelineProps {
   documentId: string;
   onViewVersion?: (version: DocumentVersion) => void;
   onDownloadVersion?: (version: DocumentVersion) => void;
-  onEditVersion?: (version: DocumentVersion) => void;
+  onEditVersion?: (version?: DocumentVersion) => void;
   onDeleteVersion?: (version: DocumentVersion) => void;
   onCompareVersions?: (v1: DocumentVersion, v2: DocumentVersion) => void;
   onApproveVersion?: (version: DocumentVersion) => void;
@@ -82,12 +83,33 @@ export const VersionTimeline: React.FC<VersionTimelineProps> = ({
 }) => {
   const [selectedForCompare, setSelectedForCompare] = useState<DocumentVersion | null>(null);
   const [compareMode, setCompareMode] = useState(false);
+  const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
 
   // Use validation hook
   const { validateVersion, validateVersionWithModal, validating, ValidationModal } = useDocumentValidation({
     showModalOnInvalid: true,
     allowProceedOnInvalid: true, // Allow user to proceed even if validation fails
   });
+
+  const handleStatusToggle = async (version: DocumentVersion, checked: boolean) => {
+    const newStatus = checked ? DocumentStatus.PENDING_APPROVAL : DocumentStatus.DRAFT;
+    
+    try {
+      setUpdatingStatus(version.id);
+      await VersionApi.updateVersionStatus(documentId, version.id, newStatus);
+      message.success(`Version status updated to ${newStatus}`);
+      
+      // Trigger a re-fetch by calling onEditVersion if available
+      if (onEditVersion) {
+        onEditVersion();
+      }
+    } catch (error) {
+      message.error('Failed to update version status');
+      console.error('Status update error:', error);
+    } finally {
+      setUpdatingStatus(null);
+    }
+  };
 
   const sortedVersions = [...versions].sort((a, b) => b.versionNumber - a.versionNumber);
 
@@ -256,6 +278,20 @@ export const VersionTimeline: React.FC<VersionTimelineProps> = ({
                   status={config.badgeStatus} 
                   text={config.label}
                 />
+                {/* Status Toggle Switch */}
+                {(version.status === DocumentStatus.DRAFT || version.status === DocumentStatus.PENDING_APPROVAL) && (
+                  <Tooltip title={`Switch to ${version.status === DocumentStatus.DRAFT ? 'Pending Approval' : 'Draft'}`}>
+                    <Switch
+                      size="small"
+                      checked={version.status === DocumentStatus.PENDING_APPROVAL}
+                      onChange={(checked) => handleStatusToggle(version, checked)}
+                      loading={updatingStatus === version.id}
+                      checkedChildren="Pending"
+                      unCheckedChildren="Draft"
+                      disabled={updatingStatus !== null}
+                    />
+                  </Tooltip>
+                )}
               </div>
               <div className="flex items-center gap-2 text-sm text-gray-500">
                 <UserOutlined className="text-xs" />
@@ -301,7 +337,7 @@ export const VersionTimeline: React.FC<VersionTimelineProps> = ({
           </div>
 
           {/* Quick Actions */}
-          <div className="mt-3 flex flex-wrap gap-2">
+          <div className="mt-3 flex flex-wrap gap-2 items-center">
             <Button 
               size="small" 
               icon={<SafetyCertificateOutlined />}
