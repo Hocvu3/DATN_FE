@@ -307,7 +307,7 @@ const SignaturesPage = () => {
       </div>
 
       {/* Stats Cards */}
-      <Row gutter={16} style={{ marginBottom: "24px" }}>
+      {/* <Row gutter={16} style={{ marginBottom: "24px" }}>
         <Col xs={24} sm={12} md={8}>
           <Card>
             <Statistic
@@ -337,7 +337,7 @@ const SignaturesPage = () => {
             />
           </Card>
         </Col>
-      </Row>
+      </Row> */}
 
       {/* Filter and Table */}
       <Card title="Documents to Sign">

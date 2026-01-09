@@ -260,8 +260,8 @@ export const VersionTimeline: React.FC<VersionTimelineProps> = ({
               <div className="flex items-center gap-2 text-sm text-gray-500">
                 <UserOutlined className="text-xs" />
                 <span>
-                  {version.createdBy 
-                    ? `${version.createdBy.firstName} ${version.createdBy.lastName}`
+                  {(version.creator || version.createdBy)
+                    ? `${(version.creator || version.createdBy)?.firstName} ${(version.creator || version.createdBy)?.lastName} (@${(version.creator || version.createdBy)?.username})`
                     : '—'}
                 </span>
                 <span>•</span>

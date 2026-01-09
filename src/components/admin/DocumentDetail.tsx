@@ -588,12 +588,6 @@ export default function DocumentDetail({ documentId }: DocumentDetailProps) {
                   <Descriptions.Item label="Security Level" span={2}>
                     <Tag color={securityColors[document.securityLevel]}>{document.securityLevel}</Tag>
                   </Descriptions.Item>
-                  <Descriptions.Item label="Status" span={2}>
-                    <Badge 
-                      status={statusColors[(document.versions?.find(v => v.isLatest)?.status || DocumentStatus.DRAFT)] as any} 
-                      text={document.versions?.find(v => v.isLatest)?.status || DocumentStatus.DRAFT} 
-                    />
-                  </Descriptions.Item>
                   <Descriptions.Item label="Created By" span={1}>
                     {document?.creator?.firstName} {document?.creator?.lastName}
                   </Descriptions.Item>

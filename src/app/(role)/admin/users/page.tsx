@@ -13,9 +13,6 @@ import {
   Form,
   Space,
   App,
-  Row,
-  Col,
-  Statistic,
 } from "antd";
 import {
   PlusOutlined,
@@ -357,11 +354,6 @@ const UsersPage = () => {
     fetchUsers(newPagination.current, newPagination.pageSize, searchText);
   };
 
-  // Stats calculations
-  const totalUsers = pagination.total;
-  const activeUsers = users.filter(u => u.isActive).length;
-  const inactiveUsers = users.filter(u => !u.isActive).length;
-
   const columns = [
     {
       title: "Name",
@@ -466,40 +458,6 @@ const UsersPage = () => {
           />
         </div>
       </div>
-
-      {/* Stats Cards */}
-      <Row gutter={16} className="mb-6">
-        <Col xs={24} sm={8}>
-          <Card>
-            <Statistic
-              title="Total Users"
-              value={totalUsers}
-              prefix={<UserOutlined />}
-              valueStyle={{ color: "#1890ff" }}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={8}>
-          <Card>
-            <Statistic
-              title="Active Users"
-              value={activeUsers}
-              prefix={<CheckCircleOutlined />}
-              valueStyle={{ color: "#52c41a" }}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={8}>
-          <Card>
-            <Statistic
-              title="Inactive Users"
-              value={inactiveUsers}
-              prefix={<CloseCircleOutlined />}
-              valueStyle={{ color: "#ff4d4f" }}
-            />
-          </Card>
-        </Col>
-      </Row>
 
       <Card className="shadow-md">
         <div className="mb-4 space-y-4">

@@ -100,6 +100,7 @@ export interface DocumentVersion {
     comment: string | null;
     assets: Asset[];
     createdBy?: User;
+    creator?: User;
     signatureRequests?: Array<{
         id: string;
         status: string;

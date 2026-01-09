@@ -261,47 +261,6 @@ const TagsPage = () => {
         </div>
       </div>
 
-      {/* Stats Card */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-8">
-        <Card className="border-0 shadow-sm">
-          <div className="flex items-center gap-3">
-            <div className="p-3 bg-blue-100 rounded-lg">
-              <TagOutlined className="text-2xl text-blue-600" />
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-gray-900">{tags.length}</div>
-              <div className="text-sm text-gray-500">Total Tags</div>
-            </div>
-          </div>
-        </Card>
-        <Card className="border-0 shadow-sm">
-          <div className="flex items-center gap-3">
-            <div className="p-3 bg-green-100 rounded-lg">
-              <TagOutlined className="text-2xl text-green-600" />
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-gray-900">
-                {tags.filter(t => t.isActive).length}
-              </div>
-              <div className="text-sm text-gray-500">Active Tags</div>
-            </div>
-          </div>
-        </Card>
-        <Card className="border-0 shadow-sm">
-          <div className="flex items-center gap-3">
-            <div className="p-3 bg-purple-100 rounded-lg">
-              <TagOutlined className="text-2xl text-purple-600" />
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-gray-900">
-                {tags.reduce((sum, tag) => sum + (tag._count?.documents || tag.documentCount || 0), 0)}
-              </div>
-              <div className="text-sm text-gray-500">Total Tagged Documents</div>
-            </div>
-          </div>
-        </Card>
-      </div>
-
       <Card className="shadow-md border-0">
         <div className="flex justify-between mb-4 flex-col md:flex-row gap-4">
           <Input

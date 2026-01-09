@@ -307,47 +307,6 @@ const DepartmentsPage = () => {
         </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-8">
-        <Card className="border-0 shadow-sm">
-          <div className="flex items-center gap-3">
-            <div className="p-3 bg-blue-100 rounded-lg">
-              <AppstoreOutlined className="h-6 w-6 text-blue-600" style={{ fontSize: 24 }} />
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-gray-900">{departments.length}</div>
-              <div className="text-sm text-gray-500">Total Departments</div>
-            </div>
-          </div>
-        </Card>
-        <Card className="border-0 shadow-sm">
-          <div className="flex items-center gap-3">
-            <div className="p-3 bg-green-100 rounded-lg">
-              <TeamOutlined className="h-6 w-6 text-green-600" style={{ fontSize: 24 }} />
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-gray-900">
-                {departments.reduce((sum, dept) => sum + (dept.members || 0), 0)}
-              </div>
-              <div className="text-sm text-gray-500">Total Members</div>
-            </div>
-          </div>
-        </Card>
-        <Card className="border-0 shadow-sm">
-          <div className="flex items-center gap-3">
-            <div className="p-3 bg-purple-100 rounded-lg">
-              <FileTextOutlined className="h-6 w-6 text-purple-600" style={{ fontSize: 24 }} />
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-gray-900">
-                {departments.reduce((sum, dept) => sum + (dept.documents || 0), 0)}
-              </div>
-              <div className="text-sm text-gray-500">Total Documents</div>
-            </div>
-          </div>
-        </Card>
-      </div>
-
       {/* Main Content */}
       <Card className="border-0 shadow-sm">
         {/* Search Bar */}

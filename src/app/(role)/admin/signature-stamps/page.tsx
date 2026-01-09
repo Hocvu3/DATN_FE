@@ -456,7 +456,7 @@ const SignatureStampsPage = () => {
       </div>
 
       {/* Stats Cards */}
-      <Row gutter={16} className="mb-6">
+      {/* <Row gutter={16} className="mb-6">
         <Col xs={24} sm={8}>
           <Card>
             <Statistic
@@ -487,7 +487,7 @@ const SignatureStampsPage = () => {
             />
           </Card>
         </Col>
-      </Row>
+      </Row> */}
 
       {/* Filters and Actions */}
       <Card className="mb-4">
